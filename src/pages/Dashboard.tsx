@@ -262,59 +262,83 @@ export default function Dashboard() {
   const gainers = [...MOCK_COMPANIES].sort((a, b) => b.change_pct - a.change_pct);
   const losers = [...MOCK_COMPANIES].sort((a, b) => a.change_pct - b.change_pct);
   const active = [...MOCK_COMPANIES].sort((a, b) => b.market_cap - a.market_cap);
+  const { widgets, setWidgets, isEditing, setIsEditing, toggleVisibility, resetLayout, isVisible, orderedIds } = useDashboardLayout();
+
+  const widgetMap: Record<string, React.ReactNode> = {
+    hero: (
+      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+        className="flex flex-col items-center gap-5 py-10">
+        <div className="relative">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight text-center" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            Institutional-Grade{" "}<span className="gradient-text">Financial Data</span>
+          </h1>
+          <div className="absolute -inset-x-10 -inset-y-4 bg-primary/5 rounded-3xl blur-3xl pointer-events-none" />
+        </div>
+        <p className="text-muted-foreground text-center max-w-lg text-base">
+          Deep fundamentals for <span className="font-semibold text-foreground">2,229</span> NSE companies. Data first, no noise.
+        </p>
+        <SearchBar variant="hero" />
+      </motion.div>
+    ),
+    recent: <RecentlyViewed />,
+    heatmap: (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <div className="glass-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="section-title">Sector Performance</h2>
+            <span className="text-xs text-muted-foreground font-mono">{SECTOR_DATA.length} sectors</span>
+          </div>
+          <SectorHeatmap />
+        </div>
+      </motion.div>
+    ),
+    feeds: (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <FIIDIITracker />
+        <NewsFeed />
+        <IPOCalendar />
+      </motion.div>
+    ),
+    pulse: (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <MarketPulseCard title="Top Gainers" companies={gainers} type="gainers"
+          icon={<div className="h-7 w-7 rounded-lg bg-chart-green/10 flex items-center justify-center"><TrendingUp className="h-4 w-4 text-positive" /></div>} />
+        <MarketPulseCard title="Top Losers" companies={losers} type="losers"
+          icon={<div className="h-7 w-7 rounded-lg bg-chart-red/10 flex items-center justify-center"><TrendingDown className="h-4 w-4 text-negative" /></div>} />
+        <MarketPulseCard title="Most Active" companies={active} type="active"
+          icon={<div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center"><Zap className="h-4 w-4 text-primary" /></div>} />
+      </motion.div>
+    ),
+  };
 
   return (
     <div>
-      {/* Market Ticker */}
       <MarketTicker />
-
       <div className="container max-w-7xl py-8 space-y-8">
-        {/* Hero */}
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className="flex flex-col items-center gap-5 py-10">
-          <div className="relative">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight text-center" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Institutional-Grade{" "}<span className="gradient-text">Financial Data</span>
-            </h1>
-            <div className="absolute -inset-x-10 -inset-y-4 bg-primary/5 rounded-3xl blur-3xl pointer-events-none" />
-          </div>
-          <p className="text-muted-foreground text-center max-w-lg text-base">
-            Deep fundamentals for <span className="font-semibold text-foreground">2,229</span> NSE companies. Data first, no noise.
-          </p>
-          <SearchBar variant="hero" />
-        </motion.div>
+        {/* Dashboard customize button */}
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={() => setIsEditing(!isEditing)} className="gap-1.5 text-xs text-muted-foreground">
+            <Settings2 className="h-3.5 w-3.5" /> Customize
+          </Button>
+        </div>
 
-        <RecentlyViewed />
+        <AnimatePresence>
+          {isEditing && (
+            <DashboardLayoutEditor
+              widgets={widgets}
+              setWidgets={setWidgets}
+              toggleVisibility={toggleVisibility}
+              resetLayout={resetLayout}
+              onClose={() => setIsEditing(false)}
+            />
+          )}
+        </AnimatePresence>
 
-        {/* Sector Heatmap */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <div className="glass-card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="section-title">Sector Performance</h2>
-              <span className="text-xs text-muted-foreground font-mono">{SECTOR_DATA.length} sectors</span>
-            </div>
-            <SectorHeatmap />
-          </div>
-        </motion.div>
-
-        {/* New: FII/DII + News + IPO row */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FIIDIITracker />
-          <NewsFeed />
-          <IPOCalendar />
-        </motion.div>
-
-        {/* Market Pulse */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MarketPulseCard title="Top Gainers" companies={gainers} type="gainers"
-            icon={<div className="h-7 w-7 rounded-lg bg-chart-green/10 flex items-center justify-center"><TrendingUp className="h-4 w-4 text-positive" /></div>} />
-          <MarketPulseCard title="Top Losers" companies={losers} type="losers"
-            icon={<div className="h-7 w-7 rounded-lg bg-chart-red/10 flex items-center justify-center"><TrendingDown className="h-4 w-4 text-negative" /></div>} />
-          <MarketPulseCard title="Most Active" companies={active} type="active"
-            icon={<div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center"><Zap className="h-4 w-4 text-primary" /></div>} />
-        </motion.div>
+        {orderedIds.map((id) => (
+          <div key={id}>{widgetMap[id]}</div>
+        ))}
       </div>
     </div>
   );

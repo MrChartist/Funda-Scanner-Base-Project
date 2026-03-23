@@ -55,6 +55,7 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2">
+            <LiveMarketIndicator />
             <SearchBar variant="header" />
             {/* Cmd+K hint */}
             <button onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
