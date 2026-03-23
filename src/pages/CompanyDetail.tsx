@@ -1,7 +1,10 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
+import { FileText, Download } from "lucide-react";
 import { getMockCompanyIntelligence } from "@/lib/mock-data";
+import { exportCompanyPDF, exportCompanyExcel } from "@/lib/export-utils";
+import { Button } from "@/components/ui/button";
 import { CompanyHeader } from "@/components/company/CompanyHeader";
 import { KeyRatiosGrid } from "@/components/company/KeyRatiosGrid";
 import { ProsConsSection } from "@/components/company/ProsCons";
