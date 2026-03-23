@@ -8,7 +8,6 @@ import { SearchBar } from "@/components/SearchBar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageTransition } from "@/components/PageTransition";
-import { Badge } from "@/components/ui/badge";
 
 const COMPARE_COLORS = [
   "hsl(var(--primary))",
