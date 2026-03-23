@@ -25,16 +25,21 @@ export default function CompanyDetail() {
       const updated = [symbol, ...recent.filter((s) => s !== symbol)].slice(0, 10);
       localStorage.setItem("funda-recent", JSON.stringify(updated));
     } catch {}
+    window.scrollTo(0, 0);
   }, [symbol]);
 
   const section = (delay: number, children: React.ReactNode) => (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: delay * 0.05 }}>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: delay * 0.06, duration: 0.4, ease: "easeOut" }}
+    >
       {children}
     </motion.div>
   );
 
   return (
-    <div className="container py-6 space-y-6">
+    <div className="container max-w-7xl py-6 md:py-8 space-y-5">
       {section(0, <CompanyHeader company={data.company} />)}
       {section(1, <KeyRatiosGrid company={data.company} ratios={data.intelligence.ratio_rows} />)}
       {section(2, <ProsConsSection pros={data.company.pros} cons={data.company.cons} />)}
@@ -44,8 +49,16 @@ export default function CompanyDetail() {
       {section(6, <FinancialStatements rows={data.intelligence.statement_rows} />)}
       {section(7, <RatiosTable rows={data.intelligence.ratio_rows} />)}
       {section(8, <ShareholdingPattern data={data.intelligence.shareholding} />)}
-      {section(9, <CorporateActions actions={data.intelligence.corporate_actions} />)}
-      {section(10, <PeerComparison peers={data.intelligence.peers} currentSymbol={data.company.symbol} company={data.company} />)}
+      
+      {/* Side by side: Corporate Actions + Peer Comparison */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        <div className="lg:col-span-2">
+          {section(9, <CorporateActions actions={data.intelligence.corporate_actions} />)}
+        </div>
+        <div className="lg:col-span-3">
+          {section(10, <PeerComparison peers={data.intelligence.peers} currentSymbol={data.company.symbol} company={data.company} />)}
+        </div>
+      </div>
     </div>
   );
 }
