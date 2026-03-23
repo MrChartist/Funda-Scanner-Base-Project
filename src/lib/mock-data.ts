@@ -1,4 +1,5 @@
 // Mock data mirroring the /api/company/:symbol/intelligence response structure
+// Price data is overlaid with real TradingView data when available via useLivePrices()
 
 function generatePriceHistory(days: number, basePrice: number) {
   const data = [];
