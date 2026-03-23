@@ -1,6 +1,7 @@
 // TradingView Scanner API integration for real-time NSE stock data
+// Uses Vite dev proxy to bypass CORS: /api/tv -> https://scanner.tradingview.com
 
-const TRADINGVIEW_SCAN_URL = "https://scanner.tradingview.com/india/scan";
+const TRADINGVIEW_SCAN_URL = "/api/tv/india/scan";
 
 const FIELDS = [
   "name",                        // Ticker symbol
@@ -24,11 +25,11 @@ const FIELDS = [
 ];
 
 export interface TVStockData {
-  symbol: string;        // e.g. "RELIANCE"
-  name: string;          // e.g. "Reliance Industries Limited"
+  symbol: string;
+  name: string;
   industry: string;
   sector: string;
-  market_cap: number;    // in crores (converted)
+  market_cap: number;    // in crores
   currency: string;
   eps: number;
   pe: number;
@@ -44,7 +45,6 @@ export interface TVStockData {
   sma50: number;
 }
 
-// Map TradingView sector names to our app's sector categories
 const SECTOR_MAP: Record<string, string> = {
   "Energy Minerals": "Energy",
   "Technology Services": "IT",
@@ -70,10 +70,7 @@ const SECTOR_MAP: Record<string, string> = {
 
 function parseRow(entry: { s: string; d: any[] }): TVStockData {
   const d = entry.d;
-  const rawSymbol = entry.s; // "NSE:RELIANCE"
-  const symbol = rawSymbol.split(":")[1] || rawSymbol;
-  
-  // Market cap from TradingView is in INR, convert to crores (÷ 10^7)
+  const symbol = (entry.s || "").split(":")[1] || entry.s;
   const marketCapCr = (d[4] || 0) / 10000000;
 
   return {
@@ -98,103 +95,60 @@ function parseRow(entry: { s: string; d: any[] }): TVStockData {
   };
 }
 
-/**
- * Fetch specific stocks by their NSE symbols
- */
-export async function fetchStocksBySymbols(symbols: string[]): Promise<TVStockData[]> {
-  const tickers = symbols.map((s) => `NSE:${s}`);
-
-  const body = {
-    columns: FIELDS,
-    symbols: { tickers },
-    sort: { sortBy: "market_cap_basic", sortOrder: "desc" },
-    range: [0, symbols.length],
-  };
-
+async function tvFetch(body: any): Promise<TVStockData[]> {
   const res = await fetch(TRADINGVIEW_SCAN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-
   if (!res.ok) throw new Error(`TradingView API error: ${res.status}`);
   const json = await res.json();
   return (json.data || []).map(parseRow);
 }
 
-/**
- * Fetch top N stocks from NSE by market cap
- */
+export async function fetchStocksBySymbols(symbols: string[]): Promise<TVStockData[]> {
+  return tvFetch({
+    columns: FIELDS,
+    symbols: { tickers: symbols.map((s) => `NSE:${s}`) },
+    sort: { sortBy: "market_cap_basic", sortOrder: "desc" },
+    range: [0, symbols.length],
+  });
+}
+
 export async function fetchTopStocks(count: number = 50): Promise<TVStockData[]> {
-  const body = {
+  return tvFetch({
     columns: FIELDS,
     filter: [{ left: "exchange", operation: "equal", right: "NSE" }],
     sort: { sortBy: "market_cap_basic", sortOrder: "desc" },
     range: [0, count],
     options: { lang: "en" },
-  };
-
-  const res = await fetch(TRADINGVIEW_SCAN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
   });
-
-  if (!res.ok) throw new Error(`TradingView API error: ${res.status}`);
-  const json = await res.json();
-  return (json.data || []).map(parseRow);
 }
 
-/**
- * Fetch stocks filtered by custom criteria (for screener)
- */
-export async function fetchScreenedStocks(filters: {
-  minMarketCap?: number;
-  maxPE?: number;
-  minPE?: number;
-  sector?: string;
+export async function fetchScreenedStocks(options: {
+  filters?: Array<{ left: string; operation: string; right: any }>;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
   count?: number;
 }): Promise<TVStockData[]> {
   const filterArr: any[] = [
     { left: "exchange", operation: "equal", right: "NSE" },
+    ...(options.filters || []),
   ];
 
-  if (filters.minMarketCap) {
-    filterArr.push({ left: "market_cap_basic", operation: "greater", right: filters.minMarketCap * 10000000 });
-  }
-  if (filters.maxPE) {
-    filterArr.push({ left: "price_earnings_ttm", operation: "less", right: filters.maxPE });
-  }
-  if (filters.minPE) {
-    filterArr.push({ left: "price_earnings_ttm", operation: "greater", right: filters.minPE });
-  }
-
-  const body = {
+  return tvFetch({
     columns: FIELDS,
     filter: filterArr,
-    sort: { sortBy: "market_cap_basic", sortOrder: "desc" },
-    range: [0, filters.count || 50],
+    sort: { sortBy: options.sortBy || "market_cap_basic", sortOrder: options.sortOrder || "desc" },
+    range: [0, options.count || 100],
     options: { lang: "en" },
-  };
-
-  const res = await fetch(TRADINGVIEW_SCAN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
   });
-
-  if (!res.ok) throw new Error(`TradingView API error: ${res.status}`);
-  const json = await res.json();
-  return (json.data || []).map(parseRow);
 }
 
-// Cache for stock data with TTL
+// Cache
 let stockCache: { data: TVStockData[]; timestamp: number } | null = null;
-const CACHE_TTL = 30_000; // 30 seconds
+const CACHE_TTL = 30_000;
 
-/**
- * Cached version of fetchTopStocks — avoids hammering the API
- */
 export async function fetchTopStocksCached(count: number = 50): Promise<TVStockData[]> {
   if (stockCache && Date.now() - stockCache.timestamp < CACHE_TTL) {
     return stockCache.data;
@@ -204,9 +158,6 @@ export async function fetchTopStocksCached(count: number = 50): Promise<TVStockD
   return data;
 }
 
-/**
- * Invalidate cache (e.g., on manual refresh)
- */
 export function invalidateStockCache() {
   stockCache = null;
 }
