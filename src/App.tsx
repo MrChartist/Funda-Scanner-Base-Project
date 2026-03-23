@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { Header } from "@/components/Header";
 import { CommandPalette } from "@/components/CommandPalette";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 import { AnimatePresence } from "framer-motion";
 import { OnboardingTour } from "./components/OnboardingTour";
 import { useMarketNotifications } from "./components/NotificationSystem";
