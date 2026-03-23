@@ -29,6 +29,7 @@ function AnimatedRoutes() {
         <Route path="/screener" element={<Screener />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/watchlist" element={<Watchlist />} />
+        <Route path="/dcf" element={<DCFCalculator />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
