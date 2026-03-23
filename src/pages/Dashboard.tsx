@@ -1,11 +1,14 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, ArrowUpRight, Clock, Zap, BarChart3, Newspaper, Calendar, ArrowUp, ArrowDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { TrendingUp, TrendingDown, ArrowUpRight, Clock, Zap, BarChart3, Newspaper, Calendar, ArrowUp, ArrowDown, Settings2 } from "lucide-react";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { MOCK_COMPANIES, SECTOR_DATA } from "@/lib/mock-data";
 import { SearchBar } from "@/components/SearchBar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useDashboardLayout, DashboardLayoutEditor } from "@/components/DashboardLayout";
+import { useLivePrices } from "@/hooks/use-live-prices";
 
 function formatMarketCap(val: number) {
   if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L Cr`;
