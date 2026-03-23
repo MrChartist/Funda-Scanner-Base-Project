@@ -1,7 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { fetchStocksBySymbols, fetchTopStocksCached, type TVStockData } from "@/lib/tradingview";
+import { useState, useCallback, useEffect } from "react";
+import { fetchStocksBySymbols, type TVStockData } from "@/lib/tradingview";
 
-// Symbols we track — these are the ones in our app
 const TRACKED_SYMBOLS = [
   "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
   "BHARTIARTL", "HINDUNILVR", "ITC", "SBIN", "BAJFINANCE",
@@ -16,7 +15,6 @@ export interface PriceTick {
   changePct: number;
   volume: number;
   timestamp: number;
-  // Extra TradingView fields
   pe?: number;
   eps?: number;
   marketCap?: number;
@@ -52,12 +50,7 @@ class LivePriceService {
   private prices: Map<string, PriceTick> = new Map();
   private interval: ReturnType<typeof setInterval> | null = null;
   private listeners: Set<TickCallback> = new Set();
-  private isLive = false;
-  private fetchFailed = false;
-
-  constructor() {
-    // Initialize with empty map — will be populated on first fetch
-  }
+  private _isLive = false;
 
   private async fetchPrices() {
     try {
@@ -65,22 +58,16 @@ class LivePriceService {
       stocks.forEach((tv) => {
         this.prices.set(tv.symbol, tvToTick(tv));
       });
-      this.isLive = true;
-      this.fetchFailed = false;
+      this._isLive = true;
       this.listeners.forEach((cb) => cb(new Map(this.prices)));
     } catch (err) {
-      console.warn("TradingView fetch failed, using cached data:", err);
-      this.fetchFailed = true;
-      // If we have no data at all, generate fallback
-      if (this.prices.size === 0) {
-        this.initFallback();
-      }
+      console.warn("TradingView fetch failed, using fallback:", err);
+      if (this.prices.size === 0) this.initFallback();
     }
   }
 
   private initFallback() {
-    // Fallback prices if API fails entirely
-    const fallbackData: Record<string, [number, number]> = {
+    const fallback: Record<string, [number, number]> = {
       RELIANCE: [1407.80, -0.47], TCS: [2383.80, -0.28], HDFCBANK: [744.15, -4.65],
       INFY: [1256.80, 0.07], ICICIBANK: [1222.70, -1.82], BHARTIARTL: [1720.80, 2.15],
       HINDUNILVR: [2640.90, -0.34], ITC: [465.20, 0.78], SBIN: [808.15, -0.92],
@@ -89,7 +76,7 @@ class LivePriceService {
       WIPRO: [520.80, -0.67], SUNPHARMA: [1650.40, 0.56], TATAMOTORS: [950.60, 2.34],
       HCLTECH: [1680.90, -0.23], ULTRACEMCO: [10750.25, 0.45],
     };
-    Object.entries(fallbackData).forEach(([sym, [price, changePct]]) => {
+    Object.entries(fallback).forEach(([sym, [price, changePct]]) => {
       this.prices.set(sym, {
         symbol: sym, price, change: +(price * changePct / 100).toFixed(2),
         changePct, volume: Math.floor(1000000 + Math.random() * 5000000),
@@ -101,17 +88,12 @@ class LivePriceService {
 
   start() {
     if (this.interval) return;
-    // Initial fetch
     this.fetchPrices();
-    // Poll every 30 seconds (TradingView rate-friendly)
     this.interval = setInterval(() => this.fetchPrices(), 30_000);
   }
 
   stop() {
-    if (this.interval) {
-      clearInterval(this.interval);
-      this.interval = null;
-    }
+    if (this.interval) { clearInterval(this.interval); this.interval = null; }
   }
 
   subscribe(cb: TickCallback) {
@@ -124,16 +106,10 @@ class LivePriceService {
     };
   }
 
-  getSnapshot() {
-    return new Map(this.prices);
-  }
-
-  getIsLive() {
-    return this.isLive;
-  }
+  getSnapshot() { return new Map(this.prices); }
+  get isLive() { return this._isLive; }
 }
 
-// Singleton
 const service = new LivePriceService();
 
 export function useLivePrices() {
@@ -144,8 +120,7 @@ export function useLivePrices() {
   }, []);
 
   const getPrice = useCallback((symbol: string) => prices.get(symbol), [prices]);
-
-  return { prices, getPrice, isLive: service.getIsLive() };
+  return { prices, getPrice, isLive: service.isLive };
 }
 
 export function LiveMarketIndicator() {
