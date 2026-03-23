@@ -193,6 +193,8 @@ function MarketPulseCard({ title, companies, type, icon }: {
   title: string; companies: typeof MOCK_COMPANIES; type: "gainers" | "losers" | "active"; icon: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const { getPrice } = useLivePrices();
+
   return (
     <div className="glass-card p-4">
       <div className="flex items-center gap-2.5 mb-4">
@@ -200,23 +202,28 @@ function MarketPulseCard({ title, companies, type, icon }: {
         <h3 className="text-sm font-bold text-foreground">{title}</h3>
       </div>
       <div className="space-y-1">
-        {companies.slice(0, 5).map((c, i) => (
-          <motion.button key={c.symbol} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.04 }}
-            onClick={() => navigate(`/company/${c.symbol}`)}
-            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-accent/50 transition-all duration-200 group">
-            <div className="flex items-center gap-2.5">
-              <span className="font-mono font-bold text-foreground group-hover:text-primary transition-colors">{c.symbol}</span>
-              <span className="text-muted-foreground text-xs hidden lg:inline">{c.name.split(" ").slice(0, 2).join(" ")}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-sm text-foreground">₹{c.price.toLocaleString()}</span>
-              <span className={`metric-badge ${c.change_pct >= 0 ? "bg-chart-green/10 text-positive" : "bg-chart-red/10 text-negative"}`}>
-                {c.change_pct >= 0 ? "+" : ""}{c.change_pct.toFixed(2)}%
-              </span>
-            </div>
-          </motion.button>
-        ))}
+        {companies.slice(0, 5).map((c, i) => {
+          const live = getPrice(c.symbol);
+          const price = live?.price ?? c.price;
+          const changePct = live?.changePct ?? c.change_pct;
+          return (
+            <motion.button key={c.symbol} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.04 }}
+              onClick={() => navigate(`/company/${c.symbol}`)}
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-accent/50 transition-all duration-200 group">
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono font-bold text-foreground group-hover:text-primary transition-colors">{c.symbol}</span>
+                <span className="text-muted-foreground text-xs hidden lg:inline">{c.name.split(" ").slice(0, 2).join(" ")}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-sm text-foreground">₹{price.toLocaleString()}</span>
+                <span className={`metric-badge ${changePct >= 0 ? "bg-chart-green/10 text-positive" : "bg-chart-red/10 text-negative"}`}>
+                  {changePct >= 0 ? "+" : ""}{changePct.toFixed(2)}%
+                </span>
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );
