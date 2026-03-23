@@ -215,7 +215,38 @@ export function getMockCompanyIntelligence(symbol: string) {
         { quarter: "Q3 FY2024", promoter_pct: 50.3, fii_pct: 22.8, dii_pct: 15.5, public_pct: 11.4 },
         { quarter: "Q2 FY2024", promoter_pct: 50.6, fii_pct: 22.5, dii_pct: 15.1, public_pct: 11.8 },
         { quarter: "Q1 FY2024", promoter_pct: 50.6, fii_pct: 22.2, dii_pct: 14.9, public_pct: 12.3 },
+        { quarter: "Q4 FY2023", promoter_pct: 50.8, fii_pct: 21.9, dii_pct: 14.6, public_pct: 12.7 },
+        { quarter: "Q3 FY2023", promoter_pct: 51.0, fii_pct: 21.5, dii_pct: 14.3, public_pct: 13.2 },
+        { quarter: "Q2 FY2023", promoter_pct: 51.2, fii_pct: 21.2, dii_pct: 14.0, public_pct: 13.6 },
+        { quarter: "Q1 FY2023", promoter_pct: 51.4, fii_pct: 20.8, dii_pct: 13.8, public_pct: 14.0 },
       ],
+      documents: {
+        announcements: [
+          { title: "Disclosure Under Regulation 30 Of The SEBI (LODR) Regulations, 2015", date: "2026-03-18", summary: "Customs redemption fine; company to appeal; no operational impact.", type: "Recent" as const },
+          { title: `Media Release - ${company.name} SIGNS LANDMARK GREEN AMMONIA BINDING LONG-TERM OFFTAKE AGREEMENT`, date: "2026-03-16", summary: "Signs 15-year binding green ammonia SPA.", type: "Important" as const },
+          { title: "Board Meeting Outcome - Quarterly Results Approved", date: "2026-01-25", summary: "Board approved Q3 FY2026 results.", type: "Important" as const },
+          { title: "Investor Presentation - Q3 FY2026", date: "2026-01-26", summary: "Quarterly investor presentation released.", type: "Recent" as const },
+        ],
+        annual_reports: [
+          { year: "Financial Year 2025", source: "bse" },
+          { year: "Financial Year 2024", source: "bse" },
+          { year: "Financial Year 2023", source: "bse" },
+          { year: "Financial Year 2022", source: "bse" },
+          { year: "Financial Year 2021", source: "bse" },
+        ],
+        credit_ratings: [
+          { title: "Rating update", date: "30 Jan from crisil" },
+          { title: "Rating update", date: "29 Jan from icra" },
+          { title: "Rating update", date: "30 Oct 2025 from crisil" },
+          { title: "Rating update", date: "30 Jul 2025 from crisil" },
+        ],
+        concalls: [
+          { date: "Jan 2026", transcript: true, ai_summary: true, ppt: false, rec: false },
+          { date: "Jan 2026", transcript: true, ai_summary: true, ppt: true, rec: false },
+          { date: "Oct 2025", transcript: true, ai_summary: true, ppt: true, rec: true },
+          { date: "Oct 2025", transcript: false, ai_summary: false, ppt: true, rec: false },
+        ],
+      },
       price_history: priceHistory,
       corporate_actions: [
         { type: "DIVIDEND", date: "2024-08-15", details: "₹8.00 per share", ratio: "" },

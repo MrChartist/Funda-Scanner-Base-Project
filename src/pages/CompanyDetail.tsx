@@ -13,6 +13,7 @@ import { RatiosTable } from "@/components/company/RatiosTable";
 import { ShareholdingPattern } from "@/components/company/ShareholdingPattern";
 import { CorporateActions } from "@/components/company/CorporateActions";
 import { PeerComparison } from "@/components/company/PeerComparison";
+import { Documents } from "@/components/company/Documents";
 
 export default function CompanyDetail() {
   const { symbol } = useParams<{ symbol: string }>();
@@ -49,16 +50,13 @@ export default function CompanyDetail() {
       {section(6, <FinancialStatements rows={data.intelligence.statement_rows} />)}
       {section(7, <RatiosTable rows={data.intelligence.ratio_rows} />)}
       {section(8, <ShareholdingPattern data={data.intelligence.shareholding} />)}
+      {section(9, <Documents documents={data.intelligence.documents} />)}
       
-      {/* Side by side: Corporate Actions + Peer Comparison */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        <div className="lg:col-span-2">
-          {section(9, <CorporateActions actions={data.intelligence.corporate_actions} />)}
-        </div>
-        <div className="lg:col-span-3">
-          {section(10, <PeerComparison peers={data.intelligence.peers} currentSymbol={data.company.symbol} company={data.company} />)}
-        </div>
-      </div>
+      {/* Corporate Actions */}
+      {section(10, <CorporateActions actions={data.intelligence.corporate_actions} />)}
+      
+      {/* Peer Comparison at bottom - full width */}
+      {section(11, <PeerComparison peers={data.intelligence.peers} currentSymbol={data.company.symbol} company={data.company} />)}
     </div>
   );
 }
