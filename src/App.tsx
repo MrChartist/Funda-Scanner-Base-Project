@@ -7,11 +7,14 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import { Header } from "@/components/Header";
 import { CommandPalette } from "@/components/CommandPalette";
 import { AnimatePresence } from "framer-motion";
+import { OnboardingTour } from "./components/OnboardingTour";
+import { useMarketNotifications } from "./components/NotificationSystem";
 import Dashboard from "./pages/Dashboard";
 import CompanyDetail from "./pages/CompanyDetail";
 import Screener from "./pages/Screener";
 import Compare from "./pages/Compare";
 import Watchlist from "./pages/Watchlist";
+import DCFCalculator from "./pages/DCFCalculator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
