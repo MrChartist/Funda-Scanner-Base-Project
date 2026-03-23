@@ -12,7 +12,7 @@ import { PriceChart } from "@/components/company/PriceChart";
 import { AnalystRatings } from "@/components/company/AnalystRatings";
 import { QuarterlyResults } from "@/components/company/QuarterlyResults";
 import { FinancialStatements } from "@/components/company/FinancialStatements";
-import { RatiosTable } from "@/components/company/RatiosTable";
+import { RatioTrendAnalysis } from "@/components/company/RatioTrendAnalysis";
 import { ShareholdingPattern } from "@/components/company/ShareholdingPattern";
 import { CorporateActions } from "@/components/company/CorporateActions";
 import { PeerComparison } from "@/components/company/PeerComparison";
@@ -21,6 +21,7 @@ import { MutualFundHoldings } from "@/components/company/MutualFundHoldings";
 import { InsiderDeals } from "@/components/company/InsiderDeals";
 import { RevenueSegmentation } from "@/components/company/RevenueSegmentation";
 import { ManagementInfo } from "@/components/company/ManagementInfo";
+import { CompanyPageNav } from "@/components/company/CompanyPageNav";
 
 export default function CompanyDetail() {
   const { symbol } = useParams<{ symbol: string }>();
@@ -36,50 +37,55 @@ export default function CompanyDetail() {
     window.scrollTo(0, 0);
   }, [symbol]);
 
-  const section = (delay: number, children: React.ReactNode) => (
+  const section = (id: string, delay: number, children: React.ReactNode) => (
     <motion.div
+      id={id}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: delay * 0.06, duration: 0.4, ease: "easeOut" }}
+      className="scroll-mt-20"
     >
       {children}
     </motion.div>
   );
 
   return (
-    <div className="container max-w-7xl py-6 md:py-8 space-y-5">
-      {/* Export toolbar */}
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" size="sm" onClick={() => exportCompanyPDF(symbol || "RELIANCE")} className="gap-1.5 text-xs">
-          <FileText className="h-3.5 w-3.5" /> PDF Report
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => exportCompanyExcel(symbol || "RELIANCE")} className="gap-1.5 text-xs">
-          <Download className="h-3.5 w-3.5" /> Excel Export
-        </Button>
-      </div>
-      {section(0, <CompanyHeader company={data.company} />)}
-      {section(1, <KeyRatiosGrid company={data.company} ratios={data.intelligence.ratio_rows} />)}
-      {section(2, <ProsConsSection pros={data.company.pros} cons={data.company.cons} />)}
-      {section(3, <PriceChart priceHistory={data.intelligence.price_history} />)}
-      {section(4, <AnalystRatings ratings={data.intelligence.analyst_ratings} currentPrice={data.company.price} />)}
-      {section(5, <QuarterlyResults rows={data.intelligence.quarterly_rows} />)}
-      {section(6, <FinancialStatements rows={data.intelligence.statement_rows} />)}
-      {section(7, <RatiosTable rows={data.intelligence.ratio_rows} />)}
-      {section(8, <ShareholdingPattern data={data.intelligence.shareholding} />)}
-      
-      {/* Revenue & Holdings side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div>{section(9, <RevenueSegmentation />)}</div>
-        <div>{section(10, <MutualFundHoldings />)}</div>
-      </div>
+    <>
+      <CompanyPageNav />
+      <div className="container max-w-7xl py-6 md:py-8 space-y-5 xl:ml-48">
+        {/* Export toolbar */}
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportCompanyPDF(symbol || "RELIANCE")} className="gap-1.5 text-xs">
+            <FileText className="h-3.5 w-3.5" /> PDF Report
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => exportCompanyExcel(symbol || "RELIANCE")} className="gap-1.5 text-xs">
+            <Download className="h-3.5 w-3.5" /> Excel Export
+          </Button>
+        </div>
+        {section("header", 0, <CompanyHeader company={data.company} />)}
+        {section("ratios-grid", 1, <KeyRatiosGrid company={data.company} ratios={data.intelligence.ratio_rows} />)}
+        {section("pros-cons", 2, <ProsConsSection pros={data.company.pros} cons={data.company.cons} />)}
+        {section("price-chart", 3, <PriceChart priceHistory={data.intelligence.price_history} />)}
+        {section("analyst-ratings", 4, <AnalystRatings ratings={data.intelligence.analyst_ratings} currentPrice={data.company.price} />)}
+        {section("quarterly", 5, <QuarterlyResults rows={data.intelligence.quarterly_rows} />)}
+        {section("financials", 6, <FinancialStatements rows={data.intelligence.statement_rows} />)}
+        {section("ratio-trends", 7, <RatioTrendAnalysis rows={data.intelligence.ratio_rows} />)}
+        {section("shareholding", 8, <ShareholdingPattern data={data.intelligence.shareholding} />)}
+        
+        {/* Revenue & Holdings side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div id="segments" className="scroll-mt-20">{section("segments-inner", 9, <RevenueSegmentation />)}</div>
+          <div>{section("holdings", 10, <MutualFundHoldings />)}</div>
+        </div>
 
-      {section(11, <InsiderDeals />)}
-      {section(12, <ManagementInfo />)}
-      {section(13, <Documents documents={data.intelligence.documents} />)}
-      {section(14, <CorporateActions actions={data.intelligence.corporate_actions} />)}
-      
-      {/* Peer Comparison at bottom - full width */}
-      {section(15, <PeerComparison peers={data.intelligence.peers} currentSymbol={data.company.symbol} company={data.company} />)}
-    </div>
+        {section("insider-deals", 11, <InsiderDeals />)}
+        {section("management", 12, <ManagementInfo />)}
+        {section("documents", 13, <Documents documents={data.intelligence.documents} />)}
+        {section("corporate-actions", 14, <CorporateActions actions={data.intelligence.corporate_actions} />)}
+        
+        {/* Peer Comparison at bottom - full width */}
+        {section("peers", 15, <PeerComparison peers={data.intelligence.peers} currentSymbol={data.company.symbol} company={data.company} />)}
+      </div>
+    </>
   );
 }
