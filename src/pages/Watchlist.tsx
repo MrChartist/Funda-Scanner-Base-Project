@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
-import { Bookmark, X, Bell, TrendingUp, TrendingDown, Eye } from "lucide-react";
+import { Bookmark, X, Bell, TrendingUp, TrendingDown, Eye, ChevronUp, ChevronDown } from "lucide-react";
 import { MOCK_COMPANIES, getMockCompanyIntelligence } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 
@@ -25,6 +25,8 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   );
 }
 
+type SortKey = "symbol" | "price" | "change_pct" | "pe" | "roce" | "npm" | "market_cap";
+
 export default function Watchlist() {
   const navigate = useNavigate();
   const [followed, setFollowed] = useState<string[]>(() => {
@@ -33,6 +35,8 @@ export default function Watchlist() {
 
   const [alerts, setAlerts] = useState<Record<string, { above?: number; below?: number }>>({});
   const [editingAlert, setEditingAlert] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const watchlistData = useMemo(() => {
     return followed.map((symbol) => {
@@ -44,6 +48,21 @@ export default function Watchlist() {
     }).filter(Boolean) as any[];
   }, [followed]);
 
+  const sortedData = useMemo(() => {
+    if (!sortKey) return watchlistData;
+    return [...watchlistData].sort((a, b) => {
+      const av = a[sortKey];
+      const bv = b[sortKey];
+      if (typeof av === "string") return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortDir === "asc" ? av - bv : bv - av;
+    });
+  }, [watchlistData, sortKey, sortDir]);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("desc"); }
+  };
+
   const removeFromWatchlist = (symbol: string) => {
     const updated = followed.filter((s) => s !== symbol);
     setFollowed(updated);
@@ -53,6 +72,11 @@ export default function Watchlist() {
   const setAlert = (symbol: string, above?: number, below?: number) => {
     setAlerts((prev) => ({ ...prev, [symbol]: { above, below } }));
     setEditingAlert(null);
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) => {
+    if (sortKey !== col) return <ChevronDown className="h-3 w-3 opacity-0 group-hover:opacity-30 transition-opacity" />;
+    return sortDir === "asc" ? <ChevronUp className="h-3 w-3 text-primary" /> : <ChevronDown className="h-3 w-3 text-primary" />;
   };
 
   if (followed.length === 0) {
@@ -83,6 +107,12 @@ export default function Watchlist() {
               <p className="text-sm text-muted-foreground">{followed.length} companies tracked</p>
             </div>
           </div>
+          {sortKey && (
+            <button onClick={() => setSortKey(null)}
+              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+              Clear sort
+            </button>
+          )}
         </div>
       </motion.div>
 
@@ -91,20 +121,34 @@ export default function Watchlist() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/60 bg-muted/30">
-                <th className="data-header">Company</th>
-                <th className="data-header">Price</th>
-                <th className="data-header">Change</th>
+                <th className="data-header cursor-pointer group" onClick={() => toggleSort("symbol")}>
+                  <span className="flex items-center gap-1">Company <SortIcon col="symbol" /></span>
+                </th>
+                <th className="data-header cursor-pointer group" onClick={() => toggleSort("price")}>
+                  <span className="flex items-center gap-1">Price <SortIcon col="price" /></span>
+                </th>
+                <th className="data-header cursor-pointer group" onClick={() => toggleSort("change_pct")}>
+                  <span className="flex items-center gap-1">Change <SortIcon col="change_pct" /></span>
+                </th>
                 <th className="data-header">30D Trend</th>
-                <th className="data-header">P/E</th>
-                <th className="data-header">ROCE</th>
-                <th className="data-header">NPM</th>
-                <th className="data-header">Market Cap</th>
+                <th className="data-header cursor-pointer group" onClick={() => toggleSort("pe")}>
+                  <span className="flex items-center gap-1">P/E <SortIcon col="pe" /></span>
+                </th>
+                <th className="data-header cursor-pointer group" onClick={() => toggleSort("roce")}>
+                  <span className="flex items-center gap-1">ROCE <SortIcon col="roce" /></span>
+                </th>
+                <th className="data-header cursor-pointer group" onClick={() => toggleSort("npm")}>
+                  <span className="flex items-center gap-1">NPM <SortIcon col="npm" /></span>
+                </th>
+                <th className="data-header cursor-pointer group" onClick={() => toggleSort("market_cap")}>
+                  <span className="flex items-center gap-1">Market Cap <SortIcon col="market_cap" /></span>
+                </th>
                 <th className="data-header">Alert</th>
                 <th className="data-header w-10"></th>
               </tr>
             </thead>
             <tbody>
-              {watchlistData.map((c, idx) => {
+              {sortedData.map((c, idx) => {
                 const isPositive = c.change_pct >= 0;
                 const sparkColor = isPositive ? "hsl(var(--chart-green))" : "hsl(var(--chart-red))";
                 const alert = alerts[c.symbol];
