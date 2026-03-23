@@ -39,7 +39,6 @@ export default function CompanyDetail() {
       localStorage.setItem("funda-recent", JSON.stringify(updated));
     } catch {}
 
-    // Deep link: scroll to hash section
     const hash = location.hash.replace("#", "");
     if (hash) {
       setTimeout(() => {
@@ -54,13 +53,12 @@ export default function CompanyDetail() {
   const section = (id: string, delay: number, children: React.ReactNode, freshness?: string | number) => (
     <motion.div
       id={id}
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: delay * 0.06, duration: 0.4, ease: "easeOut" }}
-      className="scroll-mt-20 group/section"
+      transition={{ delay: delay * 0.04, duration: 0.3, ease: "easeOut" }}
+      className="scroll-mt-16 group/section"
     >
-      {/* Section share + freshness bar */}
-      <div className="flex items-center justify-end gap-2 mb-1 opacity-0 group-hover/section:opacity-100 transition-opacity" data-no-print>
+      <div className="flex items-center justify-end gap-1.5 mb-0.5 opacity-0 group-hover/section:opacity-100 transition-opacity" data-no-print>
         {freshness !== undefined && <DataFreshness updatedAt={freshness} />}
         <ShareSection sectionId={id} sectionLabel={id.replace(/-/g, " ")} />
       </div>
@@ -71,27 +69,24 @@ export default function CompanyDetail() {
   return (
     <>
       <CompanyPageNav />
-      <div className="container max-w-7xl py-2 md:py-4 space-y-5 xl:ml-48">
-        {/* Breadcrumb */}
+      <div className="container max-w-7xl py-2 md:py-3 space-y-3 xl:ml-48">
         <CompanyBreadcrumb />
 
-        {/* Export toolbar */}
-        <div className="flex justify-end gap-2" data-no-print>
-          <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5 text-xs">
-            <Printer className="h-3.5 w-3.5" /> Print
+        <div className="flex justify-end gap-1.5" data-no-print>
+          <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1 h-7 px-2" style={{ fontSize: '10px' }}>
+            <Printer className="h-3 w-3" /> Print
           </Button>
-          <Button variant="outline" size="sm" onClick={() => exportCompanyPDF(symbol || "RELIANCE")} className="gap-1.5 text-xs">
-            <FileText className="h-3.5 w-3.5" /> PDF Report
+          <Button variant="outline" size="sm" onClick={() => exportCompanyPDF(symbol || "RELIANCE")} className="gap-1 h-7 px-2" style={{ fontSize: '10px' }}>
+            <FileText className="h-3 w-3" /> PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={() => exportCompanyExcel(symbol || "RELIANCE")} className="gap-1.5 text-xs">
-            <Download className="h-3.5 w-3.5" /> Excel Export
+          <Button variant="outline" size="sm" onClick={() => exportCompanyExcel(symbol || "RELIANCE")} className="gap-1 h-7 px-2" style={{ fontSize: '10px' }}>
+            <Download className="h-3 w-3" /> Excel
           </Button>
         </div>
 
-        {/* Print-only header */}
         <div className="print-header hidden">
-          <h1 style={{ fontSize: "18pt", fontWeight: 700 }}>{data.company.name}</h1>
-          <p style={{ fontSize: "10pt", color: "#666" }}>
+          <h1 style={{ fontSize: "16pt", fontWeight: 700 }}>{data.company.name}</h1>
+          <p style={{ fontSize: "9pt", color: "#666" }}>
             {data.company.symbol} · {data.company.sector} · Generated {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
@@ -106,9 +101,8 @@ export default function CompanyDetail() {
         {section("ratio-trends", 7, <RatioTrendAnalysis rows={data.intelligence.ratio_rows} />, 4320)}
         {section("shareholding", 8, <ShareholdingPattern data={data.intelligence.shareholding} />, 2880)}
         
-        {/* Revenue & Holdings side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div id="segments" className="scroll-mt-20">{section("segments-inner", 9, <RevenueSegmentation />, 4320)}</div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div id="segments" className="scroll-mt-16">{section("segments-inner", 9, <RevenueSegmentation />, 4320)}</div>
           <div>{section("holdings", 10, <MutualFundHoldings />, 2880)}</div>
         </div>
 
@@ -117,7 +111,6 @@ export default function CompanyDetail() {
         {section("documents", 13, <Documents documents={data.intelligence.documents} />, 4320)}
         {section("corporate-actions", 14, <CorporateActions actions={data.intelligence.corporate_actions} />, 4320)}
         
-        {/* Peer Comparison at bottom - full width */}
         {section("peers", 15, <PeerComparison peers={data.intelligence.peers} currentSymbol={data.company.symbol} company={data.company} />, 15)}
       </div>
     </>

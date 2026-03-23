@@ -16,12 +16,12 @@ interface Props {
 function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   const chartData = data.map((v, i) => ({ i, v }));
   return (
-    <div className="h-8 w-20">
+    <div className="h-6 w-16">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData}>
           <defs>
             <linearGradient id={`spark-${color.replace(/[^a-z]/gi, '')}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+              <stop offset="0%" stopColor={color} stopOpacity={0.25} />
               <stop offset="100%" stopColor={color} stopOpacity={0.02} />
             </linearGradient>
           </defs>
@@ -52,38 +52,36 @@ export function KeyRatiosGrid({ company, ratios }: Props) {
       { label: "Face Value", value: `₹${company.face_value}`, quality: "neutral" },
       { label: "EPS", value: `₹${company.eps}`, quality: "neutral" },
       { label: "Debt/Equity", value: String(company.de), quality: Number(company.de) < 0.5 ? "good" : Number(company.de) > 1 ? "bad" : "neutral" },
-      { label: "Net Profit Margin", value: `${company.npm}%`, quality: company.npm > 15 ? "good" : company.npm < 5 ? "bad" : "neutral", sparkline: npmValues },
+      { label: "NPM", value: `${company.npm}%`, quality: company.npm > 15 ? "good" : company.npm < 5 ? "bad" : "neutral", sparkline: npmValues },
     ];
   }, [company, ratios]);
 
   const qualityStyles = (q: string) => {
     if (q === "good") return "border-l-chart-green bg-chart-green/5";
     if (q === "bad") return "border-l-chart-red bg-chart-red/5";
-    return "border-l-border bg-muted/20";
+    return "border-l-border bg-muted/15";
   };
 
   return (
-    <div className="glass-card p-5">
-      <h2 className="section-title mb-4">Key Ratios</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+    <div className="glass-card p-3">
+      <h2 className="section-title mb-3">Key Ratios</h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
         {metrics.map((m, idx) => {
           const Icon = ICONS[idx];
           return (
             <motion.div
               key={m.label}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.03 }}
-              className={`rounded-lg border border-border/60 p-3.5 border-l-[3px] hover:border-border transition-all duration-200 group ${qualityStyles(m.quality)}`}
+              transition={{ delay: idx * 0.02 }}
+              className={`rounded border border-border/60 p-2.5 border-l-2 hover:border-border transition-all duration-150 group ${qualityStyles(m.quality)}`}
             >
-              <div className="flex items-start justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
-                  <Icon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{m.label}</span>
-                </div>
+              <div className="flex items-center gap-1 mb-1">
+                <Icon className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-muted-foreground uppercase tracking-wider font-medium" style={{ fontSize: '9px' }}>{m.label}</span>
               </div>
               <div className="flex items-end justify-between">
-                <span className="text-lg font-mono font-bold text-foreground tracking-tight">{m.value}</span>
+                <span className="font-mono font-bold text-foreground tracking-tight" style={{ fontSize: '14px' }}>{m.value}</span>
                 {m.sparkline && (
                   <MiniSparkline
                     data={m.sparkline}
