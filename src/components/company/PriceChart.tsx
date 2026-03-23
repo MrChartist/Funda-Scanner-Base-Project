@@ -1,6 +1,5 @@
-import { useState, useMemo } from "react";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Bar, BarChart, CartesianGrid } from "recharts";
-import { Button } from "@/components/ui/button";
+import { useState, useMemo, useCallback } from "react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Bar, ComposedChart, CartesianGrid, ReferenceLine } from "recharts";
 
 interface PricePoint {
   date: string; open: number; high: number; low: number; close: number; volume: number;
@@ -14,46 +13,88 @@ const RANGES = [
   { label: "MAX", days: 9999 },
 ];
 
+function CustomTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  const price = payload.find((p: any) => p.dataKey === "close");
+  const sma = payload.find((p: any) => p.dataKey === "sma50");
+  const vol = payload.find((p: any) => p.dataKey === "volume");
+
+  return (
+    <div className="glass-card p-3 shadow-xl !bg-card/95 min-w-[180px]">
+      <p className="text-xs text-muted-foreground font-medium mb-2">{label}</p>
+      {price && (
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-xs text-muted-foreground">Price</span>
+          <span className="text-sm font-mono font-bold text-foreground">₹{Number(price.value).toFixed(2)}</span>
+        </div>
+      )}
+      {sma && Number(sma.value) > 0 && (
+        <div className="flex items-center justify-between gap-4 mt-1">
+          <span className="text-xs text-chart-amber">SMA 50</span>
+          <span className="text-sm font-mono font-semibold text-chart-amber">₹{Number(sma.value).toFixed(2)}</span>
+        </div>
+      )}
+      {vol && (
+        <div className="flex items-center justify-between gap-4 mt-1 pt-1 border-t border-border/50">
+          <span className="text-xs text-muted-foreground">Volume</span>
+          <span className="text-xs font-mono text-muted-foreground">{(Number(vol.value) / 1000000).toFixed(2)}M</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PriceChart({ priceHistory }: { priceHistory: PricePoint[] }) {
   const [range, setRange] = useState("1Y");
   const [showVolume, setShowVolume] = useState(true);
+  const [showSMA, setShowSMA] = useState(true);
 
   const data = useMemo(() => {
     const r = RANGES.find((x) => x.label === range);
     const days = r?.days || 365;
-    return priceHistory.slice(-days).map((p) => ({
+    const sliced = priceHistory.slice(-days).map((p) => ({
       date: p.date,
       close: p.close,
       volume: p.volume,
       sma50: 0,
     }));
-  }, [priceHistory, range]);
-
-  // Calculate SMA
-  useMemo(() => {
-    for (let i = 0; i < data.length; i++) {
+    // SMA calc
+    for (let i = 0; i < sliced.length; i++) {
       if (i >= 49) {
-        const sum = data.slice(i - 49, i + 1).reduce((s, d) => s + d.close, 0);
-        data[i].sma50 = +(sum / 50).toFixed(2);
+        const sum = sliced.slice(i - 49, i + 1).reduce((s, d) => s + d.close, 0);
+        sliced[i].sma50 = +(sum / 50).toFixed(2);
       }
     }
-  }, [data]);
+    return sliced;
+  }, [priceHistory, range]);
 
-  const minPrice = Math.min(...data.map((d) => d.close)) * 0.98;
-  const maxPrice = Math.max(...data.map((d) => d.close)) * 1.02;
+  const minPrice = Math.min(...data.map((d) => d.close)) * 0.97;
+  const maxPrice = Math.max(...data.map((d) => d.close)) * 1.03;
+  const avgPrice = data.reduce((s, d) => s + d.close, 0) / data.length;
+  const lastPrice = data[data.length - 1]?.close || 0;
+  const firstPrice = data[0]?.close || 0;
+  const periodChange = ((lastPrice - firstPrice) / firstPrice * 100).toFixed(2);
+  const isUp = Number(periodChange) >= 0;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h2 className="text-sm font-semibold text-foreground">Price Chart</h2>
+    <div className="glass-card p-5">
+      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <div className="flex items-center gap-4">
+          <h2 className="section-title">Price Chart</h2>
+          <span className={`metric-badge ${isUp ? "bg-chart-green/10 text-positive" : "bg-chart-red/10 text-negative"}`}>
+            {isUp ? "+" : ""}{periodChange}% ({range})
+          </span>
+        </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-md border border-border overflow-hidden">
+          <div className="flex rounded-lg border border-border/60 overflow-hidden bg-muted/30">
             {RANGES.map((r) => (
               <button
                 key={r.label}
                 onClick={() => setRange(r.label)}
-                className={`px-3 py-1 text-xs font-medium transition-colors ${
-                  range === r.label ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+                className={`px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                  range === r.label
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 }`}
               >
                 {r.label}
@@ -61,9 +102,17 @@ export function PriceChart({ priceHistory }: { priceHistory: PricePoint[] }) {
             ))}
           </div>
           <button
+            onClick={() => setShowSMA(!showSMA)}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-200 ${
+              showSMA ? "bg-chart-amber/10 text-chart-amber border-chart-amber/30" : "text-muted-foreground border-border/60"
+            }`}
+          >
+            SMA
+          </button>
+          <button
             onClick={() => setShowVolume(!showVolume)}
-            className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors ${
-              showVolume ? "bg-primary/10 text-primary border-primary/30" : "text-muted-foreground border-border"
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-200 ${
+              showVolume ? "bg-primary/10 text-primary border-primary/30" : "text-muted-foreground border-border/60"
             }`}
           >
             Vol
@@ -71,39 +120,76 @@ export function PriceChart({ priceHistory }: { priceHistory: PricePoint[] }) {
         </div>
       </div>
 
-      <div className="h-72">
+      <div className={showVolume ? "h-80" : "h-72"}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => v.slice(5)} />
-            <YAxis domain={[minPrice, maxPrice]} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `₹${v.toFixed(0)}`} />
-            <Tooltip
-              contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: 12 }}
-              labelStyle={{ color: "hsl(var(--foreground))" }}
-              formatter={(value: any, name: string) => [`₹${Number(value).toFixed(2)}`, name === "close" ? "Price" : "SMA 50"]}
+          <ComposedChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+            <defs>
+              <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={isUp ? "hsl(var(--chart-green))" : "hsl(var(--chart-red))"} stopOpacity={0.2} />
+                <stop offset="50%" stopColor={isUp ? "hsl(var(--chart-green))" : "hsl(var(--chart-red))"} stopOpacity={0.05} />
+                <stop offset="100%" stopColor={isUp ? "hsl(var(--chart-green))" : "hsl(var(--chart-red))"} stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+              tickFormatter={(v) => { const d = new Date(v); return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }); }}
+              axisLine={{ stroke: "hsl(var(--border))" }}
+              tickLine={false}
+              minTickGap={40}
             />
-            <Area type="monotone" dataKey="close" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.1} strokeWidth={2} dot={false} />
-            {data[data.length - 1]?.sma50 > 0 && (
-              <Area type="monotone" dataKey="sma50" stroke="hsl(var(--chart-amber))" fill="none" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
+            <YAxis
+              domain={[minPrice, maxPrice]}
+              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+              tickFormatter={(v) => `₹${v.toFixed(0)}`}
+              axisLine={false}
+              tickLine={false}
+              width={55}
+            />
+            {showVolume && (
+              <YAxis
+                yAxisId="volume"
+                orientation="right"
+                tick={false}
+                axisLine={false}
+                tickLine={false}
+                domain={[0, (max: number) => max * 4]}
+                width={0}
+              />
             )}
-          </AreaChart>
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1, strokeDasharray: "4 4" }} />
+            <ReferenceLine y={avgPrice} stroke="hsl(var(--muted-foreground))" strokeDasharray="2 6" opacity={0.3} />
+            {showVolume && (
+              <Bar yAxisId="volume" dataKey="volume" fill="url(#volumeGradient)" radius={[2, 2, 0, 0]} maxBarSize={4} />
+            )}
+            <Area
+              type="monotone"
+              dataKey="close"
+              stroke={isUp ? "hsl(var(--chart-green))" : "hsl(var(--chart-red))"}
+              fill="url(#priceGradient)"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+            />
+            {showSMA && data[data.length - 1]?.sma50 > 0 && (
+              <Area
+                type="monotone"
+                dataKey="sma50"
+                stroke="hsl(var(--chart-amber))"
+                fill="none"
+                strokeWidth={1.5}
+                strokeDasharray="6 3"
+                dot={false}
+              />
+            )}
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
-
-      {showVolume && (
-        <div className="h-20 mt-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data}>
-              <Bar dataKey="volume" fill="hsl(var(--muted-foreground))" opacity={0.3} radius={[1, 1, 0, 0]} />
-              <XAxis dataKey="date" hide />
-              <Tooltip
-                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: 12 }}
-                formatter={(value: any) => [(Number(value) / 1000000).toFixed(2) + "M", "Volume"]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
     </div>
   );
 }
