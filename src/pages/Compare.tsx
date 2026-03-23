@@ -1,10 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from "recharts";
-import { Plus, X, GitCompare, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, X, GitCompare, TrendingUp, TrendingDown, Share2, Download } from "lucide-react";
 import { MOCK_COMPANIES, getMockCompanyIntelligence } from "@/lib/mock-data";
 import { SearchBar } from "@/components/SearchBar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PageTransition } from "@/components/PageTransition";
 import { Badge } from "@/components/ui/badge";
 
 const COMPARE_COLORS = [
