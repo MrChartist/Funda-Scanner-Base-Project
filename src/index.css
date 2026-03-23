@@ -286,4 +286,130 @@
       border-radius: 16px;
     }
   }
+
+  /* Data freshness indicator */
+  .freshness-badge {
+    @apply inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground;
+  }
+
+  .freshness-dot {
+    @apply h-1.5 w-1.5 rounded-full;
+  }
+
+  .freshness-dot-live {
+    @apply bg-positive;
+    animation: pulse-dot 2s infinite;
+  }
+
+  .freshness-dot-recent {
+    @apply bg-warning;
+  }
+
+  .freshness-dot-stale {
+    @apply bg-muted-foreground/40;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+}
+
+/* Print styles for company reports */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+  }
+
+  /* Hide non-essential UI */
+  header, nav, aside,
+  .company-page-nav,
+  .xl\\:block.fixed,
+  .xl\\:hidden.fixed,
+  button:not(.print-keep),
+  .pill-button,
+  .metric-badge,
+  [data-no-print] {
+    display: none !important;
+  }
+
+  /* Clean card styles for print */
+  .glass-card, .glass-card-elevated {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    border-radius: 8px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 12pt;
+  }
+
+  /* Table styles */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    font-size: 9pt !important;
+  }
+
+  th {
+    background: #f5f5f5 !important;
+    border-bottom: 2px solid #333 !important;
+    color: #333 !important;
+    padding: 4pt 6pt !important;
+  }
+
+  td {
+    border-bottom: 1px solid #ddd !important;
+    padding: 3pt 6pt !important;
+    color: #333 !important;
+  }
+
+  .text-positive { color: #16a34a !important; }
+  .text-negative { color: #dc2626 !important; }
+
+  /* Charts - show but don't break */
+  .recharts-wrapper {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Section titles */
+  .section-title {
+    font-size: 13pt !important;
+    color: #111 !important;
+    border-bottom: 2px solid #0ea5e9;
+    padding-bottom: 4pt;
+    margin-bottom: 8pt;
+  }
+
+  .section-title::before {
+    display: none !important;
+  }
+
+  /* Container */
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .xl\\:ml-48 {
+    margin-left: 0 !important;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+
+  /* Print header */
+  .print-header {
+    display: block !important;
+    text-align: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 8pt;
+    margin-bottom: 16pt;
+  }
 }
