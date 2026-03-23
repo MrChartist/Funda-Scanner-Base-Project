@@ -1,11 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from "recharts";
-import { Plus, X, GitCompare, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, X, GitCompare, TrendingUp, TrendingDown, Share2, Download } from "lucide-react";
 import { MOCK_COMPANIES, getMockCompanyIntelligence } from "@/lib/mock-data";
 import { SearchBar } from "@/components/SearchBar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PageTransition } from "@/components/PageTransition";
 
 const COMPARE_COLORS = [
   "hsl(var(--primary))",
@@ -15,10 +17,15 @@ const COMPARE_COLORS = [
 ];
 
 export default function Compare() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialSymbols = searchParams.get("symbols")?.split(",").filter(Boolean) || [];
   const [symbols, setSymbols] = useState<string[]>(initialSymbols.length > 0 ? initialSymbols : ["RELIANCE", "TCS"]);
   const [showSearch, setShowSearch] = useState(false);
+
+  // Sync URL with selected symbols
+  useEffect(() => {
+    setSearchParams({ symbols: symbols.join(",") }, { replace: true });
+  }, [symbols, setSearchParams]);
 
   const companyData = useMemo(() => {
     return symbols.map((s) => ({
@@ -91,16 +98,37 @@ export default function Compare() {
     { label: "Book Value", key: "book_value", fmt: (v: number) => `₹${v}` },
   ];
 
+  const shareUrl = () => {
+    const url = `${window.location.origin}/compare?symbols=${symbols.join(",")}`;
+    navigator.clipboard.writeText(url);
+    alert("Compare URL copied to clipboard!");
+  };
+
+  const exportCSV = () => {
+    const headers = ["Metric", ...symbols];
+    const rows = metricRows.map((row) => [row.label, ...companyData.map((cd) => row.fmt(Number((cd.company as any)[row.key])))]);
+    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `compare_${symbols.join("_")}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
+    <PageTransition>
     <div className="container max-w-7xl py-6 space-y-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <GitCompare className="h-6 w-6 text-primary" />
             <div>
               <h1 className="text-2xl font-display font-bold text-foreground">Stock Comparison</h1>
               <p className="text-sm text-muted-foreground">Compare up to 4 stocks side-by-side</p>
             </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={shareUrl}><Share2 className="h-4 w-4 mr-1" />Share</Button>
+            <Button variant="outline" size="sm" onClick={exportCSV}><Download className="h-4 w-4 mr-1" />Export</Button>
           </div>
         </div>
       </motion.div>
@@ -263,5 +291,6 @@ export default function Compare() {
         </div>
       </div>
     </div>
+    </PageTransition>
   );
 }
