@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Palette, Check, Moon } from "lucide-react";
+import { DARK_DEFAULTS } from "@/hooks/use-theme";
 
 const ACCENT_PRESETS = [
   { name: "Ocean Blue", hue: 220, light: "220 70% 50%", dark: "199 89% 48%" },
@@ -18,7 +19,7 @@ export function AccentColorPicker() {
   const [activeAccent, setActiveAccent] = useState(() => localStorage.getItem("funda-accent") || "Ocean Blue");
   const [oledDark, setOledDark] = useState(() => localStorage.getItem("funda-oled") === "true");
 
-  useEffect(() => {
+  const applyAccent = useCallback(() => {
     const preset = ACCENT_PRESETS.find((p) => p.name === activeAccent);
     if (!preset) return;
     const root = document.documentElement;
@@ -26,41 +27,36 @@ export function AccentColorPicker() {
     const val = isDark ? preset.dark : preset.light;
     root.style.setProperty("--primary", val);
     root.style.setProperty("--ring", val);
-    localStorage.setItem("funda-accent", activeAccent);
-  }, [activeAccent]);
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (oledDark && root.classList.contains("dark")) {
+    // OLED dark mode
+    if (oledDark && isDark) {
       root.style.setProperty("--background", "0 0% 0%");
       root.style.setProperty("--card", "0 0% 3%");
-    } else if (root.classList.contains("dark")) {
-      root.style.setProperty("--background", "225 40% 5%");
-      root.style.setProperty("--card", "225 35% 8%");
+      root.style.setProperty("--popover", "0 0% 3%");
+    } else if (isDark) {
+      root.style.setProperty("--background", DARK_DEFAULTS["--background"]);
+      root.style.setProperty("--card", DARK_DEFAULTS["--card"]);
+      root.style.setProperty("--popover", DARK_DEFAULTS["--popover"]);
     }
-    localStorage.setItem("funda-oled", String(oledDark));
-  }, [oledDark]);
-
-  // Re-apply on theme change
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      const preset = ACCENT_PRESETS.find((p) => p.name === activeAccent);
-      if (!preset) return;
-      const root = document.documentElement;
-      const isDark = root.classList.contains("dark");
-      root.style.setProperty("--primary", isDark ? preset.dark : preset.light);
-      root.style.setProperty("--ring", isDark ? preset.dark : preset.light);
-      if (oledDark && isDark) {
-        root.style.setProperty("--background", "0 0% 0%");
-        root.style.setProperty("--card", "0 0% 3%");
-      } else if (isDark) {
-        root.style.setProperty("--background", "225 40% 5%");
-        root.style.setProperty("--card", "225 35% 8%");
-      }
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
+    // Light mode: don't touch --background/--card — ThemeProvider already reset them
   }, [activeAccent, oledDark]);
+
+  // Apply on accent or OLED change
+  useEffect(() => {
+    applyAccent();
+    localStorage.setItem("funda-accent", activeAccent);
+    localStorage.setItem("funda-oled", String(oledDark));
+  }, [activeAccent, oledDark, applyAccent]);
+
+  // Re-apply when theme toggles
+  useEffect(() => {
+    const handler = () => {
+      // Small delay to let ThemeProvider set defaults first
+      requestAnimationFrame(applyAccent);
+    };
+    window.addEventListener("theme-changed", handler);
+    return () => window.removeEventListener("theme-changed", handler);
+  }, [applyAccent]);
 
   return (
     <div className="relative">
@@ -92,7 +88,7 @@ export function AccentColorPicker() {
                     title={preset.name}
                   >
                     <div
-                      className={`h-8 w-8 rounded-full border-2 transition-all ${isActive ? "border-foreground scale-110" : "border-transparent hover:scale-105"}`}
+                      className={`relative h-8 w-8 rounded-full border-2 transition-all ${isActive ? "border-foreground scale-110" : "border-transparent hover:scale-105"}`}
                       style={{ background: `hsl(${preset.light})` }}
                     >
                       {isActive && (
