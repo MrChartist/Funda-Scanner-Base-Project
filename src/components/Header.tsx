@@ -1,7 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import { Sun, Moon, BarChart3, TrendingUp, LayoutDashboard, GitCompare, Eye, Command } from "lucide-react";
+import { Sun, Moon, BarChart3, TrendingUp, LayoutDashboard, GitCompare, Eye, Command, Calculator } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { SearchBar } from "./SearchBar";
+import { AccentColorPicker } from "./AccentColorPicker";
 import { motion } from "framer-motion";
 
 export function Header() {
@@ -13,6 +14,7 @@ export function Header() {
     { to: "/screener", label: "Screener", icon: BarChart3 },
     { to: "/compare", label: "Compare", icon: GitCompare },
     { to: "/watchlist", label: "Watchlist", icon: Eye },
+    { to: "/dcf", label: "DCF", icon: Calculator },
   ];
 
   return (
@@ -59,6 +61,7 @@ export function Header() {
               <Command className="h-3 w-3" />
               <span className="font-mono">K</span>
             </button>
+            <AccentColorPicker />
             <button onClick={toggleTheme}
               className="relative rounded-lg p-2.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200"
               aria-label="Toggle theme">

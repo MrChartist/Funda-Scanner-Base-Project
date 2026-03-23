@@ -7,11 +7,14 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import { Header } from "@/components/Header";
 import { CommandPalette } from "@/components/CommandPalette";
 import { AnimatePresence } from "framer-motion";
+import { OnboardingTour } from "./components/OnboardingTour";
+import { useMarketNotifications } from "./components/NotificationSystem";
 import Dashboard from "./pages/Dashboard";
 import CompanyDetail from "./pages/CompanyDetail";
 import Screener from "./pages/Screener";
 import Compare from "./pages/Compare";
 import Watchlist from "./pages/Watchlist";
+import DCFCalculator from "./pages/DCFCalculator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,9 +29,22 @@ function AnimatedRoutes() {
         <Route path="/screener" element={<Screener />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/watchlist" element={<Watchlist />} />
+        <Route path="/dcf" element={<DCFCalculator />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
+  );
+}
+
+function AppShell() {
+  useMarketNotifications();
+  return (
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
+      <Header />
+      <CommandPalette />
+      <OnboardingTour />
+      <AnimatedRoutes />
+    </div>
   );
 }
 
@@ -39,11 +55,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="min-h-screen bg-background pb-16 md:pb-0">
-            <Header />
-            <CommandPalette />
-            <AnimatedRoutes />
-          </div>
+          <AppShell />
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
