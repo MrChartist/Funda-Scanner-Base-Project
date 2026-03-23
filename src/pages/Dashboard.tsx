@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, ArrowUpRight, Clock, Search } from "lucide-react";
-import { MOCK_COMPANIES, SECTOR_DATA, searchCompanies } from "@/lib/mock-data";
+import { TrendingUp, TrendingDown, ArrowUpRight, Clock, Zap, BarChart3 } from "lucide-react";
+import { MOCK_COMPANIES, SECTOR_DATA } from "@/lib/mock-data";
 import { SearchBar } from "@/components/SearchBar";
 
 function formatMarketCap(val: number) {
@@ -13,28 +13,36 @@ function formatMarketCap(val: number) {
 function SectorHeatmap() {
   const navigate = useNavigate();
   const total = SECTOR_DATA.reduce((s, d) => s + d.marketCap, 0);
+  const sorted = [...SECTOR_DATA].sort((a, b) => b.marketCap - a.marketCap);
 
   return (
-    <div className="grid grid-cols-4 md:grid-cols-6 gap-1 h-64">
-      {SECTOR_DATA.sort((a, b) => b.marketCap - a.marketCap).map((sector) => {
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1.5 min-h-[200px]">
+      {sorted.map((sector, idx) => {
         const pct = (sector.marketCap / total) * 100;
         const isPositive = sector.change >= 0;
+        const size = pct > 20 ? "col-span-2 row-span-2" : pct > 10 ? "col-span-2" : "";
         return (
           <motion.div
             key={sector.name}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`relative flex flex-col items-center justify-center rounded-md p-2 cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 ${
-              isPositive ? "bg-chart-green/15 hover:bg-chart-green/25" : "bg-chart-red/15 hover:bg-chart-red/25"
+            transition={{ delay: idx * 0.03 }}
+            className={`relative flex flex-col items-center justify-center rounded-lg p-3 cursor-pointer 
+              transition-all duration-200 hover:ring-2 hover:ring-primary/40 hover:shadow-lg group overflow-hidden ${size} ${
+              isPositive ? "bg-chart-green/8 hover:bg-chart-green/15" : "bg-chart-red/8 hover:bg-chart-red/15"
             }`}
-            style={{ gridColumn: pct > 20 ? "span 2" : undefined, gridRow: pct > 20 ? "span 2" : undefined }}
             onClick={() => navigate(`/screener?sector=${sector.name}`)}
           >
-            <span className="text-xs font-semibold text-foreground">{sector.name}</span>
-            <span className={`text-sm font-mono font-bold ${isPositive ? "text-positive" : "text-negative"}`}>
+            {/* Background glow */}
+            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+              isPositive ? "bg-gradient-to-br from-chart-green/10 to-transparent" : "bg-gradient-to-br from-chart-red/10 to-transparent"
+            }`} />
+
+            <span className="text-xs font-bold text-foreground relative z-10">{sector.name}</span>
+            <span className={`text-base font-mono font-bold relative z-10 ${isPositive ? "text-positive" : "text-negative"}`}>
               {isPositive ? "+" : ""}{sector.change.toFixed(2)}%
             </span>
-            <span className="text-[10px] text-muted-foreground">{formatMarketCap(sector.marketCap)}</span>
+            <span className="text-[10px] text-muted-foreground font-mono relative z-10">{formatMarketCap(sector.marketCap)}</span>
           </motion.div>
         );
       })}
@@ -42,34 +50,38 @@ function SectorHeatmap() {
   );
 }
 
-function MarketPulseCard({ title, companies, type }: { title: string; companies: typeof MOCK_COMPANIES; type: "gainers" | "losers" | "active" }) {
+function MarketPulseCard({ title, companies, type, icon }: {
+  title: string; companies: typeof MOCK_COMPANIES; type: "gainers" | "losers" | "active"; icon: React.ReactNode;
+}) {
   const navigate = useNavigate();
-  const icon = type === "gainers" ? <TrendingUp className="h-4 w-4 text-positive" /> : type === "losers" ? <TrendingDown className="h-4 w-4 text-negative" /> : <ArrowUpRight className="h-4 w-4 text-primary" />;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center gap-2 mb-3">
+    <div className="glass-card p-4">
+      <div className="flex items-center gap-2.5 mb-4">
         {icon}
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        <h3 className="text-sm font-bold text-foreground">{title}</h3>
       </div>
-      <div className="space-y-2">
-        {companies.slice(0, 5).map((c) => (
-          <button
+      <div className="space-y-1">
+        {companies.slice(0, 5).map((c, i) => (
+          <motion.button
             key={c.symbol}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.04 }}
             onClick={() => navigate(`/company/${c.symbol}`)}
-            className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
+            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-accent/50 transition-all duration-200 group"
           >
-            <div className="flex items-center gap-2">
-              <span className="font-mono font-semibold text-foreground">{c.symbol}</span>
+            <div className="flex items-center gap-2.5">
+              <span className="font-mono font-bold text-foreground group-hover:text-primary transition-colors">{c.symbol}</span>
               <span className="text-muted-foreground text-xs hidden lg:inline">{c.name.split(" ").slice(0, 2).join(" ")}</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="font-mono text-sm text-foreground">₹{c.price.toLocaleString()}</span>
-              <span className={`font-mono text-xs font-medium ${c.change_pct >= 0 ? "text-positive" : "text-negative"}`}>
+              <span className={`metric-badge ${c.change_pct >= 0 ? "bg-chart-green/10 text-positive" : "bg-chart-red/10 text-negative"}`}>
                 {c.change_pct >= 0 ? "+" : ""}{c.change_pct.toFixed(2)}%
               </span>
             </div>
-          </button>
+          </motion.button>
         ))}
       </div>
     </div>
@@ -93,19 +105,19 @@ function RecentlyViewed() {
   if (companies.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="glass-card p-4">
       <div className="flex items-center gap-2 mb-3">
         <Clock className="h-4 w-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold text-foreground">Recently Viewed</h3>
+        <h3 className="text-sm font-bold text-foreground">Recently Viewed</h3>
       </div>
       <div className="flex flex-wrap gap-2">
         {companies.map((c: any) => (
           <button
             key={c.symbol}
             onClick={() => navigate(`/company/${c.symbol}`)}
-            className="flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+            className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/20 px-3.5 py-2 text-sm hover:bg-accent/50 hover:border-border transition-all duration-200"
           >
-            <span className="font-mono font-semibold text-foreground">{c.symbol}</span>
+            <span className="font-mono font-bold text-foreground">{c.symbol}</span>
             <span className={`font-mono text-xs ${c.change_pct >= 0 ? "text-positive" : "text-negative"}`}>
               {c.change_pct >= 0 ? "+" : ""}{c.change_pct.toFixed(2)}%
             </span>
@@ -122,29 +134,36 @@ export default function Dashboard() {
   const active = [...MOCK_COMPANIES].sort((a, b) => b.market_cap - a.market_cap);
 
   return (
-    <div className="container py-8 space-y-8">
-      {/* Hero Search */}
+    <div className="container max-w-7xl py-8 space-y-8">
+      {/* Hero */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center gap-4 py-8"
+        transition={{ duration: 0.5 }}
+        className="flex flex-col items-center gap-5 py-10"
       >
-        <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground tracking-tight text-center">
-          Institutional-Grade <span className="text-primary">Financial Data</span>
-        </h1>
-        <p className="text-muted-foreground text-center max-w-lg">
-          Deep fundamentals for 2,229 NSE companies. Data first, no noise.
+        <div className="relative">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight text-center" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            Institutional-Grade{" "}
+            <span className="gradient-text">Financial Data</span>
+          </h1>
+          <div className="absolute -inset-x-10 -inset-y-4 bg-primary/5 rounded-3xl blur-3xl pointer-events-none" />
+        </div>
+        <p className="text-muted-foreground text-center max-w-lg text-base">
+          Deep fundamentals for <span className="font-semibold text-foreground">2,229</span> NSE companies. Data first, no noise.
         </p>
         <SearchBar variant="hero" />
       </motion.div>
 
-      {/* Recently Viewed */}
       <RecentlyViewed />
 
       {/* Sector Heatmap */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <h2 className="text-sm font-semibold text-foreground mb-3">Sector Performance</h2>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <div className="glass-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="section-title">Sector Performance</h2>
+            <span className="text-xs text-muted-foreground font-mono">{SECTOR_DATA.length} sectors</span>
+          </div>
           <SectorHeatmap />
         </div>
       </motion.div>
@@ -153,12 +172,27 @@ export default function Dashboard() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.25 }}
         className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
-        <MarketPulseCard title="Top Gainers" companies={gainers} type="gainers" />
-        <MarketPulseCard title="Top Losers" companies={losers} type="losers" />
-        <MarketPulseCard title="Most Active" companies={active} type="active" />
+        <MarketPulseCard
+          title="Top Gainers"
+          companies={gainers}
+          type="gainers"
+          icon={<div className="h-7 w-7 rounded-lg bg-chart-green/10 flex items-center justify-center"><TrendingUp className="h-4 w-4 text-positive" /></div>}
+        />
+        <MarketPulseCard
+          title="Top Losers"
+          companies={losers}
+          type="losers"
+          icon={<div className="h-7 w-7 rounded-lg bg-chart-red/10 flex items-center justify-center"><TrendingDown className="h-4 w-4 text-negative" /></div>}
+        />
+        <MarketPulseCard
+          title="Most Active"
+          companies={active}
+          type="active"
+          icon={<div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center"><Zap className="h-4 w-4 text-primary" /></div>}
+        />
       </motion.div>
     </div>
   );

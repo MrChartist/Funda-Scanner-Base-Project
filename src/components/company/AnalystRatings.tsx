@@ -1,3 +1,6 @@
+import { motion } from "framer-motion";
+import { Target, TrendingUp } from "lucide-react";
+
 interface Props {
   ratings: { buy_count: number; hold_count: number; sell_count: number; target_price: number };
   currentPrice: number;
@@ -8,41 +11,61 @@ export function AnalystRatings({ ratings, currentPrice }: Props) {
   const upside = ((ratings.target_price - currentPrice) / currentPrice * 100).toFixed(1);
   const isPositive = Number(upside) >= 0;
 
-  const buyPct = (ratings.buy_count / total * 100).toFixed(0);
-  const holdPct = (ratings.hold_count / total * 100).toFixed(0);
-  const sellPct = (ratings.sell_count / total * 100).toFixed(0);
+  const buyPct = ratings.buy_count / total * 100;
+  const holdPct = ratings.hold_count / total * 100;
+  const sellPct = ratings.sell_count / total * 100;
+
+  const consensus = buyPct > 60 ? "Strong Buy" : buyPct > 40 ? "Buy" : holdPct > 40 ? "Hold" : "Sell";
+  const consensusColor = buyPct > 60 ? "text-positive" : buyPct > 40 ? "text-positive" : holdPct > 40 ? "text-chart-amber" : "text-negative";
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <h2 className="text-sm font-semibold text-foreground mb-4">Analyst Ratings</h2>
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Stacked Bar */}
-        <div className="flex-1">
-          <div className="flex h-8 rounded-md overflow-hidden">
-            <div className="bg-chart-green flex items-center justify-center text-xs font-semibold text-white" style={{ width: `${buyPct}%` }}>
-              {Number(buyPct) > 10 && `Buy ${buyPct}%`}
+    <div className="glass-card p-5">
+      <h2 className="section-title mb-5">Analyst Ratings</h2>
+      <div className="flex flex-col md:flex-row gap-8 items-center">
+        {/* Consensus + Bars */}
+        <div className="flex-1 w-full">
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`text-2xl font-bold ${consensusColor}`} style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              {consensus}
             </div>
-            <div className="bg-chart-amber flex items-center justify-center text-xs font-semibold text-white" style={{ width: `${holdPct}%` }}>
-              {Number(holdPct) > 10 && `Hold ${holdPct}%`}
-            </div>
-            <div className="bg-chart-red flex items-center justify-center text-xs font-semibold text-white" style={{ width: `${sellPct}%` }}>
-              {Number(sellPct) > 10 && `Sell ${sellPct}%`}
-            </div>
+            <span className="text-sm text-muted-foreground">from {total} analysts</span>
           </div>
-          <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-            <span>{ratings.buy_count} Buy</span>
-            <span>{ratings.hold_count} Hold</span>
-            <span>{ratings.sell_count} Sell</span>
+
+          {/* Individual bars */}
+          <div className="space-y-3">
+            {[
+              { label: "Buy", count: ratings.buy_count, pct: buyPct, color: "bg-chart-green", textColor: "text-positive" },
+              { label: "Hold", count: ratings.hold_count, pct: holdPct, color: "bg-chart-amber", textColor: "text-chart-amber" },
+              { label: "Sell", count: ratings.sell_count, pct: sellPct, color: "bg-chart-red", textColor: "text-negative" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-3">
+                <span className={`text-xs font-semibold w-8 ${item.textColor}`}>{item.label}</span>
+                <div className="flex-1 h-3 rounded-full bg-muted/40 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${item.pct}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className={`h-full rounded-full ${item.color}`}
+                    style={{ opacity: 0.8 }}
+                  />
+                </div>
+                <span className="text-xs font-mono font-semibold text-foreground w-8 text-right">{item.count}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Target Price */}
-        <div className="flex flex-col items-center gap-1 min-w-[140px]">
-          <span className="text-xs text-muted-foreground">Target Price</span>
-          <span className="text-2xl font-mono font-bold text-foreground">₹{ratings.target_price.toLocaleString()}</span>
-          <span className={`text-sm font-mono font-semibold ${isPositive ? "text-positive" : "text-negative"}`}>
-            {isPositive ? "+" : ""}{upside}% upside
+        {/* Target Price Card */}
+        <div className="glass-card p-5 min-w-[180px] text-center glow-primary">
+          <Target className="h-5 w-5 text-primary mx-auto mb-2" />
+          <span className="text-xs text-muted-foreground block mb-1">Target Price</span>
+          <span className="text-3xl font-mono font-bold text-foreground block tracking-tight">
+            ₹{ratings.target_price.toLocaleString()}
           </span>
+          <div className={`mt-2 metric-badge mx-auto ${isPositive ? "bg-chart-green/10 text-positive" : "bg-chart-red/10 text-negative"}`}>
+            <TrendingUp className="h-3 w-3" />
+            {isPositive ? "+" : ""}{upside}% upside
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 
 interface QuarterlyRow {
   quarter: string; revenue: number; ebitda: number; depreciation: number;
@@ -35,46 +35,79 @@ export function QuarterlyResults({ rows }: { rows: QuarterlyRow[] }) {
     { key: "opm_pct", label: "OPM %" },
   ];
 
-  const fmt = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v.toFixed(0);
+  const fmt = (v: number) => {
+    if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(1)}K`;
+    return v.toFixed(0);
+  };
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <h2 className="text-sm font-semibold text-foreground mb-3">Quarterly Results</h2>
+    <div className="glass-card p-5">
+      <h2 className="section-title mb-4">Quarterly Results</h2>
       <div className="overflow-x-auto scrollbar-thin">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border">
+            <tr className="border-b border-border/60">
               {cols.map((c) => (
                 <th
                   key={c.key}
                   onClick={() => c.key !== "quarter" && toggleSort(c.key)}
-                  className="px-3 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap cursor-pointer hover:text-foreground"
+                  className="data-header cursor-pointer hover:text-foreground transition-colors group"
                 >
                   <span className="flex items-center gap-1">
                     {c.label}
-                    {sortKey === c.key && (sortDir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+                    {sortKey === c.key ? (
+                      sortDir === "asc" ? <ChevronUp className="h-3 w-3 text-primary" /> : <ChevronDown className="h-3 w-3 text-primary" />
+                    ) : c.key !== "quarter" ? (
+                      <ChevronDown className="h-3 w-3 opacity-0 group-hover:opacity-30 transition-opacity" />
+                    ) : null}
                   </span>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {sorted.map((r, i) => (
-              <tr key={i} className="border-b border-border last:border-0 hover:bg-accent/30">
-                <td className="px-3 py-2 font-medium text-foreground whitespace-nowrap">{r.quarter}</td>
-                <td className="px-3 py-2 font-mono text-foreground">{fmt(r.revenue)}</td>
-                <td className="px-3 py-2 font-mono text-foreground">{fmt(r.ebitda)}</td>
-                <td className="px-3 py-2 font-mono text-muted-foreground">{fmt(r.depreciation)}</td>
-                <td className="px-3 py-2 font-mono text-muted-foreground">{fmt(r.interest)}</td>
-                <td className="px-3 py-2 font-mono text-foreground">{fmt(r.pbt)}</td>
-                <td className="px-3 py-2 font-mono text-muted-foreground">{fmt(r.tax)}</td>
-                <td className={`px-3 py-2 font-mono font-semibold ${r.net_profit >= 0 ? "text-positive" : "text-negative"}`}>{fmt(r.net_profit)}</td>
-                <td className={`px-3 py-2 font-mono font-semibold ${r.opm_pct >= 20 ? "text-positive" : r.opm_pct < 10 ? "text-negative" : "text-foreground"}`}>{r.opm_pct}%</td>
-              </tr>
-            ))}
+            {sorted.map((r, i) => {
+              const prevRow = sorted[i + 1];
+              return (
+                <tr key={i} className="border-b border-border/20 last:border-0 hover:bg-accent/20 transition-colors">
+                  <td className="data-cell font-semibold text-foreground whitespace-nowrap">{r.quarter}</td>
+                  <td className="data-cell text-foreground">
+                    <span className="flex items-center gap-1">
+                      {fmt(r.revenue)}
+                      {prevRow && <GrowthArrow current={r.revenue} prev={prevRow.revenue} />}
+                    </span>
+                  </td>
+                  <td className="data-cell text-foreground">{fmt(r.ebitda)}</td>
+                  <td className="data-cell text-muted-foreground">{fmt(r.depreciation)}</td>
+                  <td className="data-cell text-muted-foreground">{fmt(r.interest)}</td>
+                  <td className="data-cell text-foreground">{fmt(r.pbt)}</td>
+                  <td className="data-cell text-muted-foreground">{fmt(r.tax)}</td>
+                  <td className={`data-cell font-semibold ${r.net_profit >= 0 ? "text-positive" : "text-negative"}`}>
+                    {fmt(r.net_profit)}
+                  </td>
+                  <td className="data-cell">
+                    <span className={`metric-badge ${
+                      r.opm_pct >= 20 ? "bg-chart-green/10 text-positive" :
+                      r.opm_pct < 10 ? "bg-chart-red/10 text-negative" :
+                      "bg-muted text-foreground"
+                    }`}>
+                      {r.opm_pct}%
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
     </div>
   );
+}
+
+function GrowthArrow({ current, prev }: { current: number; prev: number }) {
+  const growth = ((current - prev) / prev) * 100;
+  if (Math.abs(growth) < 1) return null;
+  return growth > 0
+    ? <ArrowUpRight className="h-3 w-3 text-positive" />
+    : <ArrowDownRight className="h-3 w-3 text-negative" />;
 }
