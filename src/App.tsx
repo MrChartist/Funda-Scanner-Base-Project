@@ -4,12 +4,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { DensityProvider } from "@/hooks/use-density";
 import { Header } from "@/components/Header";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { AnimatePresence } from "framer-motion";
 import { OnboardingTour } from "./components/OnboardingTour";
 import { useMarketNotifications } from "./components/NotificationSystem";
+import { useKeyboardNav, KeyboardShortcutsHelp } from "@/hooks/use-keyboard-nav";
 import Dashboard from "./pages/Dashboard";
 import CompanyDetail from "./pages/CompanyDetail";
 import Screener from "./pages/Screener";
@@ -40,11 +42,14 @@ function AnimatedRoutes() {
 function AppShell() {
   useMarketNotifications();
   useDocumentTitle();
+  const { showHelp, setShowHelp } = useKeyboardNav();
+
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
       <Header />
       <CommandPalette />
       <OnboardingTour />
+      <KeyboardShortcutsHelp open={showHelp} onClose={() => setShowHelp(false)} />
       <AnimatedRoutes />
     </div>
   );
@@ -53,13 +58,15 @@ function AppShell() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppShell />
-        </BrowserRouter>
-      </TooltipProvider>
+      <DensityProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppShell />
+          </BrowserRouter>
+        </TooltipProvider>
+      </DensityProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
