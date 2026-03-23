@@ -3,6 +3,7 @@ import { Sun, Moon, BarChart3, TrendingUp, LayoutDashboard, GitCompare, Eye, Com
 import { useTheme } from "@/hooks/use-theme";
 import { SearchBar } from "./SearchBar";
 import { AccentColorPicker } from "./AccentColorPicker";
+import { LiveMarketIndicator } from "@/hooks/use-live-prices";
 import { motion } from "framer-motion";
 
 export function Header() {
