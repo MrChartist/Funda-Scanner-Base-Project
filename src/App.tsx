@@ -36,6 +36,18 @@ function AnimatedRoutes() {
   );
 }
 
+function AppShell() {
+  useMarketNotifications();
+  return (
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
+      <Header />
+      <CommandPalette />
+      <OnboardingTour />
+      <AnimatedRoutes />
+    </div>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -43,11 +55,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="min-h-screen bg-background pb-16 md:pb-0">
-            <Header />
-            <CommandPalette />
-            <AnimatedRoutes />
-          </div>
+          <AppShell />
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>

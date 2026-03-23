@@ -61,6 +61,7 @@ export function Header() {
               <Command className="h-3 w-3" />
               <span className="font-mono">K</span>
             </button>
+            <AccentColorPicker />
             <button onClick={toggleTheme}
               className="relative rounded-lg p-2.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200"
               aria-label="Toggle theme">
