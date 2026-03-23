@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Sun, Moon, BarChart3, TrendingUp, LayoutDashboard, Search } from "lucide-react";
+import { Sun, Moon, BarChart3, TrendingUp, LayoutDashboard, GitCompare, Eye } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { SearchBar } from "./SearchBar";
 import { motion } from "framer-motion";
@@ -11,6 +11,8 @@ export function Header() {
   const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
     { to: "/screener", label: "Screener", icon: BarChart3 },
+    { to: "/compare", label: "Compare", icon: GitCompare },
+    { to: "/watchlist", label: "Watchlist", icon: Eye },
   ];
 
   return (
@@ -31,23 +33,16 @@ export function Header() {
             {navItems.map((item) => {
               const isActive = location.pathname === item.to;
               return (
-                <Link
-                  key={item.to}
-                  to={item.to}
+                <Link key={item.to} to={item.to}
                   className={`relative flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                  }`}
-                >
+                    isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}>
                   <item.icon className="h-4 w-4" />
                   {item.label}
                   {isActive && (
-                    <motion.div
-                      layoutId="nav-indicator"
+                    <motion.div layoutId="nav-indicator"
                       className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-primary"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-                    />
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.5 }} />
                   )}
                 </Link>
               );
@@ -59,17 +54,10 @@ export function Header() {
           <div className="hidden sm:block">
             <SearchBar variant="header" />
           </div>
-          <button
-            onClick={toggleTheme}
+          <button onClick={toggleTheme}
             className="relative rounded-lg p-2.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200 group"
-            aria-label="Toggle theme"
-          >
-            <motion.div
-              key={theme}
-              initial={{ rotate: -30, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              transition={{ duration: 0.2 }}
-            >
+            aria-label="Toggle theme">
+            <motion.div key={theme} initial={{ rotate: -30, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} transition={{ duration: 0.2 }}>
               {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
             </motion.div>
           </button>
