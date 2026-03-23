@@ -99,16 +99,37 @@ export default function Compare() {
     { label: "Book Value", key: "book_value", fmt: (v: number) => `₹${v}` },
   ];
 
+  const shareUrl = () => {
+    const url = `${window.location.origin}/compare?symbols=${symbols.join(",")}`;
+    navigator.clipboard.writeText(url);
+    alert("Compare URL copied to clipboard!");
+  };
+
+  const exportCSV = () => {
+    const headers = ["Metric", ...symbols];
+    const rows = metricRows.map((row) => [row.label, ...companyData.map((cd) => row.fmt(Number((cd.company as any)[row.key])))]);
+    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `compare_${symbols.join("_")}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
+    <PageTransition>
     <div className="container max-w-7xl py-6 space-y-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <GitCompare className="h-6 w-6 text-primary" />
             <div>
               <h1 className="text-2xl font-display font-bold text-foreground">Stock Comparison</h1>
               <p className="text-sm text-muted-foreground">Compare up to 4 stocks side-by-side</p>
             </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={shareUrl}><Share2 className="h-4 w-4 mr-1" />Share</Button>
+            <Button variant="outline" size="sm" onClick={exportCSV}><Download className="h-4 w-4 mr-1" />Export</Button>
           </div>
         </div>
       </motion.div>
