@@ -1,11 +1,14 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, ArrowUpRight, Clock, Zap, BarChart3, Newspaper, Calendar, ArrowUp, ArrowDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { TrendingUp, TrendingDown, ArrowUpRight, Clock, Zap, BarChart3, Newspaper, Calendar, ArrowUp, ArrowDown, Settings2 } from "lucide-react";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { MOCK_COMPANIES, SECTOR_DATA } from "@/lib/mock-data";
 import { SearchBar } from "@/components/SearchBar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useDashboardLayout, DashboardLayoutEditor } from "@/components/DashboardLayout";
+import { useLivePrices } from "@/hooks/use-live-prices";
 
 function formatMarketCap(val: number) {
   if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L Cr`;
@@ -190,6 +193,8 @@ function MarketPulseCard({ title, companies, type, icon }: {
   title: string; companies: typeof MOCK_COMPANIES; type: "gainers" | "losers" | "active"; icon: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const { getPrice } = useLivePrices();
+
   return (
     <div className="glass-card p-4">
       <div className="flex items-center gap-2.5 mb-4">
@@ -197,23 +202,28 @@ function MarketPulseCard({ title, companies, type, icon }: {
         <h3 className="text-sm font-bold text-foreground">{title}</h3>
       </div>
       <div className="space-y-1">
-        {companies.slice(0, 5).map((c, i) => (
-          <motion.button key={c.symbol} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.04 }}
-            onClick={() => navigate(`/company/${c.symbol}`)}
-            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-accent/50 transition-all duration-200 group">
-            <div className="flex items-center gap-2.5">
-              <span className="font-mono font-bold text-foreground group-hover:text-primary transition-colors">{c.symbol}</span>
-              <span className="text-muted-foreground text-xs hidden lg:inline">{c.name.split(" ").slice(0, 2).join(" ")}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-sm text-foreground">₹{c.price.toLocaleString()}</span>
-              <span className={`metric-badge ${c.change_pct >= 0 ? "bg-chart-green/10 text-positive" : "bg-chart-red/10 text-negative"}`}>
-                {c.change_pct >= 0 ? "+" : ""}{c.change_pct.toFixed(2)}%
-              </span>
-            </div>
-          </motion.button>
-        ))}
+        {companies.slice(0, 5).map((c, i) => {
+          const live = getPrice(c.symbol);
+          const price = live?.price ?? c.price;
+          const changePct = live?.changePct ?? c.change_pct;
+          return (
+            <motion.button key={c.symbol} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.04 }}
+              onClick={() => navigate(`/company/${c.symbol}`)}
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-accent/50 transition-all duration-200 group">
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono font-bold text-foreground group-hover:text-primary transition-colors">{c.symbol}</span>
+                <span className="text-muted-foreground text-xs hidden lg:inline">{c.name.split(" ").slice(0, 2).join(" ")}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-sm text-foreground">₹{price.toLocaleString()}</span>
+                <span className={`metric-badge ${changePct >= 0 ? "bg-chart-green/10 text-positive" : "bg-chart-red/10 text-negative"}`}>
+                  {changePct >= 0 ? "+" : ""}{changePct.toFixed(2)}%
+                </span>
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );
@@ -252,59 +262,83 @@ export default function Dashboard() {
   const gainers = [...MOCK_COMPANIES].sort((a, b) => b.change_pct - a.change_pct);
   const losers = [...MOCK_COMPANIES].sort((a, b) => a.change_pct - b.change_pct);
   const active = [...MOCK_COMPANIES].sort((a, b) => b.market_cap - a.market_cap);
+  const { widgets, setWidgets, isEditing, setIsEditing, toggleVisibility, resetLayout, isVisible, orderedIds } = useDashboardLayout();
+
+  const widgetMap: Record<string, React.ReactNode> = {
+    hero: (
+      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+        className="flex flex-col items-center gap-5 py-10">
+        <div className="relative">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight text-center" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            Institutional-Grade{" "}<span className="gradient-text">Financial Data</span>
+          </h1>
+          <div className="absolute -inset-x-10 -inset-y-4 bg-primary/5 rounded-3xl blur-3xl pointer-events-none" />
+        </div>
+        <p className="text-muted-foreground text-center max-w-lg text-base">
+          Deep fundamentals for <span className="font-semibold text-foreground">2,229</span> NSE companies. Data first, no noise.
+        </p>
+        <SearchBar variant="hero" />
+      </motion.div>
+    ),
+    recent: <RecentlyViewed />,
+    heatmap: (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <div className="glass-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="section-title">Sector Performance</h2>
+            <span className="text-xs text-muted-foreground font-mono">{SECTOR_DATA.length} sectors</span>
+          </div>
+          <SectorHeatmap />
+        </div>
+      </motion.div>
+    ),
+    feeds: (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <FIIDIITracker />
+        <NewsFeed />
+        <IPOCalendar />
+      </motion.div>
+    ),
+    pulse: (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <MarketPulseCard title="Top Gainers" companies={gainers} type="gainers"
+          icon={<div className="h-7 w-7 rounded-lg bg-chart-green/10 flex items-center justify-center"><TrendingUp className="h-4 w-4 text-positive" /></div>} />
+        <MarketPulseCard title="Top Losers" companies={losers} type="losers"
+          icon={<div className="h-7 w-7 rounded-lg bg-chart-red/10 flex items-center justify-center"><TrendingDown className="h-4 w-4 text-negative" /></div>} />
+        <MarketPulseCard title="Most Active" companies={active} type="active"
+          icon={<div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center"><Zap className="h-4 w-4 text-primary" /></div>} />
+      </motion.div>
+    ),
+  };
 
   return (
     <div>
-      {/* Market Ticker */}
       <MarketTicker />
-
       <div className="container max-w-7xl py-8 space-y-8">
-        {/* Hero */}
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className="flex flex-col items-center gap-5 py-10">
-          <div className="relative">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight text-center" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Institutional-Grade{" "}<span className="gradient-text">Financial Data</span>
-            </h1>
-            <div className="absolute -inset-x-10 -inset-y-4 bg-primary/5 rounded-3xl blur-3xl pointer-events-none" />
-          </div>
-          <p className="text-muted-foreground text-center max-w-lg text-base">
-            Deep fundamentals for <span className="font-semibold text-foreground">2,229</span> NSE companies. Data first, no noise.
-          </p>
-          <SearchBar variant="hero" />
-        </motion.div>
+        {/* Dashboard customize button */}
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={() => setIsEditing(!isEditing)} className="gap-1.5 text-xs text-muted-foreground">
+            <Settings2 className="h-3.5 w-3.5" /> Customize
+          </Button>
+        </div>
 
-        <RecentlyViewed />
+        <AnimatePresence>
+          {isEditing && (
+            <DashboardLayoutEditor
+              widgets={widgets}
+              setWidgets={setWidgets}
+              toggleVisibility={toggleVisibility}
+              resetLayout={resetLayout}
+              onClose={() => setIsEditing(false)}
+            />
+          )}
+        </AnimatePresence>
 
-        {/* Sector Heatmap */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <div className="glass-card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="section-title">Sector Performance</h2>
-              <span className="text-xs text-muted-foreground font-mono">{SECTOR_DATA.length} sectors</span>
-            </div>
-            <SectorHeatmap />
-          </div>
-        </motion.div>
-
-        {/* New: FII/DII + News + IPO row */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FIIDIITracker />
-          <NewsFeed />
-          <IPOCalendar />
-        </motion.div>
-
-        {/* Market Pulse */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MarketPulseCard title="Top Gainers" companies={gainers} type="gainers"
-            icon={<div className="h-7 w-7 rounded-lg bg-chart-green/10 flex items-center justify-center"><TrendingUp className="h-4 w-4 text-positive" /></div>} />
-          <MarketPulseCard title="Top Losers" companies={losers} type="losers"
-            icon={<div className="h-7 w-7 rounded-lg bg-chart-red/10 flex items-center justify-center"><TrendingDown className="h-4 w-4 text-negative" /></div>} />
-          <MarketPulseCard title="Most Active" companies={active} type="active"
-            icon={<div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center"><Zap className="h-4 w-4 text-primary" /></div>} />
-        </motion.div>
+        {orderedIds.map((id) => (
+          <div key={id}>{widgetMap[id]}</div>
+        ))}
       </div>
     </div>
   );

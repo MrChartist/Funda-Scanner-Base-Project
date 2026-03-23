@@ -1,0 +1,178 @@
+import { getMockCompanyIntelligence } from "@/lib/mock-data";
+
+export function exportCompanyPDF(symbol: string) {
+  const data = getMockCompanyIntelligence(symbol);
+  const c = data.company;
+  const intel = data.intelligence;
+
+  // Build a print-friendly HTML document
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>${c.name} - Report</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a2e; padding: 40px; max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 24px; margin-bottom: 4px; }
+    h2 { font-size: 16px; margin: 24px 0 12px; padding-bottom: 4px; border-bottom: 2px solid #0ea5e9; color: #0ea5e9; }
+    .subtitle { color: #666; font-size: 13px; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0; }
+    .metric { background: #f8f9fa; padding: 12px; border-radius: 8px; }
+    .metric .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .metric .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0; }
+    th { background: #f0f4f8; padding: 8px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+    td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+    .positive { color: #16a34a; }
+    .negative { color: #dc2626; }
+    .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #ddd; font-size: 10px; color: #999; text-align: center; }
+    .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .pros-cons ul { list-style: none; padding: 0; }
+    .pros-cons li { font-size: 12px; padding: 4px 0; padding-left: 16px; position: relative; }
+    .pros-cons li::before { position: absolute; left: 0; }
+    .pros li::before { content: "✓"; color: #16a34a; }
+    .cons li::before { content: "✗"; color: #dc2626; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <h1>${c.name}</h1>
+  <div class="subtitle">${c.symbol} · ${c.sector} · ${c.industry}</div>
+  
+  <h2>Key Metrics</h2>
+  <div class="grid">
+    <div class="metric"><div class="label">Price</div><div class="value">₹${c.price.toLocaleString()}</div></div>
+    <div class="metric"><div class="label">Market Cap</div><div class="value">₹${c.market_cap >= 100000 ? (c.market_cap / 100000).toFixed(1) + 'L Cr' : (c.market_cap / 1000).toFixed(0) + 'K Cr'}</div></div>
+    <div class="metric"><div class="label">P/E</div><div class="value">${c.pe}</div></div>
+    <div class="metric"><div class="label">ROCE</div><div class="value">${c.roce}%</div></div>
+    <div class="metric"><div class="label">ROE</div><div class="value">${c.roe}%</div></div>
+    <div class="metric"><div class="label">D/E</div><div class="value">${c.de}</div></div>
+    <div class="metric"><div class="label">EPS</div><div class="value">₹${c.eps}</div></div>
+    <div class="metric"><div class="label">NPM</div><div class="value">${c.npm}%</div></div>
+    <div class="metric"><div class="label">Div. Yield</div><div class="value">${c.dividend_yield}%</div></div>
+  </div>
+
+  <h2>Pros & Cons</h2>
+  <div class="pros-cons">
+    <div class="pros"><ul>${c.pros.map((p: string) => `<li>${p}</li>`).join('')}</ul></div>
+    <div class="cons"><ul>${c.cons.map((cn: string) => `<li>${cn}</li>`).join('')}</ul></div>
+  </div>
+
+  <h2>Financial Summary (Last 5 Years)</h2>
+  <table>
+    <thead><tr><th>Year</th><th>Revenue</th><th>Net Profit</th><th>EBITDA</th><th>Total Assets</th></tr></thead>
+    <tbody>
+      ${intel.statement_rows.slice(-5).map((r: any) => `
+        <tr>
+          <td>${r.year}</td>
+          <td>₹${r.revenue.toLocaleString()} Cr</td>
+          <td>₹${r.net_profit.toLocaleString()} Cr</td>
+          <td>₹${r.ebitda.toLocaleString()} Cr</td>
+          <td>₹${r.total_assets.toLocaleString()} Cr</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <h2>Quarterly Results</h2>
+  <table>
+    <thead><tr><th>Quarter</th><th>Revenue</th><th>Net Profit</th><th>OPM %</th></tr></thead>
+    <tbody>
+      ${intel.quarterly_rows.slice(0, 4).map((r: any) => `
+        <tr>
+          <td>${r.quarter}</td>
+          <td>₹${r.revenue.toLocaleString()} Cr</td>
+          <td>₹${r.net_profit.toLocaleString()} Cr</td>
+          <td>${r.opm_pct}%</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <h2>Shareholding Pattern</h2>
+  <table>
+    <thead><tr><th>Quarter</th><th>Promoter</th><th>FII</th><th>DII</th><th>Public</th></tr></thead>
+    <tbody>
+      ${intel.shareholding.slice(0, 4).map((s: any) => `
+        <tr>
+          <td>${s.quarter}</td>
+          <td>${s.promoter_pct}%</td>
+          <td>${s.fii_pct}%</td>
+          <td>${s.dii_pct}%</td>
+          <td>${s.public_pct}%</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    Generated by Funda Scanner · ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} · For informational purposes only
+  </div>
+</body>
+</html>`;
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
+  }
+}
+
+export function exportCompanyExcel(symbol: string) {
+  const data = getMockCompanyIntelligence(symbol);
+  const c = data.company;
+  const intel = data.intelligence;
+
+  const sheets: string[] = [];
+
+  // Key Metrics sheet
+  const metrics = [
+    ['Metric', 'Value'],
+    ['Company', c.name],
+    ['Symbol', c.symbol],
+    ['Sector', c.sector],
+    ['Price', `₹${c.price}`],
+    ['Market Cap', `₹${c.market_cap} Cr`],
+    ['P/E', String(c.pe)],
+    ['P/B', String(c.pb)],
+    ['ROCE', `${c.roce}%`],
+    ['ROE', `${c.roe}%`],
+    ['EPS', `₹${c.eps}`],
+    ['D/E', String(c.de)],
+    ['NPM', `${c.npm}%`],
+    ['Div Yield', `${c.dividend_yield}%`],
+    ['Book Value', `₹${c.book_value}`],
+  ];
+
+  // Financial statements
+  const finHeaders = ['Year', 'Revenue', 'EBITDA', 'Net Profit', 'Total Assets', 'Debt', 'OCF'];
+  const finRows = intel.statement_rows.map((r: any) => [r.year, r.revenue, r.ebitda, r.net_profit, r.total_assets, r.debt, r.ocf]);
+
+  // Quarterly
+  const qHeaders = ['Quarter', 'Revenue', 'Net Profit', 'OPM %'];
+  const qRows = intel.quarterly_rows.map((r: any) => [r.quarter, r.revenue, r.net_profit, r.opm_pct]);
+
+  // Combine into CSV (multi-sheet simulation)
+  const csvContent = [
+    '--- KEY METRICS ---',
+    ...metrics.map(r => r.join(',')),
+    '',
+    '--- FINANCIAL STATEMENTS ---',
+    finHeaders.join(','),
+    ...finRows.map((r: any) => r.join(',')),
+    '',
+    '--- QUARTERLY RESULTS ---',
+    qHeaders.join(','),
+    ...qRows.map((r: any) => r.join(',')),
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${symbol}_report_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}

@@ -1,7 +1,10 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
+import { FileText, Download } from "lucide-react";
 import { getMockCompanyIntelligence } from "@/lib/mock-data";
+import { exportCompanyPDF, exportCompanyExcel } from "@/lib/export-utils";
+import { Button } from "@/components/ui/button";
 import { CompanyHeader } from "@/components/company/CompanyHeader";
 import { KeyRatiosGrid } from "@/components/company/KeyRatiosGrid";
 import { ProsConsSection } from "@/components/company/ProsCons";
@@ -45,6 +48,15 @@ export default function CompanyDetail() {
 
   return (
     <div className="container max-w-7xl py-6 md:py-8 space-y-5">
+      {/* Export toolbar */}
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={() => exportCompanyPDF(symbol || "RELIANCE")} className="gap-1.5 text-xs">
+          <FileText className="h-3.5 w-3.5" /> PDF Report
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => exportCompanyExcel(symbol || "RELIANCE")} className="gap-1.5 text-xs">
+          <Download className="h-3.5 w-3.5" /> Excel Export
+        </Button>
+      </div>
       {section(0, <CompanyHeader company={data.company} />)}
       {section(1, <KeyRatiosGrid company={data.company} ratios={data.intelligence.ratio_rows} />)}
       {section(2, <ProsConsSection pros={data.company.pros} cons={data.company.cons} />)}
