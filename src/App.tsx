@@ -45,7 +45,7 @@ function AppShell() {
   const { showHelp, setShowHelp } = useKeyboardNav();
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background pb-14 md:pb-0">
       <Header />
       <CommandPalette />
       <OnboardingTour />
