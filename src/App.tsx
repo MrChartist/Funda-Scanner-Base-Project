@@ -8,6 +8,8 @@ import { Header } from "@/components/Header";
 import Dashboard from "./pages/Dashboard";
 import CompanyDetail from "./pages/CompanyDetail";
 import Screener from "./pages/Screener";
+import Compare from "./pages/Compare";
+import Watchlist from "./pages/Watchlist";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +27,8 @@ const App = () => (
               <Route path="/" element={<Dashboard />} />
               <Route path="/company/:symbol" element={<CompanyDetail />} />
               <Route path="/screener" element={<Screener />} />
+              <Route path="/compare" element={<Compare />} />
+              <Route path="/watchlist" element={<Watchlist />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

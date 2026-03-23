@@ -14,6 +14,10 @@ import { ShareholdingPattern } from "@/components/company/ShareholdingPattern";
 import { CorporateActions } from "@/components/company/CorporateActions";
 import { PeerComparison } from "@/components/company/PeerComparison";
 import { Documents } from "@/components/company/Documents";
+import { MutualFundHoldings } from "@/components/company/MutualFundHoldings";
+import { InsiderDeals } from "@/components/company/InsiderDeals";
+import { RevenueSegmentation } from "@/components/company/RevenueSegmentation";
+import { ManagementInfo } from "@/components/company/ManagementInfo";
 
 export default function CompanyDetail() {
   const { symbol } = useParams<{ symbol: string }>();
@@ -50,13 +54,20 @@ export default function CompanyDetail() {
       {section(6, <FinancialStatements rows={data.intelligence.statement_rows} />)}
       {section(7, <RatiosTable rows={data.intelligence.ratio_rows} />)}
       {section(8, <ShareholdingPattern data={data.intelligence.shareholding} />)}
-      {section(9, <Documents documents={data.intelligence.documents} />)}
       
-      {/* Corporate Actions */}
-      {section(10, <CorporateActions actions={data.intelligence.corporate_actions} />)}
+      {/* Revenue & Holdings side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div>{section(9, <RevenueSegmentation />)}</div>
+        <div>{section(10, <MutualFundHoldings />)}</div>
+      </div>
+
+      {section(11, <InsiderDeals />)}
+      {section(12, <ManagementInfo />)}
+      {section(13, <Documents documents={data.intelligence.documents} />)}
+      {section(14, <CorporateActions actions={data.intelligence.corporate_actions} />)}
       
       {/* Peer Comparison at bottom - full width */}
-      {section(11, <PeerComparison peers={data.intelligence.peers} currentSymbol={data.company.symbol} company={data.company} />)}
+      {section(15, <PeerComparison peers={data.intelligence.peers} currentSymbol={data.company.symbol} company={data.company} />)}
     </div>
   );
 }
