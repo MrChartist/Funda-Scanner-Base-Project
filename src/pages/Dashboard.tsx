@@ -1,8 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, TrendingDown, ArrowUpRight, Clock, Zap, BarChart3, Newspaper, Calendar, ArrowUp, ArrowDown, Settings2 } from "lucide-react";
-import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { TrendingUp, TrendingDown, ArrowUpRight, Clock, Zap, BarChart3, Newspaper, Calendar, ArrowUp, ArrowDown, Settings2, Search, Activity, ChevronRight } from "lucide-react";
+import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, AreaChart, Area } from "recharts";
 import { MOCK_COMPANIES, SECTOR_DATA } from "@/lib/mock-data";
 import { SearchBar } from "@/components/SearchBar";
 import { Badge } from "@/components/ui/badge";
@@ -15,28 +15,44 @@ function formatMarketCap(val: number) {
   return `₹${(val / 1000).toFixed(0)}K Cr`;
 }
 
-// Market Indices Ticker
+// Market Indices Ticker with mini sparklines
 function MarketTicker() {
   const indices = [
-    { name: "NIFTY 50", value: 24580.25, change: 142.30, changePct: 0.58 },
-    { name: "SENSEX", value: 80945.60, change: 468.75, changePct: 0.58 },
-    { name: "NIFTY BANK", value: 52340.10, change: -185.40, changePct: -0.35 },
-    { name: "NIFTY IT", value: 38920.45, change: -210.30, changePct: -0.54 },
-    { name: "NIFTY PHARMA", value: 18450.80, change: 95.20, changePct: 0.52 },
-    { name: "INDIA VIX", value: 13.25, change: -0.45, changePct: -3.28 },
+    { name: "NIFTY 50", value: 24580.25, change: 142.30, changePct: 0.58, trend: [24200, 24350, 24180, 24420, 24580] },
+    { name: "SENSEX", value: 80945.60, change: 468.75, changePct: 0.58, trend: [80100, 80400, 80200, 80650, 80945] },
+    { name: "NIFTY BANK", value: 52340.10, change: -185.40, changePct: -0.35, trend: [52600, 52450, 52520, 52380, 52340] },
+    { name: "NIFTY IT", value: 38920.45, change: -210.30, changePct: -0.54, trend: [39200, 39100, 39050, 38980, 38920] },
+    { name: "NIFTY PHARMA", value: 18450.80, change: 95.20, changePct: 0.52, trend: [18300, 18320, 18380, 18420, 18450] },
+    { name: "INDIA VIX", value: 13.25, change: -0.45, changePct: -3.28, trend: [13.8, 13.6, 13.5, 13.4, 13.25] },
   ];
 
   return (
-    <div className="overflow-hidden border-b border-border/30 bg-muted/20">
-      <div className="flex items-center gap-6 px-4 py-2 overflow-x-auto scrollbar-thin">
+    <div className="overflow-hidden border-b border-border/30 bg-secondary/30">
+      <div className="flex items-center gap-8 px-4 py-2.5 overflow-x-auto scrollbar-thin">
         {indices.map((idx) => {
           const isUp = idx.change >= 0;
           return (
-            <div key={idx.name} className="flex items-center gap-2 whitespace-nowrap flex-shrink-0">
-              <span className="text-[11px] font-medium text-muted-foreground">{idx.name}</span>
-              <span className="text-[11px] font-mono font-bold text-foreground">{idx.value.toLocaleString()}</span>
-              <span className={`text-[10px] font-mono font-semibold flex items-center gap-0.5 ${isUp ? "text-positive" : "text-negative"}`}>
-                {isUp ? <ArrowUp className="h-2.5 w-2.5" /> : <ArrowDown className="h-2.5 w-2.5" />}
+            <div key={idx.name} className="flex items-center gap-3 whitespace-nowrap flex-shrink-0 group cursor-default">
+              <div>
+                <span className="text-[10px] font-medium text-muted-foreground block leading-none mb-0.5">{idx.name}</span>
+                <span className="text-xs font-mono font-bold text-foreground">{idx.value.toLocaleString()}</span>
+              </div>
+              {/* Mini sparkline */}
+              <div className="w-12 h-5">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={idx.trend.map((v, i) => ({ v, i }))}>
+                    <defs>
+                      <linearGradient id={`tick-${idx.name}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={isUp ? "hsl(var(--chart-green))" : "hsl(var(--chart-red))"} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={isUp ? "hsl(var(--chart-green))" : "hsl(var(--chart-red))"} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="v" stroke={isUp ? "hsl(var(--chart-green))" : "hsl(var(--chart-red))"} strokeWidth={1.5}
+                      fill={`url(#tick-${idx.name})`} dot={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              <span className={`text-[11px] font-mono font-semibold flex items-center gap-0.5 ${isUp ? "text-positive" : "text-negative"}`}>
                 {isUp ? "+" : ""}{idx.changePct.toFixed(2)}%
               </span>
             </div>
@@ -44,6 +60,78 @@ function MarketTicker() {
         })}
       </div>
     </div>
+  );
+}
+
+// Data-forward hero replacing generic AI text
+function MarketOverviewHero() {
+  const navigate = useNavigate();
+  const totalMarketCap = MOCK_COMPANIES.reduce((s, c) => s + c.market_cap, 0);
+  const advancers = MOCK_COMPANIES.filter(c => c.change_pct > 0).length;
+  const decliners = MOCK_COMPANIES.filter(c => c.change_pct < 0).length;
+  const avgChange = (MOCK_COMPANIES.reduce((s, c) => s + c.change_pct, 0) / MOCK_COMPANIES.length);
+
+  const stats = [
+    { label: "Total Market Cap", value: formatMarketCap(totalMarketCap), sub: `${MOCK_COMPANIES.length} companies` },
+    { label: "Market Breadth", value: `${advancers}:${decliners}`, sub: advancers > decliners ? "Bullish" : "Bearish", positive: advancers > decliners },
+    { label: "Avg Change", value: `${avgChange >= 0 ? "+" : ""}${avgChange.toFixed(2)}%`, sub: "Today", positive: avgChange >= 0 },
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+      className="space-y-5">
+      {/* Search-first approach */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Activity className="h-4 w-4 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Market Overview</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+            Good {new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 17 ? "Afternoon" : "Evening"}
+          </h1>
+        </div>
+        <div className="w-full sm:w-auto sm:min-w-[320px]">
+          <SearchBar variant="hero" />
+        </div>
+      </div>
+
+      {/* Quick stats row */}
+      <div className="grid grid-cols-3 gap-3">
+        {stats.map((stat, i) => (
+          <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06 }}
+            className="glass-card p-4">
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block mb-1">{stat.label}</span>
+            <span className={`text-xl md:text-2xl font-mono font-bold block ${stat.positive !== undefined ? (stat.positive ? "text-positive" : "text-negative") : "text-foreground"}`}>
+              {stat.value}
+            </span>
+            <span className="text-[11px] text-muted-foreground">{stat.sub}</span>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Quick action chips */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { label: "Stock Screener", to: "/screener", icon: BarChart3 },
+          { label: "Compare Stocks", to: "/compare", icon: ChevronRight },
+          { label: "DCF Calculator", to: "/dcf", icon: TrendingUp },
+        ].map((action) => (
+          <button key={action.label} onClick={() => navigate(action.to)}
+            className="flex items-center gap-1.5 rounded-full border border-border/60 bg-secondary/50 px-3.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border transition-all">
+            <action.icon className="h-3 w-3" />
+            {action.label}
+          </button>
+        ))}
+        <button onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+          className="flex items-center gap-1.5 rounded-full border border-border/60 bg-secondary/50 px-3.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border transition-all">
+          <Search className="h-3 w-3" />
+          Quick Search
+          <span className="kbd ml-1">⌘K</span>
+        </button>
+      </div>
+    </motion.div>
   );
 }
 
@@ -139,7 +227,7 @@ function IPOCalendar() {
       <div className="space-y-2">
         {ipos.map((ipo, i) => (
           <motion.div key={ipo.name} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
-            className="flex items-center justify-between rounded-lg border border-border/30 bg-muted/10 px-3 py-2">
+            className="flex items-center justify-between rounded-lg border border-border/30 bg-secondary/30 px-3 py-2">
             <div>
               <p className="text-xs font-medium text-foreground">{ipo.name}</p>
               <p className="text-[10px] text-muted-foreground">{ipo.date} · {ipo.size}</p>
@@ -167,17 +255,14 @@ function SectorHeatmap() {
         const isPositive = sector.change >= 0;
         const size = pct > 20 ? "col-span-2 row-span-2" : pct > 10 ? "col-span-2" : "";
         return (
-          <motion.div key={sector.name} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+          <motion.div key={sector.name} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: idx * 0.03 }}
-            className={`relative flex flex-col items-center justify-center rounded-lg p-3 cursor-pointer 
-              transition-all duration-200 hover:ring-2 hover:ring-primary/40 hover:shadow-lg group overflow-hidden ${size} ${
-              isPositive ? "bg-chart-green/8 hover:bg-chart-green/15" : "bg-chart-red/8 hover:bg-chart-red/15"
+            className={`relative flex flex-col items-center justify-center rounded-xl p-3 cursor-pointer 
+              transition-all duration-200 hover:shadow-md group overflow-hidden ${size} ${
+              isPositive ? "bg-chart-green/8 hover:bg-chart-green/12" : "bg-chart-red/8 hover:bg-chart-red/12"
             }`}
             onClick={() => navigate(`/screener?sector=${sector.name}`)}>
-            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
-              isPositive ? "bg-gradient-to-br from-chart-green/10 to-transparent" : "bg-gradient-to-br from-chart-red/10 to-transparent"
-            }`} />
-            <span className="text-xs font-bold text-foreground relative z-10">{sector.name}</span>
+            <span className="text-xs font-semibold text-foreground relative z-10">{sector.name}</span>
             <span className={`text-base font-mono font-bold relative z-10 ${isPositive ? "text-positive" : "text-negative"}`}>
               {isPositive ? "+" : ""}{sector.change.toFixed(2)}%
             </span>
@@ -246,7 +331,7 @@ function RecentlyViewed() {
       <div className="flex flex-wrap gap-2">
         {companies.map((c: any) => (
           <button key={c.symbol} onClick={() => navigate(`/company/${c.symbol}`)}
-            className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/20 px-3.5 py-2 text-sm hover:bg-accent/50 hover:border-border transition-all duration-200">
+            className="flex items-center gap-2 rounded-full border border-border/50 bg-secondary/50 px-3.5 py-2 text-sm hover:bg-secondary hover:border-border transition-all duration-200">
             <span className="font-mono font-bold text-foreground">{c.symbol}</span>
             <span className={`font-mono text-xs ${c.change_pct >= 0 ? "text-positive" : "text-negative"}`}>
               {c.change_pct >= 0 ? "+" : ""}{c.change_pct.toFixed(2)}%
@@ -265,21 +350,7 @@ export default function Dashboard() {
   const { widgets, setWidgets, isEditing, setIsEditing, toggleVisibility, resetLayout, isVisible, orderedIds } = useDashboardLayout();
 
   const widgetMap: Record<string, React.ReactNode> = {
-    hero: (
-      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-        className="flex flex-col items-center gap-5 py-10">
-        <div className="relative">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight text-center" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            Institutional-Grade{" "}<span className="gradient-text">Financial Data</span>
-          </h1>
-          <div className="absolute -inset-x-10 -inset-y-4 bg-primary/5 rounded-3xl blur-3xl pointer-events-none" />
-        </div>
-        <p className="text-muted-foreground text-center max-w-lg text-base">
-          Deep fundamentals for <span className="font-semibold text-foreground">2,229</span> NSE companies. Data first, no noise.
-        </p>
-        <SearchBar variant="hero" />
-      </motion.div>
-    ),
+    hero: <MarketOverviewHero />,
     recent: <RecentlyViewed />,
     heatmap: (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
@@ -316,7 +387,7 @@ export default function Dashboard() {
   return (
     <div>
       <MarketTicker />
-      <div className="container max-w-7xl py-8 space-y-8">
+      <div className="container max-w-7xl py-6 space-y-6">
         {/* Dashboard customize button */}
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={() => setIsEditing(!isEditing)} className="gap-1.5 text-xs text-muted-foreground">

@@ -22,6 +22,7 @@ import { InsiderDeals } from "@/components/company/InsiderDeals";
 import { RevenueSegmentation } from "@/components/company/RevenueSegmentation";
 import { ManagementInfo } from "@/components/company/ManagementInfo";
 import { CompanyPageNav } from "@/components/company/CompanyPageNav";
+import { CompanyBreadcrumb } from "@/components/company/CompanyBreadcrumb";
 
 export default function CompanyDetail() {
   const { symbol } = useParams<{ symbol: string }>();
@@ -52,7 +53,10 @@ export default function CompanyDetail() {
   return (
     <>
       <CompanyPageNav />
-      <div className="container max-w-7xl py-6 md:py-8 space-y-5 xl:ml-48">
+      <div className="container max-w-7xl py-2 md:py-4 space-y-5 xl:ml-48">
+        {/* Breadcrumb */}
+        <CompanyBreadcrumb />
+
         {/* Export toolbar */}
         <div className="flex justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => exportCompanyPDF(symbol || "RELIANCE")} className="gap-1.5 text-xs">
