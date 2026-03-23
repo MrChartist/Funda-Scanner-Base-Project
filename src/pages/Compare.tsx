@@ -18,10 +18,15 @@ const COMPARE_COLORS = [
 ];
 
 export default function Compare() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialSymbols = searchParams.get("symbols")?.split(",").filter(Boolean) || [];
   const [symbols, setSymbols] = useState<string[]>(initialSymbols.length > 0 ? initialSymbols : ["RELIANCE", "TCS"]);
   const [showSearch, setShowSearch] = useState(false);
+
+  // Sync URL with selected symbols
+  useEffect(() => {
+    setSearchParams({ symbols: symbols.join(",") }, { replace: true });
+  }, [symbols, setSearchParams]);
 
   const companyData = useMemo(() => {
     return symbols.map((s) => ({
