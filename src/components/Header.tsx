@@ -14,6 +14,7 @@ export function Header() {
     { to: "/screener", label: "Screener", icon: BarChart3 },
     { to: "/compare", label: "Compare", icon: GitCompare },
     { to: "/watchlist", label: "Watchlist", icon: Eye },
+    { to: "/dcf", label: "DCF", icon: Calculator },
   ];
 
   return (
