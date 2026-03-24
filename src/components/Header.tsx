@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Sun, Moon, BarChart3, TrendingUp, LayoutDashboard, GitCompare, Eye, Command, Calculator } from "lucide-react";
+import { Sun, Moon, BarChart3, TrendingUp, LayoutDashboard, GitCompare, Eye, Command, Calculator, Briefcase } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { SearchBar } from "./SearchBar";
 import { AccentColorPicker } from "./AccentColorPicker";
