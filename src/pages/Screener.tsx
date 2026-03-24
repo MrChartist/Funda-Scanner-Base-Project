@@ -140,6 +140,9 @@ export default function Screener() {
         eps: 0, pe: 0, price: c.price, change_pct: c.change_pct,
         volume: 0, relative_volume: 0, avg_volume_10d: 0,
         high_52w: 0, low_52w: 0, sma10: 0, sma20: 0, sma50: 0,
+        roe: 0, roce: 0, debt_equity: 0, dividend_yield: 0,
+        sales_growth: 0, profit_growth: 0, price_book: 0,
+        interest_coverage: 0, fcf_yield: 0,
       })));
     } finally {
       setLoading(false);
