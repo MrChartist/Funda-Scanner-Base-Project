@@ -38,7 +38,7 @@ export interface TVStockData {
   name: string;
   industry: string;
   sector: string;
-  market_cap: number;    // in crores
+  market_cap: number;
   currency: string;
   eps: number;
   pe: number;
@@ -52,6 +52,15 @@ export interface TVStockData {
   sma10: number;
   sma20: number;
   sma50: number;
+  roe: number;
+  roce: number;
+  debt_equity: number;
+  dividend_yield: number;
+  sales_growth: number;
+  profit_growth: number;
+  price_book: number;
+  interest_coverage: number;
+  fcf_yield: number;
 }
 
 const SECTOR_MAP: Record<string, string> = {
