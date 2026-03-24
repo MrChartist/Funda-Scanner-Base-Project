@@ -110,6 +110,15 @@ function parseRow(entry: { s: string; d: any[] }): TVStockData {
     sma10: +(d[15] || 0).toFixed(2),
     sma20: +(d[16] || 0).toFixed(2),
     sma50: +(d[17] || 0).toFixed(2),
+    roe: +(d[18] || 0).toFixed(2),
+    roce: +(d[19] || 0).toFixed(2),
+    debt_equity: +(d[20] || 0).toFixed(2),
+    dividend_yield: +(d[21] || 0).toFixed(2),
+    sales_growth: +(d[22] || 0).toFixed(2),
+    profit_growth: +(d[23] || 0).toFixed(2),
+    price_book: +(d[24] || 0).toFixed(2),
+    interest_coverage: +(d[25] || 0).toFixed(2),
+    fcf_yield: +(d[26] || 0).toFixed(2),
   };
 }
 
