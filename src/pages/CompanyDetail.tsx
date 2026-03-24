@@ -26,6 +26,7 @@ import { CompanyBreadcrumb } from "@/components/company/CompanyBreadcrumb";
 import { ShareSection } from "@/components/company/ShareSection";
 import { DataFreshness } from "@/components/company/DataFreshness";
 import { FundamentalScoring } from "@/components/company/FundamentalScoring";
+import { DividendAnalysis } from "@/components/company/DividendAnalysis";
 
 export default function CompanyDetail() {
   const { symbol } = useParams<{ symbol: string }>();
