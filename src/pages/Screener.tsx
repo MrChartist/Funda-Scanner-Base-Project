@@ -289,16 +289,20 @@ export default function Screener() {
                   { key: "name", label: "Company" },
                   { key: "sector", label: "Sector" },
                   { key: "price", label: "Price" },
-                  { key: "change_pct", label: "Change %" },
+                  { key: "change_pct", label: "Chg%" },
                   { key: "pe", label: "P/E" },
-                  { key: "eps", label: "EPS" },
-                  { key: "volume", label: "Volume" },
-                  { key: "market_cap", label: "Market Cap" },
-                  { key: "high_52w", label: "52W High" },
-                  { key: "low_52w", label: "52W Low" },
+                  { key: "roce", label: "ROCE" },
+                  { key: "roe", label: "ROE" },
+                  { key: "debt_equity", label: "D/E" },
+                  { key: "dividend_yield", label: "Div%" },
+                  { key: "price_book", label: "P/B" },
+                  { key: "fcf_yield", label: "FCF%" },
+                  { key: "sales_growth", label: "Sales G" },
+                  { key: "profit_growth", label: "Profit G" },
+                  { key: "market_cap", label: "MCap" },
                 ].map((col) => (
                   <th key={col.key} onClick={() => toggleSort(col.key)}
-                    className="data-header cursor-pointer hover:text-foreground group">
+                    className="data-header cursor-pointer hover:text-foreground group whitespace-nowrap">
                     <span className="flex items-center gap-1">
                       {col.label}
                       {sortKey === col.key && <ChevronDown className={`h-3 w-3 text-primary transition-transform ${sortDir === "asc" ? "rotate-180" : ""}`} />}
@@ -313,24 +317,40 @@ export default function Screener() {
                 <tr key={c.symbol} onClick={() => navigate(`/company/${c.symbol}`)}
                   className="border-b border-border/30 last:border-0 hover:bg-accent/50 cursor-pointer transition-colors">
                   <td className="data-cell font-bold text-primary">{c.symbol}</td>
-                  <td className="data-cell text-foreground whitespace-nowrap max-w-[200px] truncate">{c.name}</td>
+                  <td className="data-cell text-foreground whitespace-nowrap max-w-[180px] truncate">{c.name}</td>
                   <td className="data-cell text-muted-foreground whitespace-nowrap">{c.sector}</td>
                   <td className="data-cell font-mono text-foreground">₹{c.price.toLocaleString()}</td>
                   <td className={`data-cell font-mono font-semibold ${c.change_pct >= 0 ? "text-positive" : "text-negative"}`}>
                     {c.change_pct >= 0 ? "+" : ""}{c.change_pct.toFixed(2)}%
                   </td>
                   <td className="data-cell font-mono text-foreground">{c.pe > 0 ? c.pe.toFixed(1) : "—"}</td>
-                  <td className="data-cell font-mono text-foreground">{c.eps > 0 ? `₹${c.eps.toFixed(1)}` : "—"}</td>
-                  <td className="data-cell font-mono text-muted-foreground">
-                    {c.volume > 1000000 ? `${(c.volume / 1000000).toFixed(1)}M` : c.volume > 1000 ? `${(c.volume / 1000).toFixed(0)}K` : c.volume}
+                  <td className={`data-cell font-mono ${c.roce > 15 ? "text-positive" : c.roce > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                    {c.roce > 0 ? `${c.roce}%` : "—"}
+                  </td>
+                  <td className={`data-cell font-mono ${c.roe > 15 ? "text-positive" : c.roe > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                    {c.roe > 0 ? `${c.roe}%` : "—"}
+                  </td>
+                  <td className={`data-cell font-mono ${c.debt_equity > 1 ? "text-negative" : c.debt_equity > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                    {c.debt_equity > 0 ? c.debt_equity.toFixed(2) : "—"}
+                  </td>
+                  <td className={`data-cell font-mono ${c.dividend_yield > 2 ? "text-positive" : c.dividend_yield > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                    {c.dividend_yield > 0 ? `${c.dividend_yield}%` : "—"}
+                  </td>
+                  <td className="data-cell font-mono text-foreground">{c.price_book > 0 ? c.price_book.toFixed(1) : "—"}</td>
+                  <td className={`data-cell font-mono ${c.fcf_yield > 5 ? "text-positive" : c.fcf_yield > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                    {c.fcf_yield > 0 ? `${c.fcf_yield}%` : "—"}
+                  </td>
+                  <td className={`data-cell font-mono ${c.sales_growth > 0 ? "text-positive" : c.sales_growth < 0 ? "text-negative" : "text-muted-foreground"}`}>
+                    {c.sales_growth !== 0 ? `${c.sales_growth > 0 ? "+" : ""}${c.sales_growth}%` : "—"}
+                  </td>
+                  <td className={`data-cell font-mono ${c.profit_growth > 0 ? "text-positive" : c.profit_growth < 0 ? "text-negative" : "text-muted-foreground"}`}>
+                    {c.profit_growth !== 0 ? `${c.profit_growth > 0 ? "+" : ""}${c.profit_growth}%` : "—"}
                   </td>
                   <td className="data-cell font-mono text-foreground">{formatMarketCap(c.market_cap)}</td>
-                  <td className="data-cell font-mono text-muted-foreground">₹{c.high_52w.toLocaleString()}</td>
-                  <td className="data-cell font-mono text-muted-foreground">₹{c.low_52w.toLocaleString()}</td>
                 </tr>
               ))}
               {!loading && results.length === 0 && (
-                <tr><td colSpan={11} className="px-4 py-12 text-center text-muted-foreground">No stocks match your criteria. Try adjusting filters.</td></tr>
+                <tr><td colSpan={15} className="px-4 py-12 text-center text-muted-foreground">No stocks match your criteria. Try adjusting filters.</td></tr>
               )}
             </tbody>
           </table>
