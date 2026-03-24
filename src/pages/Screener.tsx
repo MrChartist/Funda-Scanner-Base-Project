@@ -13,13 +13,23 @@ import { LiveMarketIndicator } from "@/hooks/use-live-prices";
 
 // Metrics available for filtering — mapped to TradingView field names
 const METRICS = [
-  { key: "market_cap_basic", label: "Market Cap", tvField: "market_cap_basic", type: "number" },
-  { key: "close", label: "Price", tvField: "close", type: "number" },
-  { key: "change", label: "Change %", tvField: "change", type: "number" },
-  { key: "price_earnings_ttm", label: "P/E Ratio", tvField: "price_earnings_ttm", type: "number" },
-  { key: "earnings_per_share_basic_ttm", label: "EPS", tvField: "earnings_per_share_basic_ttm", type: "number" },
-  { key: "volume", label: "Volume", tvField: "volume", type: "number" },
-  { key: "relative_volume_10d_calc", label: "Relative Volume", tvField: "relative_volume_10d_calc", type: "number" },
+  { key: "market_cap_basic", label: "Market Cap", tvField: "market_cap_basic", type: "number", category: "Valuation" },
+  { key: "close", label: "Price", tvField: "close", type: "number", category: "Price" },
+  { key: "change", label: "Change %", tvField: "change", type: "number", category: "Price" },
+  { key: "price_earnings_ttm", label: "P/E Ratio", tvField: "price_earnings_ttm", type: "number", category: "Valuation" },
+  { key: "earnings_per_share_basic_ttm", label: "EPS", tvField: "earnings_per_share_basic_ttm", type: "number", category: "Valuation" },
+  { key: "volume", label: "Volume", tvField: "volume", type: "number", category: "Price" },
+  { key: "relative_volume_10d_calc", label: "Relative Volume", tvField: "relative_volume_10d_calc", type: "number", category: "Price" },
+  // Fundamental metrics
+  { key: "return_on_invested_capital", label: "ROCE (ROIC)", tvField: "return_on_invested_capital", type: "number", category: "Fundamental" },
+  { key: "return_on_equity", label: "ROE", tvField: "return_on_equity", type: "number", category: "Fundamental" },
+  { key: "debt_to_equity", label: "Debt/Equity", tvField: "debt_to_equity", type: "number", category: "Fundamental" },
+  { key: "dividend_yield_recent", label: "Dividend Yield %", tvField: "dividend_yield_recent", type: "number", category: "Fundamental" },
+  { key: "revenue_growth_quarterly", label: "Sales Growth (QoQ)", tvField: "revenue_growth_quarterly", type: "number", category: "Growth" },
+  { key: "earnings_growth_quarterly", label: "Profit Growth (QoQ)", tvField: "earnings_growth_quarterly", type: "number", category: "Growth" },
+  { key: "price_book_fq", label: "Price/Book", tvField: "price_book_fq", type: "number", category: "Valuation" },
+  { key: "total_debt_to_ebitda", label: "Debt/EBITDA", tvField: "total_debt_to_ebitda", type: "number", category: "Fundamental" },
+  { key: "free_cash_flow_yield_ttm", label: "FCF Yield %", tvField: "free_cash_flow_yield_ttm", type: "number", category: "Fundamental" },
 ];
 
 const OPERATORS = [
@@ -37,6 +47,13 @@ const PRESETS = [
   { name: "Top Losers (<-2%)", filters: [{ left: "change", operation: "less", right: -2 }] },
   { name: "High Volume", filters: [{ left: "relative_volume_10d_calc", operation: "greater", right: 2 }] },
   { name: "Penny Stocks (<₹50)", filters: [{ left: "close", operation: "less", right: 50 }] },
+  // Fundamental presets
+  { name: "High ROCE (>20%)", filters: [{ left: "return_on_invested_capital", operation: "greater", right: 20 }] },
+  { name: "Low Debt (D/E<0.5)", filters: [{ left: "debt_to_equity", operation: "less", right: 0.5 }, { left: "debt_to_equity", operation: "greater", right: 0 }] },
+  { name: "Dividend Stars (>3%)", filters: [{ left: "dividend_yield_recent", operation: "greater", right: 3 }] },
+  { name: "High ROE (>15%)", filters: [{ left: "return_on_equity", operation: "greater", right: 15 }] },
+  { name: "Growth Stocks", filters: [{ left: "revenue_growth_quarterly", operation: "greater", right: 15 }, { left: "earnings_growth_quarterly", operation: "greater", right: 15 }] },
+  { name: "Value Picks (P/B<2)", filters: [{ left: "price_book_fq", operation: "less", right: 2 }, { left: "price_book_fq", operation: "greater", right: 0 }] },
 ];
 
 interface FilterCondition {
@@ -123,6 +140,9 @@ export default function Screener() {
         eps: 0, pe: 0, price: c.price, change_pct: c.change_pct,
         volume: 0, relative_volume: 0, avg_volume_10d: 0,
         high_52w: 0, low_52w: 0, sma10: 0, sma20: 0, sma50: 0,
+        roe: 0, roce: 0, debt_equity: 0, dividend_yield: 0,
+        sales_growth: 0, profit_growth: 0, price_book: 0,
+        interest_coverage: 0, fcf_yield: 0,
       })));
     } finally {
       setLoading(false);
@@ -230,8 +250,19 @@ export default function Screener() {
           <div key={f.id} className="flex items-center gap-2 flex-wrap">
             {i > 0 && <Badge variant="outline" className="text-xs">AND</Badge>}
             <Select value={f.metric} onValueChange={(v) => updateFilter(f.id, "metric", v)}>
-              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-              <SelectContent>{METRICS.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}</SelectContent>
+              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["Valuation", "Price", "Fundamental", "Growth"].map((cat) => {
+                  const items = METRICS.filter((m) => m.category === cat);
+                  if (items.length === 0) return null;
+                  return (
+                    <div key={cat}>
+                      <div className="px-2 py-1 text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">{cat}</div>
+                      {items.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}
+                    </div>
+                  );
+                })}
+              </SelectContent>
             </Select>
             <Select value={f.operator} onValueChange={(v) => updateFilter(f.id, "operator", v)}>
               <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
@@ -269,16 +300,20 @@ export default function Screener() {
                   { key: "name", label: "Company" },
                   { key: "sector", label: "Sector" },
                   { key: "price", label: "Price" },
-                  { key: "change_pct", label: "Change %" },
+                  { key: "change_pct", label: "Chg%" },
                   { key: "pe", label: "P/E" },
-                  { key: "eps", label: "EPS" },
-                  { key: "volume", label: "Volume" },
-                  { key: "market_cap", label: "Market Cap" },
-                  { key: "high_52w", label: "52W High" },
-                  { key: "low_52w", label: "52W Low" },
+                  { key: "roce", label: "ROCE" },
+                  { key: "roe", label: "ROE" },
+                  { key: "debt_equity", label: "D/E" },
+                  { key: "dividend_yield", label: "Div%" },
+                  { key: "price_book", label: "P/B" },
+                  { key: "fcf_yield", label: "FCF%" },
+                  { key: "sales_growth", label: "Sales G" },
+                  { key: "profit_growth", label: "Profit G" },
+                  { key: "market_cap", label: "MCap" },
                 ].map((col) => (
                   <th key={col.key} onClick={() => toggleSort(col.key)}
-                    className="data-header cursor-pointer hover:text-foreground group">
+                    className="data-header cursor-pointer hover:text-foreground group whitespace-nowrap">
                     <span className="flex items-center gap-1">
                       {col.label}
                       {sortKey === col.key && <ChevronDown className={`h-3 w-3 text-primary transition-transform ${sortDir === "asc" ? "rotate-180" : ""}`} />}
@@ -293,24 +328,40 @@ export default function Screener() {
                 <tr key={c.symbol} onClick={() => navigate(`/company/${c.symbol}`)}
                   className="border-b border-border/30 last:border-0 hover:bg-accent/50 cursor-pointer transition-colors">
                   <td className="data-cell font-bold text-primary">{c.symbol}</td>
-                  <td className="data-cell text-foreground whitespace-nowrap max-w-[200px] truncate">{c.name}</td>
+                  <td className="data-cell text-foreground whitespace-nowrap max-w-[180px] truncate">{c.name}</td>
                   <td className="data-cell text-muted-foreground whitespace-nowrap">{c.sector}</td>
                   <td className="data-cell font-mono text-foreground">₹{c.price.toLocaleString()}</td>
                   <td className={`data-cell font-mono font-semibold ${c.change_pct >= 0 ? "text-positive" : "text-negative"}`}>
                     {c.change_pct >= 0 ? "+" : ""}{c.change_pct.toFixed(2)}%
                   </td>
                   <td className="data-cell font-mono text-foreground">{c.pe > 0 ? c.pe.toFixed(1) : "—"}</td>
-                  <td className="data-cell font-mono text-foreground">{c.eps > 0 ? `₹${c.eps.toFixed(1)}` : "—"}</td>
-                  <td className="data-cell font-mono text-muted-foreground">
-                    {c.volume > 1000000 ? `${(c.volume / 1000000).toFixed(1)}M` : c.volume > 1000 ? `${(c.volume / 1000).toFixed(0)}K` : c.volume}
+                  <td className={`data-cell font-mono ${c.roce > 15 ? "text-positive" : c.roce > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                    {c.roce > 0 ? `${c.roce}%` : "—"}
+                  </td>
+                  <td className={`data-cell font-mono ${c.roe > 15 ? "text-positive" : c.roe > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                    {c.roe > 0 ? `${c.roe}%` : "—"}
+                  </td>
+                  <td className={`data-cell font-mono ${c.debt_equity > 1 ? "text-negative" : c.debt_equity > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                    {c.debt_equity > 0 ? c.debt_equity.toFixed(2) : "—"}
+                  </td>
+                  <td className={`data-cell font-mono ${c.dividend_yield > 2 ? "text-positive" : c.dividend_yield > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                    {c.dividend_yield > 0 ? `${c.dividend_yield}%` : "—"}
+                  </td>
+                  <td className="data-cell font-mono text-foreground">{c.price_book > 0 ? c.price_book.toFixed(1) : "—"}</td>
+                  <td className={`data-cell font-mono ${c.fcf_yield > 5 ? "text-positive" : c.fcf_yield > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                    {c.fcf_yield > 0 ? `${c.fcf_yield}%` : "—"}
+                  </td>
+                  <td className={`data-cell font-mono ${c.sales_growth > 0 ? "text-positive" : c.sales_growth < 0 ? "text-negative" : "text-muted-foreground"}`}>
+                    {c.sales_growth !== 0 ? `${c.sales_growth > 0 ? "+" : ""}${c.sales_growth}%` : "—"}
+                  </td>
+                  <td className={`data-cell font-mono ${c.profit_growth > 0 ? "text-positive" : c.profit_growth < 0 ? "text-negative" : "text-muted-foreground"}`}>
+                    {c.profit_growth !== 0 ? `${c.profit_growth > 0 ? "+" : ""}${c.profit_growth}%` : "—"}
                   </td>
                   <td className="data-cell font-mono text-foreground">{formatMarketCap(c.market_cap)}</td>
-                  <td className="data-cell font-mono text-muted-foreground">₹{c.high_52w.toLocaleString()}</td>
-                  <td className="data-cell font-mono text-muted-foreground">₹{c.low_52w.toLocaleString()}</td>
                 </tr>
               ))}
               {!loading && results.length === 0 && (
-                <tr><td colSpan={11} className="px-4 py-12 text-center text-muted-foreground">No stocks match your criteria. Try adjusting filters.</td></tr>
+                <tr><td colSpan={15} className="px-4 py-12 text-center text-muted-foreground">No stocks match your criteria. Try adjusting filters.</td></tr>
               )}
             </tbody>
           </table>

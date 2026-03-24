@@ -4,24 +4,33 @@
 const TRADINGVIEW_SCAN_URL = "/api/tv/india/scan";
 
 const FIELDS = [
-  "name",                        // Ticker symbol
-  "description",                 // Company name
-  "industry",                    // Industry
-  "sector",                      // Sector
-  "market_cap_basic",            // Market Cap (in currency units)
-  "currency",                    // Currency
-  "earnings_per_share_basic_ttm", // EPS TTM
-  "price_earnings_ttm",          // P/E Ratio
-  "close",                       // Current Price
-  "change",                      // % change 1 day
-  "volume",                      // Volume 1 day
-  "relative_volume_10d_calc",    // Relative volume
-  "average_volume_10d_calc",     // Avg Volume 10d
-  "High.All",                    // All-time / 52W high
-  "Low.All",                     // All-time / 52W low
-  "SMA10",                       // SMA 10
-  "SMA20",                       // SMA 20
-  "SMA50",                       // SMA 50
+  "name",                        // 0  Ticker symbol
+  "description",                 // 1  Company name
+  "industry",                    // 2  Industry
+  "sector",                      // 3  Sector
+  "market_cap_basic",            // 4  Market Cap (in currency units)
+  "currency",                    // 5  Currency
+  "earnings_per_share_basic_ttm", // 6  EPS TTM
+  "price_earnings_ttm",          // 7  P/E Ratio
+  "close",                       // 8  Current Price
+  "change",                      // 9  % change 1 day
+  "volume",                      // 10 Volume 1 day
+  "relative_volume_10d_calc",    // 11 Relative volume
+  "average_volume_10d_calc",     // 12 Avg Volume 10d
+  "High.All",                    // 13 52W high
+  "Low.All",                     // 14 52W low
+  "SMA10",                       // 15 SMA 10
+  "SMA20",                       // 16 SMA 20
+  "SMA50",                       // 17 SMA 50
+  "return_on_equity",            // 18 ROE
+  "return_on_invested_capital",  // 19 ROCE (ROIC)
+  "debt_to_equity",              // 20 D/E
+  "dividend_yield_recent",       // 21 Dividend Yield
+  "revenue_growth_quarterly",    // 22 Sales Growth (QoQ)
+  "earnings_growth_quarterly",   // 23 Profit Growth (QoQ)
+  "price_book_fq",               // 24 P/B (Book Value proxy)
+  "total_debt_to_ebitda",        // 25 Interest Coverage proxy
+  "free_cash_flow_yield_ttm",    // 26 FCF Yield
 ];
 
 export interface TVStockData {
@@ -29,7 +38,7 @@ export interface TVStockData {
   name: string;
   industry: string;
   sector: string;
-  market_cap: number;    // in crores
+  market_cap: number;
   currency: string;
   eps: number;
   pe: number;
@@ -43,6 +52,15 @@ export interface TVStockData {
   sma10: number;
   sma20: number;
   sma50: number;
+  roe: number;
+  roce: number;
+  debt_equity: number;
+  dividend_yield: number;
+  sales_growth: number;
+  profit_growth: number;
+  price_book: number;
+  interest_coverage: number;
+  fcf_yield: number;
 }
 
 const SECTOR_MAP: Record<string, string> = {
@@ -92,6 +110,15 @@ function parseRow(entry: { s: string; d: any[] }): TVStockData {
     sma10: +(d[15] || 0).toFixed(2),
     sma20: +(d[16] || 0).toFixed(2),
     sma50: +(d[17] || 0).toFixed(2),
+    roe: +(d[18] || 0).toFixed(2),
+    roce: +(d[19] || 0).toFixed(2),
+    debt_equity: +(d[20] || 0).toFixed(2),
+    dividend_yield: +(d[21] || 0).toFixed(2),
+    sales_growth: +(d[22] || 0).toFixed(2),
+    profit_growth: +(d[23] || 0).toFixed(2),
+    price_book: +(d[24] || 0).toFixed(2),
+    interest_coverage: +(d[25] || 0).toFixed(2),
+    fcf_yield: +(d[26] || 0).toFixed(2),
   };
 }
 
