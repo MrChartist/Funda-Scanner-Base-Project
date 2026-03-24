@@ -13,13 +13,23 @@ import { LiveMarketIndicator } from "@/hooks/use-live-prices";
 
 // Metrics available for filtering — mapped to TradingView field names
 const METRICS = [
-  { key: "market_cap_basic", label: "Market Cap", tvField: "market_cap_basic", type: "number" },
-  { key: "close", label: "Price", tvField: "close", type: "number" },
-  { key: "change", label: "Change %", tvField: "change", type: "number" },
-  { key: "price_earnings_ttm", label: "P/E Ratio", tvField: "price_earnings_ttm", type: "number" },
-  { key: "earnings_per_share_basic_ttm", label: "EPS", tvField: "earnings_per_share_basic_ttm", type: "number" },
-  { key: "volume", label: "Volume", tvField: "volume", type: "number" },
-  { key: "relative_volume_10d_calc", label: "Relative Volume", tvField: "relative_volume_10d_calc", type: "number" },
+  { key: "market_cap_basic", label: "Market Cap", tvField: "market_cap_basic", type: "number", category: "Valuation" },
+  { key: "close", label: "Price", tvField: "close", type: "number", category: "Price" },
+  { key: "change", label: "Change %", tvField: "change", type: "number", category: "Price" },
+  { key: "price_earnings_ttm", label: "P/E Ratio", tvField: "price_earnings_ttm", type: "number", category: "Valuation" },
+  { key: "earnings_per_share_basic_ttm", label: "EPS", tvField: "earnings_per_share_basic_ttm", type: "number", category: "Valuation" },
+  { key: "volume", label: "Volume", tvField: "volume", type: "number", category: "Price" },
+  { key: "relative_volume_10d_calc", label: "Relative Volume", tvField: "relative_volume_10d_calc", type: "number", category: "Price" },
+  // Fundamental metrics
+  { key: "return_on_invested_capital", label: "ROCE (ROIC)", tvField: "return_on_invested_capital", type: "number", category: "Fundamental" },
+  { key: "return_on_equity", label: "ROE", tvField: "return_on_equity", type: "number", category: "Fundamental" },
+  { key: "debt_to_equity", label: "Debt/Equity", tvField: "debt_to_equity", type: "number", category: "Fundamental" },
+  { key: "dividend_yield_recent", label: "Dividend Yield %", tvField: "dividend_yield_recent", type: "number", category: "Fundamental" },
+  { key: "revenue_growth_quarterly", label: "Sales Growth (QoQ)", tvField: "revenue_growth_quarterly", type: "number", category: "Growth" },
+  { key: "earnings_growth_quarterly", label: "Profit Growth (QoQ)", tvField: "earnings_growth_quarterly", type: "number", category: "Growth" },
+  { key: "price_book_fq", label: "Price/Book", tvField: "price_book_fq", type: "number", category: "Valuation" },
+  { key: "total_debt_to_ebitda", label: "Debt/EBITDA", tvField: "total_debt_to_ebitda", type: "number", category: "Fundamental" },
+  { key: "free_cash_flow_yield_ttm", label: "FCF Yield %", tvField: "free_cash_flow_yield_ttm", type: "number", category: "Fundamental" },
 ];
 
 const OPERATORS = [
@@ -37,6 +47,13 @@ const PRESETS = [
   { name: "Top Losers (<-2%)", filters: [{ left: "change", operation: "less", right: -2 }] },
   { name: "High Volume", filters: [{ left: "relative_volume_10d_calc", operation: "greater", right: 2 }] },
   { name: "Penny Stocks (<₹50)", filters: [{ left: "close", operation: "less", right: 50 }] },
+  // Fundamental presets
+  { name: "High ROCE (>20%)", filters: [{ left: "return_on_invested_capital", operation: "greater", right: 20 }] },
+  { name: "Low Debt (D/E<0.5)", filters: [{ left: "debt_to_equity", operation: "less", right: 0.5 }, { left: "debt_to_equity", operation: "greater", right: 0 }] },
+  { name: "Dividend Stars (>3%)", filters: [{ left: "dividend_yield_recent", operation: "greater", right: 3 }] },
+  { name: "High ROE (>15%)", filters: [{ left: "return_on_equity", operation: "greater", right: 15 }] },
+  { name: "Growth Stocks", filters: [{ left: "revenue_growth_quarterly", operation: "greater", right: 15 }, { left: "earnings_growth_quarterly", operation: "greater", right: 15 }] },
+  { name: "Value Picks (P/B<2)", filters: [{ left: "price_book_fq", operation: "less", right: 2 }, { left: "price_book_fq", operation: "greater", right: 0 }] },
 ];
 
 interface FilterCondition {
