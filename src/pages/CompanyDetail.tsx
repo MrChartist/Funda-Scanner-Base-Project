@@ -26,6 +26,7 @@ import { CompanyBreadcrumb } from "@/components/company/CompanyBreadcrumb";
 import { ShareSection } from "@/components/company/ShareSection";
 import { DataFreshness } from "@/components/company/DataFreshness";
 import { FundamentalScoring } from "@/components/company/FundamentalScoring";
+import { DividendAnalysis } from "@/components/company/DividendAnalysis";
 
 export default function CompanyDetail() {
   const { symbol } = useParams<{ symbol: string }>();
@@ -110,8 +111,9 @@ export default function CompanyDetail() {
 
         {section("insider-deals", 11, <InsiderDeals />, 1440)}
         {section("management", 12, <ManagementInfo />, 10080)}
-        {section("documents", 13, <Documents documents={data.intelligence.documents} />, 4320)}
-        {section("corporate-actions", 14, <CorporateActions actions={data.intelligence.corporate_actions} />, 4320)}
+        {section("dividends", 13, <DividendAnalysis price={data.company.price} symbol={data.company.symbol} />, 4320)}
+        {section("documents", 14, <Documents documents={data.intelligence.documents} />, 4320)}
+        {section("corporate-actions", 15, <CorporateActions actions={data.intelligence.corporate_actions} />, 4320)}
         
         {section("peers", 15, <PeerComparison peers={data.intelligence.peers} currentSymbol={data.company.symbol} company={data.company} />, 15)}
       </div>
