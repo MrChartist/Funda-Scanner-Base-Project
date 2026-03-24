@@ -34,6 +34,7 @@ function AnimatedRoutes() {
         <Route path="/compare" element={<Compare />} />
         <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/dcf" element={<DCFCalculator />} />
+        <Route path="/portfolio" element={<Portfolio />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
