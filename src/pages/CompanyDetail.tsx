@@ -27,6 +27,7 @@ import { ShareSection } from "@/components/company/ShareSection";
 import { DataFreshness } from "@/components/company/DataFreshness";
 import { FundamentalScoring } from "@/components/company/FundamentalScoring";
 import { DividendAnalysis } from "@/components/company/DividendAnalysis";
+import { CashFlowQuality } from "@/components/company/CashFlowQuality";
 
 export default function CompanyDetail() {
   const { symbol } = useParams<{ symbol: string }>();
@@ -101,7 +102,8 @@ export default function CompanyDetail() {
         {section("analyst-ratings", 4, <AnalystRatings ratings={data.intelligence.analyst_ratings} currentPrice={data.company.price} />, 4320)}
         {section("quarterly", 5, <QuarterlyResults rows={data.intelligence.quarterly_rows} />, 2880)}
         {section("financials", 6, <FinancialStatements rows={data.intelligence.statement_rows} />, 4320)}
-        {section("ratio-trends", 7, <RatioTrendAnalysis rows={data.intelligence.ratio_rows} />, 4320)}
+        {section("cashflow-quality", 7, <CashFlowQuality statementRows={data.intelligence.statement_rows} marketCap={data.company.market_cap} price={data.company.price} />, 4320)}
+        {section("ratio-trends", 8, <RatioTrendAnalysis rows={data.intelligence.ratio_rows} />, 4320)}
         {section("shareholding", 8, <ShareholdingPattern data={data.intelligence.shareholding} />, 2880)}
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
