@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Sun, Moon, BarChart3, TrendingUp, LayoutDashboard, GitCompare, Eye, Command, Calculator } from "lucide-react";
+import { Sun, Moon, BarChart3, TrendingUp, LayoutDashboard, GitCompare, Eye, Command, Calculator, Briefcase } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { SearchBar } from "./SearchBar";
 import { AccentColorPicker } from "./AccentColorPicker";
@@ -17,6 +17,7 @@ export function Header() {
     { to: "/compare", label: "Compare", icon: GitCompare },
     { to: "/watchlist", label: "Watchlist", icon: Eye },
     { to: "/dcf", label: "DCF", icon: Calculator },
+    { to: "/portfolio", label: "Portfolio", icon: Briefcase },
   ];
 
   return (

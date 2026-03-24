@@ -18,6 +18,7 @@ import Screener from "./pages/Screener";
 import Compare from "./pages/Compare";
 import Watchlist from "./pages/Watchlist";
 import DCFCalculator from "./pages/DCFCalculator";
+import Portfolio from "./pages/Portfolio";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ function AnimatedRoutes() {
         <Route path="/compare" element={<Compare />} />
         <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/dcf" element={<DCFCalculator />} />
+        <Route path="/portfolio" element={<Portfolio />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
