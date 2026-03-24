@@ -16,6 +16,7 @@ const SECTIONS: Section[] = [
   { id: "analyst-ratings", label: "Analyst Ratings" },
   { id: "quarterly", label: "Quarterly Results" },
   { id: "financials", label: "Financial Statements" },
+  { id: "cashflow-quality", label: "Cash Flow Quality" },
   { id: "ratio-trends", label: "Ratio Trends" },
   { id: "shareholding", label: "Shareholding" },
   { id: "segments", label: "Revenue Segments" },
