@@ -25,6 +25,7 @@ import { CompanyPageNav } from "@/components/company/CompanyPageNav";
 import { CompanyBreadcrumb } from "@/components/company/CompanyBreadcrumb";
 import { ShareSection } from "@/components/company/ShareSection";
 import { DataFreshness } from "@/components/company/DataFreshness";
+import { FundamentalScoring } from "@/components/company/FundamentalScoring";
 
 export default function CompanyDetail() {
   const { symbol } = useParams<{ symbol: string }>();
@@ -93,7 +94,8 @@ export default function CompanyDetail() {
 
         {section("header", 0, <CompanyHeader company={data.company} />, "live")}
         {section("ratios-grid", 1, <KeyRatiosGrid company={data.company} ratios={data.intelligence.ratio_rows} />, 15)}
-        {section("pros-cons", 2, <ProsConsSection pros={data.company.pros} cons={data.company.cons} />, 1440)}
+        {section("fundamental-scores", 2, <FundamentalScoring statementRows={data.intelligence.statement_rows} ratioRows={data.intelligence.ratio_rows} marketCap={data.company.market_cap} price={data.company.price} sector={data.company.sector} />, 4320)}
+        {section("pros-cons", 3, <ProsConsSection pros={data.company.pros} cons={data.company.cons} />, 1440)}
         {section("price-chart", 3, <PriceChart priceHistory={data.intelligence.price_history} />, "live")}
         {section("analyst-ratings", 4, <AnalystRatings ratings={data.intelligence.analyst_ratings} currentPrice={data.company.price} />, 4320)}
         {section("quarterly", 5, <QuarterlyResults rows={data.intelligence.quarterly_rows} />, 2880)}

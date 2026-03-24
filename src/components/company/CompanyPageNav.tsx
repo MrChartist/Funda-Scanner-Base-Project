@@ -10,6 +10,7 @@ interface Section {
 const SECTIONS: Section[] = [
   { id: "header", label: "Overview" },
   { id: "ratios-grid", label: "Key Ratios" },
+  { id: "fundamental-scores", label: "F-Score / Z-Score" },
   { id: "pros-cons", label: "Pros & Cons" },
   { id: "price-chart", label: "Price Chart" },
   { id: "analyst-ratings", label: "Analyst Ratings" },
