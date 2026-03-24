@@ -21,6 +21,7 @@ const SECTIONS: Section[] = [
   { id: "segments", label: "Revenue Segments" },
   { id: "insider-deals", label: "Insider Activity" },
   { id: "management", label: "Management" },
+  { id: "dividends", label: "Dividend Analysis" },
   { id: "documents", label: "Documents" },
   { id: "corporate-actions", label: "Corporate Actions" },
   { id: "peers", label: "Peer Comparison" },
