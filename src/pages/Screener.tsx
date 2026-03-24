@@ -250,8 +250,19 @@ export default function Screener() {
           <div key={f.id} className="flex items-center gap-2 flex-wrap">
             {i > 0 && <Badge variant="outline" className="text-xs">AND</Badge>}
             <Select value={f.metric} onValueChange={(v) => updateFilter(f.id, "metric", v)}>
-              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-              <SelectContent>{METRICS.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}</SelectContent>
+              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["Valuation", "Price", "Fundamental", "Growth"].map((cat) => {
+                  const items = METRICS.filter((m) => m.category === cat);
+                  if (items.length === 0) return null;
+                  return (
+                    <div key={cat}>
+                      <div className="px-2 py-1 text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">{cat}</div>
+                      {items.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}
+                    </div>
+                  );
+                })}
+              </SelectContent>
             </Select>
             <Select value={f.operator} onValueChange={(v) => updateFilter(f.id, "operator", v)}>
               <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
