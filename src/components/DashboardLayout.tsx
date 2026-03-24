@@ -10,9 +10,11 @@ export interface DashboardWidget {
 }
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
-  { id: "hero", label: "Search & Hero", visible: true },
+  { id: "hero", label: "Search & Overview", visible: true },
   { id: "recent", label: "Recently Viewed", visible: true },
+  { id: "fundamentalMovers", label: "Fundamental Movers", visible: true },
   { id: "heatmap", label: "Sector Heatmap", visible: true },
+  { id: "valuePicks", label: "Value & Quality Picks", visible: true },
   { id: "feeds", label: "FII/DII + News + IPO", visible: true },
   { id: "pulse", label: "Market Pulse", visible: true },
 ];
@@ -20,7 +22,16 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
 function loadWidgets(): DashboardWidget[] {
   try {
     const stored = localStorage.getItem("funda-dashboard-layout");
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed: DashboardWidget[] = JSON.parse(stored);
+      // Merge new widgets that may not exist in stored layout
+      const ids = new Set(parsed.map((w) => w.id));
+      const merged = [...parsed];
+      for (const dw of DEFAULT_WIDGETS) {
+        if (!ids.has(dw.id)) merged.push(dw);
+      }
+      return merged;
+    }
   } catch {}
   return DEFAULT_WIDGETS;
 }
