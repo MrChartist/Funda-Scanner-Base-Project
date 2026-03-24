@@ -18,6 +18,7 @@ import Screener from "./pages/Screener";
 import Compare from "./pages/Compare";
 import Watchlist from "./pages/Watchlist";
 import DCFCalculator from "./pages/DCFCalculator";
+import Portfolio from "./pages/Portfolio";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
