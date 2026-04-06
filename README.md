@@ -1,3 +1,5 @@
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,50:1a1a2e,100:6366f1&height=180&section=header&text=Funda%20Scanner&fontSize=52&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=Institutional-Grade%20Fundamental%20Analysis%20Platform&descSize=16&descAlignY=55&descColor=8b5cf6" width="100%" />
+
 <p align="center">
   <img src="https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=white" alt="React 18" />
   <img src="https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
@@ -7,19 +9,21 @@
   <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT" />
 </p>
 
-<h1 align="center">📊 Funda Scanner — Base Project</h1>
-
 <p align="center">
   <strong>Institutional-grade fundamental analysis platform for 2,229+ NSE-listed companies.</strong><br />
   An open-source, fully-featured financial data dashboard built with React, TypeScript, and modern web technologies.
 </p>
 
 <p align="center">
-  <a href="#-features">Features</a> •
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-project-structure">Project Structure</a> •
-  <a href="#-connecting-a-backend">Backend Integration</a> •
+  Built by <a href="https://github.com/MrChartist"><strong>Mr. Chartist</strong></a> | Part of the <a href="https://mrchartist.com">Mr. Chartist Ecosystem</a>
+</p>
+
+<p align="center">
+  <a href="#-features">Features</a> &bull;
+  <a href="#-quick-start">Quick Start</a> &bull;
+  <a href="#-architecture">Architecture</a> &bull;
+  <a href="#-project-structure">Project Structure</a> &bull;
+  <a href="#-connecting-a-backend">Backend Integration</a> &bull;
   <a href="#-contributing">Contributing</a>
 </p>
 
@@ -504,6 +508,12 @@ Built with love by [MrChartist](https://github.com/MrChartist) using:
 ---
 
 <p align="center">
-  <strong>⭐ Star this repo if you find it useful! ⭐</strong><br />
+  <b>Made with care by <a href="https://github.com/MrChartist">Mr. Chartist</a></b><br />
+  <i>Star this repo if you find it useful!</i><br /><br />
+  <a href="https://mrchartist.com"><img src="https://img.shields.io/badge/mrchartist.com-6366f1?style=flat-square&logo=safari&logoColor=white" alt="Website"/></a>
+  <a href="https://github.com/MrChartist"><img src="https://img.shields.io/badge/More_Projects-0d1117?style=flat-square&logo=github&logoColor=white" alt="GitHub"/></a>
+  <br />
   <sub>Questions? Open an issue or reach out on GitHub.</sub>
 </p>
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,50:1a1a2e,100:6366f1&height=100&section=footer" width="100%" />
