@@ -37,7 +37,9 @@ export function CompanyHeader({ company, onExportExcel }: CompanyHeaderProps) {
       const updated = isFollowing ? followed.filter((s) => s !== company.symbol) : [...followed, company.symbol];
       localStorage.setItem("funda-followed", JSON.stringify(updated));
       setIsFollowing(!isFollowing);
-    } catch {}
+    } catch {
+      // localStorage unavailable (private mode / blocked) — safe to ignore
+    }
   };
 
   const handleExport = () => {

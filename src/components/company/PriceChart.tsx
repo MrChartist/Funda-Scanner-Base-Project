@@ -109,7 +109,7 @@ export function PriceChart({ priceHistory }: { priceHistory: PricePoint[] }) {
             {isUp ? "+" : ""}{periodChange}% ({range})
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <div className="flex rounded-full border border-border/60 overflow-hidden bg-secondary/30">
             {RANGES.map((r) => (
               <button key={r.label} onClick={() => { setRange(r.label); resetZoom(); }}

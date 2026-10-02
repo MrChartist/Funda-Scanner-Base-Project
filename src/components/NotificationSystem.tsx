@@ -39,7 +39,11 @@ const NOTIFICATION_TYPES = [
   },
 ];
 
-export function useMarketNotifications(enabled = true) {
+// These alerts are randomly generated from mock data, so they are OFF by default.
+// Set VITE_DEMO_ALERTS=true in .env to preview the notification UI.
+const DEMO_ALERTS_ENABLED = import.meta.env.VITE_DEMO_ALERTS === "true";
+
+export function useMarketNotifications(enabled = DEMO_ALERTS_ENABLED) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -57,7 +61,7 @@ export function useMarketNotifications(enabled = true) {
         info: <Bell className="h-4 w-4 text-primary" />,
       };
 
-      toast(notif.title, {
+      toast(`Demo · ${notif.title}`, {
         description: notif.description,
         icon: iconMap[notif.type],
         duration: 5000,

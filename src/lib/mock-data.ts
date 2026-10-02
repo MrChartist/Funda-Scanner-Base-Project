@@ -1,5 +1,23 @@
 // Mock data mirroring the /api/company/:symbol/intelligence response structure
 // Price data is overlaid with real TradingView data when available via useLivePrices()
+//
+// DEMO DATA ONLY: every number below is synthetic. Series are generated from a
+// seeded PRNG so a given symbol always renders the same values.
+
+// mulberry32 — tiny deterministic PRNG
+let seedState = 1;
+function rand(): number {
+  seedState = (seedState + 0x6d2b79f5) | 0;
+  let t = Math.imul(seedState ^ (seedState >>> 15), 1 | seedState);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+function seedFromSymbol(symbol: string) {
+  let h = 2166136261;
+  for (let i = 0; i < symbol.length; i++) h = Math.imul(h ^ symbol.charCodeAt(i), 16777619);
+  seedState = h >>> 0;
+}
 
 function generatePriceHistory(days: number, basePrice: number) {
   const data = [];
@@ -8,14 +26,14 @@ function generatePriceHistory(days: number, basePrice: number) {
   for (let i = days; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
-    const change = (Math.random() - 0.48) * basePrice * 0.025;
+    const change = (rand() - 0.48) * basePrice * 0.025;
     price = Math.max(price + change, basePrice * 0.6);
-    const vol = Math.floor(1000000 + Math.random() * 5000000);
+    const vol = Math.floor(1000000 + rand() * 5000000);
     data.push({
       date: date.toISOString().split("T")[0],
-      open: +(price - Math.random() * 10).toFixed(2),
-      high: +(price + Math.random() * 15).toFixed(2),
-      low: +(price - Math.random() * 15).toFixed(2),
+      open: +(price - rand() * 10).toFixed(2),
+      high: +(price + rand() * 15).toFixed(2),
+      low: +(price - rand() * 15).toFixed(2),
       close: +price.toFixed(2),
       volume: vol,
     });
@@ -27,8 +45,8 @@ function generateYearlyFinancials(years: number) {
   const rows = [];
   let revenue = 150000;
   for (let i = 0; i < years; i++) {
-    revenue *= 1 + Math.random() * 0.15;
-    const ebitda = revenue * (0.2 + Math.random() * 0.1);
+    revenue *= 1 + rand() * 0.15;
+    const ebitda = revenue * (0.2 + rand() * 0.1);
     const depreciation = ebitda * 0.15;
     const interest = revenue * 0.02;
     const pbt = ebitda - depreciation - interest;
@@ -59,8 +77,8 @@ function generateQuarterlyResults(quarters: number) {
   const rows = [];
   let revenue = 45000;
   for (let i = 0; i < quarters; i++) {
-    revenue *= 1 + (Math.random() - 0.3) * 0.08;
-    const opm = 18 + Math.random() * 8;
+    revenue *= 1 + (rand() - 0.3) * 0.08;
+    const opm = 18 + rand() * 8;
     const ebitda = revenue * (opm / 100);
     const depreciation = ebitda * 0.15;
     const interest = revenue * 0.02;
@@ -89,14 +107,14 @@ function generateRatios(years: number) {
   for (let i = 0; i < years; i++) {
     rows.push({
       year: 2015 + i,
-      roce: +(14 + Math.random() * 12).toFixed(1),
-      roe: +(12 + Math.random() * 10).toFixed(1),
-      ebitda_margin: +(18 + Math.random() * 8).toFixed(1),
-      npm: +(10 + Math.random() * 8).toFixed(1),
-      debt_equity: +(0.1 + Math.random() * 0.6).toFixed(2),
-      interest_coverage: +(4 + Math.random() * 8).toFixed(1),
-      sales_growth: +(5 + (Math.random() - 0.3) * 20).toFixed(1),
-      profit_growth: +(5 + (Math.random() - 0.3) * 25).toFixed(1),
+      roce: +(14 + rand() * 12).toFixed(1),
+      roe: +(12 + rand() * 10).toFixed(1),
+      ebitda_margin: +(18 + rand() * 8).toFixed(1),
+      npm: +(10 + rand() * 8).toFixed(1),
+      debt_equity: +(0.1 + rand() * 0.6).toFixed(2),
+      interest_coverage: +(4 + rand() * 8).toFixed(1),
+      sales_growth: +(5 + (rand() - 0.3) * 20).toFixed(1),
+      profit_growth: +(5 + (rand() - 0.3) * 25).toFixed(1),
     });
   }
   return rows;
@@ -141,6 +159,7 @@ export const SECTOR_DATA = [
 
 export function getMockCompanyIntelligence(symbol: string) {
   const company = MOCK_COMPANIES.find((c) => c.symbol === symbol) || MOCK_COMPANIES[0];
+  seedFromSymbol(company.symbol);
   const priceHistory = generatePriceHistory(365, company.price);
   const lastPrice = priceHistory[priceHistory.length - 1];
 
@@ -153,33 +172,33 @@ export function getMockCompanyIntelligence(symbol: string) {
       market_cap: company.market_cap,
       price: lastPrice.close,
       change_pct: company.change_pct,
-      pe: +(15 + Math.random() * 30).toFixed(1),
-      pb: +(1.5 + Math.random() * 6).toFixed(1),
-      roce: +(12 + Math.random() * 18).toFixed(1),
-      roe: +(10 + Math.random() * 15).toFixed(1),
-      eps: +(50 + Math.random() * 200).toFixed(1),
-      de: +(0.05 + Math.random() * 0.8).toFixed(2),
-      dividend_yield: +(0.5 + Math.random() * 3).toFixed(2),
-      book_value: +(200 + Math.random() * 1000).toFixed(1),
+      pe: +(15 + rand() * 30).toFixed(1),
+      pb: +(1.5 + rand() * 6).toFixed(1),
+      roce: +(12 + rand() * 18).toFixed(1),
+      roe: +(10 + rand() * 15).toFixed(1),
+      eps: +(50 + rand() * 200).toFixed(1),
+      de: +(0.05 + rand() * 0.8).toFixed(2),
+      dividend_yield: +(0.5 + rand() * 3).toFixed(2),
+      book_value: +(200 + rand() * 1000).toFixed(1),
       face_value: 10,
-      npm: +(8 + Math.random() * 15).toFixed(1),
+      npm: +(8 + rand() * 15).toFixed(1),
       high_52w: +(lastPrice.close * 1.2).toFixed(2),
       low_52w: +(lastPrice.close * 0.75).toFixed(2),
       website: `www.${company.symbol.toLowerCase()}.com`,
-      bse_code: `${500000 + Math.floor(Math.random() * 10000)}`,
+      bse_code: `${500000 + Math.floor(rand() * 10000)}`,
       nse_code: company.symbol,
-      isin: `INE${Math.random().toString(36).substring(2, 5).toUpperCase()}${Math.floor(10000 + Math.random() * 90000)}`,
+      isin: `INE${rand().toString(36).substring(2, 5).toUpperCase()}${Math.floor(10000 + rand() * 90000)}`,
       registrar: "KFin Technologies Ltd",
-      incorporated: `${1980 + Math.floor(Math.random() * 30)}`,
-      listed: `${1990 + Math.floor(Math.random() * 20)}`,
+      incorporated: `${1980 + Math.floor(rand() * 30)}`,
+      listed: `${1990 + Math.floor(rand() * 20)}`,
       promoter_group: company.name.split(" ")[0] + " Group",
-      about: `${company.name} is one of India's leading companies in the ${company.sector} sector. Founded in ${1980 + Math.floor(Math.random() * 30)}, the company has grown to become a market leader with operations spanning across multiple verticals. It has consistently delivered strong financial performance, driven by innovation, strategic acquisitions, and a focus on operational excellence. The company serves millions of customers across India and has been expanding its international footprint.`,
+      about: `${company.name} is one of India's leading companies in the ${company.sector} sector. Founded in ${1980 + Math.floor(rand() * 30)}, the company has grown to become a market leader with operations spanning across multiple verticals. It has consistently delivered strong financial performance, driven by innovation, strategic acquisitions, and a focus on operational excellence. The company serves millions of customers across India and has been expanding its international footprint.`,
       key_points: [
         `Market leader in the ${company.sector} sector with dominant market share`,
-        `Revenue CAGR of ${(8 + Math.random() * 12).toFixed(0)}% over the last 5 years`,
-        `Strong R&D focus with ${Math.floor(2 + Math.random() * 8)}% of revenue invested in innovation`,
-        `Pan-India presence with operations in ${Math.floor(15 + Math.random() * 15)} states`,
-        `${Math.floor(10000 + Math.random() * 90000)}+ employees across ${Math.floor(5 + Math.random() * 20)} countries`,
+        `Revenue CAGR of ${(8 + rand() * 12).toFixed(0)}% over the last 5 years`,
+        `Strong R&D focus with ${Math.floor(2 + rand() * 8)}% of revenue invested in innovation`,
+        `Pan-India presence with operations in ${Math.floor(15 + rand() * 15)} states`,
+        `${Math.floor(10000 + rand() * 90000)}+ employees across ${Math.floor(5 + rand() * 20)} countries`,
       ],
       pros: [
         "Strong revenue growth over the last 5 years",
@@ -205,11 +224,11 @@ export function getMockCompanyIntelligence(symbol: string) {
           symbol: p.symbol,
           name: p.name,
           price: p.price,
-          pe: +(15 + Math.random() * 30).toFixed(1),
+          pe: +(15 + rand() * 30).toFixed(1),
           market_cap: p.market_cap,
-          roce: +(12 + Math.random() * 18).toFixed(1),
-          npm: +(8 + Math.random() * 12).toFixed(1),
-          de: +(0.1 + Math.random() * 0.5).toFixed(2),
+          roce: +(12 + rand() * 18).toFixed(1),
+          npm: +(8 + rand() * 12).toFixed(1),
+          de: +(0.1 + rand() * 0.5).toFixed(2),
         })),
       shareholding: [
         { quarter: "Q4 FY2024", promoter_pct: 50.3, fii_pct: 23.1, dii_pct: 15.2, public_pct: 11.4 },

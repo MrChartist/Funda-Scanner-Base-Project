@@ -1,8 +1,35 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "funda-scanner",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Open-source fundamental analysis dashboard for NSE-listed companies: screener, company deep-dive, DCF calculator, portfolio and watchlist.",
+  "license": "MIT",
+  "author": "MrChartist (https://github.com/MrChartist)",
+  "homepage": "https://github.com/MrChartist/Funda-Scanner-Base-Project#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MrChartist/Funda-Scanner-Base-Project.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MrChartist/Funda-Scanner-Base-Project/issues"
+  },
+  "keywords": [
+    "nse",
+    "india",
+    "stock-market",
+    "fundamental-analysis",
+    "screener",
+    "dcf",
+    "react",
+    "typescript",
+    "vite",
+    "tailwindcss",
+    "shadcn-ui"
+  ],
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,7 +37,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "lint:fix": "eslint . --fix",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -66,7 +96,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@playwright/test": "^1.57.0",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
@@ -80,7 +109,6 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "jsdom": "^20.0.3",
-    "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

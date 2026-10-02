@@ -212,7 +212,7 @@ export default function Screener() {
               {lastFetched && <span className="ml-2 text-[10px] font-mono">Updated {lastFetched.toLocaleTimeString()}</span>}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} />Refresh
             </Button>

@@ -32,7 +32,9 @@ function loadWidgets(): DashboardWidget[] {
       }
       return merged;
     }
-  } catch {}
+  } catch {
+      // localStorage unavailable (private mode / blocked) — safe to ignore
+    }
   return DEFAULT_WIDGETS;
 }
 

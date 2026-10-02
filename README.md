@@ -7,11 +7,12 @@
   <img src="https://img.shields.io/badge/TailwindCSS-3.4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/shadcn%2Fui-49_Components-000?logo=shadcnui&logoColor=white" alt="shadcn/ui" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT" />
+  <a href="https://github.com/MrChartist/Funda-Scanner-Base-Project/actions/workflows/ci.yml"><img src="https://github.com/MrChartist/Funda-Scanner-Base-Project/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
 </p>
 
 <p align="center">
-  <strong>Institutional-grade fundamental analysis platform for 2,229+ NSE-listed companies.</strong><br />
-  An open-source, fully-featured financial data dashboard built with React, TypeScript, and modern web technologies.
+  <strong>Open-source fundamental analysis dashboard for NSE-listed companies.</strong><br />
+  A full-featured React + TypeScript front-end: screener, company deep-dive, DCF, portfolio and watchlist. Ships with demo data; plug in your own backend.
 </p>
 
 <p align="center">
@@ -33,7 +34,9 @@
 
 Funda Scanner is a **Bloomberg-terminal-inspired** financial analysis platform designed for the Indian stock market (NSE). It provides deep fundamental data analysis with an institutional-grade UI — including financial statements, ratio trend analysis, DCF valuation, stock screening, portfolio tracking, and peer comparison tools.
 
-**This is the base/frontend project.** It ships with realistic mock data for 20 blue-chip NSE companies and is designed to be easily connected to any backend API for live data.
+**This is the base/frontend project.** It ships with **synthetic demo data** for 20 blue-chip NSE companies (company financials are generated, not real) and is designed to be connected to any backend API for live data. The Screener and live prices use TradingView's public scanner endpoint when reachable.
+
+> ⚠️ **Disclaimer:** For education and research only. Not investment advice. Data may be synthetic, delayed or inaccurate — verify independently and consult a SEBI-registered adviser before investing.
 
 ---
 
@@ -118,8 +121,8 @@ Funda Scanner is a **Bloomberg-terminal-inspired** financial analysis platform d
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v18+ (recommended: v20+)
-- npm, yarn, bun, or pnpm
+- [Node.js](https://nodejs.org/) v18+ (recommended: v20+, see `.nvmrc`)
+- npm (the repo ships `package-lock.json`)
 
 ### Installation
 
@@ -130,8 +133,9 @@ cd Funda-Scanner-Base-Project
 
 # Install dependencies
 npm install
-# or
-bun install
+
+# Optional: copy the example env file
+cp .env.example .env
 ```
 
 ### Development
@@ -152,14 +156,16 @@ npm run preview  # Preview the production build
 ### Testing
 
 ```bash
-npm run test         # Run tests once
+npm run test         # Run tests once (Vitest + Testing Library)
 npm run test:watch   # Run tests in watch mode
 ```
 
 ### Linting
 
 ```bash
-npm run lint
+npm run lint         # ESLint
+npm run typecheck    # tsc --noEmit
+npm run check        # typecheck + lint + test + build (same as CI)
 ```
 
 ---
@@ -229,8 +235,7 @@ Funda-Scanner-Base-Project/
 │   │   ├── DCFCalculator.tsx  # Discounted Cash Flow calculator
 │   │   ├── Portfolio.tsx      # Portfolio tracker
 │   │   ├── Watchlist.tsx      # Stock watchlist
-│   │   ├── Index.tsx          # Placeholder (redirects to Dashboard)
-│   │   └── NotFound.tsx       # 404 page
+│   │   │   └── NotFound.tsx       # 404 page
 │   │
 │   ├── components/
 │   │   ├── Header.tsx         # Desktop header + mobile bottom nav
@@ -243,7 +248,8 @@ Funda-Scanner-Base-Project/
 │   │   ├── PageTransition.tsx # Framer Motion page transitions
 │   │   ├── AnimatedNumber.tsx # Smooth number transitions
 │   │   ├── NavLink.tsx        # Navigation link component
-│   │   ├── NotificationSystem.tsx  # Market notifications
+│   │   ├── NotificationSystem.tsx  # Demo notifications (opt-in)
+│   │   ├── Footer.tsx         # Disclaimer + license footer
 │   │   │
 │   │   ├── company/           # 24 company analysis components
 │   │   │   ├── CompanyHeader.tsx
@@ -287,7 +293,8 @@ Funda-Scanner-Base-Project/
 │   │
 │   ├── lib/                   # Utilities and services
 │   │   ├── api.ts             # Backend API client (configurable base URL)
-│   │   ├── mock-data.ts       # Mock data for 20 NSE blue-chips
+│   │   ├── mock-data.ts       # Deterministic synthetic data for 20 NSE blue-chips
+│   │   ├── dcf.ts             # Pure DCF / WACC / Monte Carlo maths (unit tested)
 │   │   ├── tradingview.ts     # TradingView Scanner API integration
 │   │   ├── export-utils.ts    # PDF and CSV export generators
 │   │   └── utils.ts           # General utilities (cn helper)
@@ -301,7 +308,6 @@ Funda-Scanner-Base-Project/
 ├── tsconfig.json              # TypeScript config
 ├── eslint.config.js           # ESLint config
 ├── vitest.config.ts           # Vitest config
-├── playwright.config.ts       # Playwright E2E config
 └── components.json            # shadcn/ui component config
 ```
 
@@ -322,7 +328,7 @@ VITE_API_URL=https://your-backend-api.com
 Or pass it inline:
 
 ```bash
-VITE_API_URL=https://api.fundascanner.com npm run dev
+VITE_API_URL=https://api.example.com npm run dev
 ```
 
 ### Step 2: API Endpoints Expected
@@ -403,7 +409,8 @@ Users can change the accent color at runtime via the **Accent Color Picker** in 
 | **Routing** | React Router DOM 6.30 |
 | **State Management** | TanStack React Query 5 |
 | **Form Handling** | React Hook Form + Zod validation |
-| **Testing** | Vitest + Testing Library + Playwright |
+| **Testing** | Vitest + Testing Library |
+| **CI** | GitHub Actions (typecheck, lint, test, build on Node 20/22) |
 
 ---
 
@@ -416,6 +423,8 @@ Users can change the accent color at runtime via the **Accent Color Picker** in 
 | `npm run build:dev` | Development build |
 | `npm run preview` | Preview production build |
 | `npm run lint` | Run ESLint |
+| `npm run typecheck` | Type-check with `tsc` |
+| `npm run check` | Typecheck, lint, test and build in one go |
 | `npm run test` | Run unit tests |
 | `npm run test:watch` | Run tests in watch mode |
 
@@ -423,7 +432,7 @@ Users can change the accent color at runtime via the **Accent Color Picker** in 
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how you can help:
+We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues: [SECURITY.md](SECURITY.md).
 
 ### Ways to Contribute
 
@@ -438,14 +447,14 @@ We welcome contributions! Here's how you can help:
 1. **Fork** the repository
 2. **Create** a feature branch: `git checkout -b feature/your-feature`
 3. **Make** your changes
-4. **Test** your changes: `npm run test && npm run lint`
+4. **Verify** your changes: `npm run check`
 5. **Commit** with clear messages: `git commit -m "feat: add sector drill-down"`
 6. **Push** to your fork: `git push origin feature/your-feature`
 7. **Open** a Pull Request
 
 ### Code Style
 
-- TypeScript strict mode enabled
+- TypeScript (non-strict today; avoid `any` — ESLint warns on it and new code should not add more)
 - ESLint configured with React hooks and refresh plugins
 - Tailwind CSS for styling (no inline styles for layout)
 - Component files: PascalCase (e.g., `CompanyHeader.tsx`)
@@ -493,14 +502,19 @@ Here are some ideas for extending and improving this base project:
 
 ## 📄 License
 
-This project is open source and free to use. Feel free to use it for personal projects, learning, or as a foundation for your own financial platform.
+Released under the [MIT License](LICENSE).
+
+### Data & trademarks
+
+- Company figures bundled in this repo are synthetic placeholders, not sourced from any exchange or vendor.
+- TradingView data is fetched from their public scanner endpoint and remains subject to [TradingView's terms](https://www.tradingview.com/policies/). You are responsible for ensuring your usage and deployment comply with them and with any exchange data-redistribution rules.
+- All product names and trademarks belong to their respective owners; this project is not affiliated with NSE, BSE or TradingView.
 
 ---
 
 ## 🙏 Credits
 
 Built with love by [MrChartist](https://github.com/MrChartist) using:
-- [Lovable](https://lovable.dev) — AI-powered web development
 - [shadcn/ui](https://ui.shadcn.com) — Beautiful UI components
 - [Recharts](https://recharts.org) — Composable charting library
 - [TradingView](https://tradingview.com) — Real-time market data
