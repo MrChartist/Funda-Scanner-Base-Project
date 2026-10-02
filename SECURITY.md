@@ -16,5 +16,4 @@ acknowledgement within a few days.
 - This project is a front-end only. It stores preferences, watchlists, portfolio entries
   and saved screens in the browser's `localStorage`; nothing is sent to a server by default.
 - Never put secrets in `VITE_*` variables — Vite embeds them in the public JavaScript bundle.
-- The Vite `/api/tv` proxy exists for local development only. In production, use your own
-  reverse proxy and check TradingView's terms of use for your use case.
+- If you connect a data provider, serve it over HTTPS and check its licence before redistributing data.

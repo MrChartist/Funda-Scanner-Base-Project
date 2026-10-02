@@ -5,7 +5,8 @@ All notable changes are documented here. Format based on [Keep a Changelog](http
 ## [Unreleased]
 
 ### Added
-- Unit tests for DCF maths, mock data and the TradingView client; GitHub Actions CI.
+- Unit tests for DCF maths, mock data and the screening engine; GitHub Actions CI.
+- `DataProvider` interface (`src/lib/data-provider.ts`) with a pure `runScreen()` engine and a built-in demo provider; "Demo data" badge.
 - Footer with investment disclaimer; `CONTRIBUTING`, `SECURITY`, `CODE_OF_CONDUCT`, issue/PR templates, `.env.example`.
 - Route-level code splitting and vendor chunks.
 
@@ -16,4 +17,5 @@ All notable changes are documented here. Format based on [Keep a Changelog](http
 - Standardised on npm (`package-lock.json`); ESLint reports zero errors.
 
 ### Removed
+- TradingView integration (client, live-price hook, dev proxy) and all price-action screener metrics/presets (change %, volume, relative volume). The project is now fundamentals-only.
 - Lovable tooling and placeholders, broken Playwright config, stray lockfiles, third-party OG image.

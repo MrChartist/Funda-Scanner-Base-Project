@@ -5,8 +5,8 @@ export function Footer() {
     <footer className="border-t border-border/50 mt-8 px-4 py-6 text-center text-[11px] leading-relaxed text-muted-foreground">
       <p className="mx-auto max-w-3xl">
         <strong className="font-semibold text-foreground">Disclaimer:</strong> Funda Scanner is an open-source educational
-        project. Company financials shown by default are synthetic demo data, and live figures (where enabled) come from
-        third-party sources that may be delayed or inaccurate. Nothing here is investment advice or a recommendation to
+        project. Figures shown by default are synthetic demo data. When you connect your own data
+        source, its accuracy and licensing are your responsibility. Nothing here is investment advice or a recommendation to
         buy or sell any security. Please verify data independently and consult a SEBI-registered adviser before investing.
       </p>
       <p className="mt-2">

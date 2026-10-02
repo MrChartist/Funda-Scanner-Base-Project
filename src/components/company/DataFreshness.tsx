@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { getDataProvider } from "@/lib/data-provider";
 
 interface DataFreshnessProps {
   /** "live" | ISO date string | minutes-ago number */
@@ -8,6 +9,10 @@ interface DataFreshnessProps {
 
 export function DataFreshness({ updatedAt, label }: DataFreshnessProps) {
   const { text, dotClass } = useMemo(() => {
+    // Timestamps on synthetic data would be fabricated, so say so instead.
+    if (getDataProvider().isDemo) {
+      return { text: "Demo", dotClass: "freshness-dot freshness-dot-stale" };
+    }
     if (updatedAt === "live" || updatedAt === undefined) {
       return { text: label || "Live", dotClass: "freshness-dot freshness-dot-live" };
     }
@@ -25,7 +30,7 @@ export function DataFreshness({ updatedAt, label }: DataFreshnessProps) {
   }, [updatedAt, label]);
 
   return (
-    <span className="freshness-badge" title={`Last updated: ${text}`}>
+    <span className="freshness-badge" title={text === "Demo" ? "Synthetic demo data" : `Last updated: ${text}`}>
       <span className={dotClass} />
       {text}
     </span>

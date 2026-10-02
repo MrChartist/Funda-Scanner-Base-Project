@@ -23,6 +23,8 @@ CI runs the same steps. Pull requests should be small and focused, with tests fo
 
 ## Guidelines
 
+- **Data sources:** Keep the app vendor-neutral. New data sources belong behind `DataProvider`, not in pages or components.
+- **Fundamentals only:** No technical indicators or live price-action features.
 - **Data:** Do not commit scraped or licensed market data, API keys or personal information. Mock data must stay clearly synthetic.
 - **Finance logic:** Keep calculations pure and in `src/lib/` (see `src/lib/dcf.ts`) so they can be unit tested. Handle empty, zero and non-finite inputs explicitly.
 - **Types:** Avoid `any`. ESLint reports it as a warning today; do not add new ones, and feel free to remove existing ones.

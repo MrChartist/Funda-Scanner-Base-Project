@@ -10,15 +10,6 @@ export default defineConfig({
     hmr: {
       overlay: false,
     },
-    proxy: {
-      // Dev-only CORS bypass for TradingView's public scanner endpoint.
-      // For production, put an equivalent reverse proxy in front of the app (see README).
-      "/api/tv": {
-        target: "https://scanner.tradingview.com",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/tv/, ""),
-      },
-    },
   },
   plugins: [react()],
   resolve: {

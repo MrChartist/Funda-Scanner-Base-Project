@@ -1,5 +1,4 @@
 // Mock data mirroring the /api/company/:symbol/intelligence response structure
-// Price data is overlaid with real TradingView data when available via useLivePrices()
 //
 // DEMO DATA ONLY: every number below is synthetic. Series are generated from a
 // seeded PRNG so a given symbol always renders the same values.

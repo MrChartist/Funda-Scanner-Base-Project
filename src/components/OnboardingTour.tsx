@@ -9,7 +9,7 @@ const TOUR_STEPS = [
     title: "Welcome to FundaScanner",
     description: "An open-source fundamentals dashboard for NSE stocks (demo data by default). Here's what you can do:",
     icon: Sparkles,
-    features: ["10-year financial data", "Live market tracking", "Advanced stock screening"],
+    features: ["10-year financial data", "Bring your own data", "Advanced stock screening"],
   },
   {
     title: "Search Any Company",
