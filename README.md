@@ -214,7 +214,9 @@ npm run check        # typecheck + lint + test + build (same as CI)
 
 ```
 Funda-Scanner-Base-Project/
+├── docs/data-format.md        # Import file format
 ├── public/                    # Static assets
+│   ├── sample-data/           # Fictional sample + template (CSV/JSON)
 │   ├── favicon.ico
 │   ├── manifest.json          # PWA manifest
 │   ├── robots.txt
@@ -294,6 +296,7 @@ Funda-Scanner-Base-Project/
 │   │   ├── dcf.ts             # Pure DCF / WACC / Monte Carlo maths (unit tested)
 │   │   ├── data-provider.ts   # DataProvider contract + pure screening engine
 │   │   ├── demo-provider.ts   # Built-in synthetic provider
+│   │   ├── import-data.ts     # CSV/JSON parser and validator for imported fundamentals
 │   │   ├── export-utils.ts    # PDF and CSV export generators
 │   │   └── utils.ts           # General utilities (cn helper)
 │   │
@@ -355,6 +358,12 @@ const data = await api.getCompanyIntelligence(symbol);
 
 ## 🔌 Bringing your own data
 
+### Quickest way: import a file
+
+Open **Screener → Import data** and choose a CSV or JSON file (or paste it). Files are parsed in your browser, never uploaded, and are remembered in `localStorage` until you click *Use demo data*. Start from [`public/sample-data/fundamentals-template.csv`](public/sample-data/fundamentals-template.csv); column names, units and rules are in the [data format guide](docs/data-format.md). Imported data currently powers the **Screener** only.
+
+### For developers: write a provider
+
 The screener and data badges talk to a `DataProvider` (`src/lib/data-provider.ts`), not to any vendor. Implement one method and register it at start-up:
 
 ```typescript
@@ -375,7 +384,7 @@ setDataProvider(myProvider);
 
 `StockRow` is fundamentals-only (market cap, P/E, P/B, ROE, ROCE, D/E, Debt/EBITDA, dividend yield, growth, FCF yield). Filtering and sorting run client-side via the pure `runScreen()` function, so a plain JSON/CSV file is enough to get started.
 
-> The company detail pages (financial statements, shareholding, etc.) still read from `getMockCompanyIntelligence()`. Moving them behind the provider interface is the next planned step; see "Extending the Project".
+> The company detail pages (financial statements, shareholding, etc.) and the Dashboard still read from `getMockCompanyIntelligence()`. Moving them behind the provider interface is the next planned step; see "Extending the Project".
 
 You are responsible for the licence and accuracy of any data you connect.
 

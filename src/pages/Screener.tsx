@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, X, Filter, Save, RotateCcw, ChevronDown, Download, Loader2 } from "lucide-react";
+import { Plus, X, Filter, Save, RotateCcw, ChevronDown, Download, Upload, Loader2 } from "lucide-react";
 import {
-  METRICS, getDataProvider, runScreen,
+  METRICS, runScreen,
   type FilterCondition, type MetricKey, type Operator, type SortKey, type StockRow,
 } from "@/lib/data-provider";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DataSourceBadge } from "@/components/DataSourceBadge";
+import { ImportDataDialog } from "@/components/ImportDataDialog";
+import { useDataProvider } from "@/hooks/use-data-provider";
 
 const OPERATORS: { key: Operator; label: string }[] = [
   { key: "gt", label: ">" },
@@ -45,7 +47,10 @@ interface FilterRow {
   value2: string;
 }
 
+const ok = (n: number) => Number.isFinite(n);
+
 function formatMarketCap(val: number) {
+  if (!ok(val)) return "—";
   if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L Cr`;
   if (val >= 1000) return `₹${(val / 1000).toFixed(0)}K Cr`;
   return `₹${val.toFixed(0)} Cr`;
@@ -58,6 +63,8 @@ const csvCell = (v: string | number) => {
 
 export default function Screener() {
   const navigate = useNavigate();
+  const provider = useDataProvider();
+  const [importOpen, setImportOpen] = useState(false);
 
   const [universe, setUniverse] = useState<StockRow[]>([]);
   const [rows, setRows] = useState<FilterRow[]>([]);
@@ -70,7 +77,7 @@ export default function Screener() {
     setLoading(true);
     setError(null);
     try {
-      setUniverse(await getDataProvider().getUniverse());
+      setUniverse(await provider.getUniverse());
     } catch (err) {
       console.error("Screener data load failed:", err);
       setError("Could not load company data from the active data provider.");
@@ -78,7 +85,7 @@ export default function Screener() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [provider]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -163,12 +170,15 @@ export default function Screener() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4 mr-1" />Import data</Button>
             <Button variant="outline" size="sm" onClick={exportCSV}><Download className="h-4 w-4 mr-1" />Export</Button>
             <Button variant="outline" size="sm" onClick={saveScreen}><Save className="h-4 w-4 mr-1" />Save</Button>
             <Button variant="outline" size="sm" onClick={() => setRows([])}><RotateCcw className="h-4 w-4 mr-1" />Reset</Button>
           </div>
         </div>
       </motion.div>
+
+      <ImportDataDialog open={importOpen} onOpenChange={setImportOpen} />
 
       {/* Error banner */}
       {error && (
@@ -232,7 +242,7 @@ export default function Screener() {
           <span className="text-sm text-muted-foreground">
             {loading ? <span className="flex items-center gap-2"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…</span> : `${results.length} companies found`}
           </span>
-          {results.length >= 2 && (
+          {provider.isDemo && results.length >= 2 && (
             <button onClick={() => navigate(`/compare?symbols=${results.slice(0, 2).map((r) => r.symbol).join(",")}`)}
               className="text-xs text-primary hover:underline font-medium">Compare Top 2 →</button>
           )}
@@ -270,12 +280,12 @@ export default function Screener() {
             </thead>
             <tbody>
               {results.map((c) => (
-                <tr key={c.symbol} onClick={() => navigate(`/company/${c.symbol}`)}
-                  className="border-b border-border/30 last:border-0 hover:bg-accent/50 cursor-pointer transition-colors">
+                <tr key={c.symbol} onClick={provider.isDemo ? () => navigate(`/company/${c.symbol}`) : undefined}
+                  className={`border-b border-border/30 last:border-0 hover:bg-accent/50 transition-colors ${provider.isDemo ? "cursor-pointer" : ""}`}>
                   <td className="data-cell font-bold text-primary">{c.symbol}</td>
                   <td className="data-cell text-foreground whitespace-nowrap max-w-[180px] truncate">{c.name}</td>
                   <td className="data-cell text-muted-foreground whitespace-nowrap">{c.sector}</td>
-                  <td className="data-cell font-mono text-foreground">₹{c.price.toLocaleString()}</td>
+                  <td className="data-cell font-mono text-foreground">{ok(c.price) ? `₹${c.price.toLocaleString()}` : "—"}</td>
                   <td className="data-cell font-mono text-foreground">{c.pe > 0 ? c.pe.toFixed(1) : "—"}</td>
                   <td className={`data-cell font-mono ${c.roce > 15 ? "text-positive" : c.roce > 0 ? "text-foreground" : "text-muted-foreground"}`}>
                     {c.roce > 0 ? `${c.roce}%` : "—"}
@@ -294,10 +304,10 @@ export default function Screener() {
                     {c.fcf_yield > 0 ? `${c.fcf_yield}%` : "—"}
                   </td>
                   <td className={`data-cell font-mono ${c.sales_growth > 0 ? "text-positive" : c.sales_growth < 0 ? "text-negative" : "text-muted-foreground"}`}>
-                    {c.sales_growth !== 0 ? `${c.sales_growth > 0 ? "+" : ""}${c.sales_growth}%` : "—"}
+                    {ok(c.sales_growth) && c.sales_growth !== 0 ? `${c.sales_growth > 0 ? "+" : ""}${c.sales_growth}%` : "—"}
                   </td>
                   <td className={`data-cell font-mono ${c.profit_growth > 0 ? "text-positive" : c.profit_growth < 0 ? "text-negative" : "text-muted-foreground"}`}>
-                    {c.profit_growth !== 0 ? `${c.profit_growth > 0 ? "+" : ""}${c.profit_growth}%` : "—"}
+                    {ok(c.profit_growth) && c.profit_growth !== 0 ? `${c.profit_growth > 0 ? "+" : ""}${c.profit_growth}%` : "—"}
                   </td>
                   <td className="data-cell font-mono text-foreground">{formatMarketCap(c.market_cap)}</td>
                 </tr>

@@ -10,9 +10,12 @@ All notable changes are documented here. Format based on [Keep a Changelog](http
 - Footer with investment disclaimer; `CONTRIBUTING`, `SECURITY`, `CODE_OF_CONDUCT`, issue/PR templates, `.env.example`.
 - Route-level code splitting and vendor chunks.
 
+- **Import your own data:** CSV/JSON import in the Screener with validation feedback, template and sample files, and `docs/data-format.md`. Imported data persists in the browser.
+
 ### Changed
 - DCF calculations moved to `src/lib/dcf.ts`; perpetuity method now reports an invalid state instead of nonsense when terminal growth ≥ discount rate.
 - Mock data is deterministic per symbol.
+- Screening sorts missing values last; table cells show "—" for missing numbers.
 - Demo notifications are opt-in (`VITE_DEMO_ALERTS=true`) and labelled as demo.
 - Standardised on npm (`package-lock.json`); ESLint reports zero errors.
 

@@ -1,5 +1,11 @@
 import { useMemo } from "react";
-import { getDataProvider } from "@/lib/data-provider";
+
+/**
+ * Company sections still render synthetic data, so a real-looking timestamp would be
+ * fabricated. Flip this to true once these sections are fed by a real DataProvider
+ * that supplies genuine update times.
+ */
+const SHOW_TIMESTAMPS = false;
 
 interface DataFreshnessProps {
   /** "live" | ISO date string | minutes-ago number */
@@ -9,8 +15,7 @@ interface DataFreshnessProps {
 
 export function DataFreshness({ updatedAt, label }: DataFreshnessProps) {
   const { text, dotClass } = useMemo(() => {
-    // Timestamps on synthetic data would be fabricated, so say so instead.
-    if (getDataProvider().isDemo) {
+    if (!SHOW_TIMESTAMPS) {
       return { text: "Demo", dotClass: "freshness-dot freshness-dot-stale" };
     }
     if (updatedAt === "live" || updatedAt === undefined) {

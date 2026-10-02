@@ -112,6 +112,9 @@ export function runScreen(rows: StockRow[], query: ScreenQuery): StockRow[] {
     const x = a[sortKey];
     const y = b[sortKey];
     if (typeof x === "string" && typeof y === "string") return x.localeCompare(y) * dir;
+    const xn = typeof x === "number" && Number.isFinite(x);
+    const yn = typeof y === "number" && Number.isFinite(y);
+    if (!xn || !yn) return xn === yn ? 0 : xn ? -1 : 1; // missing values always last
     return ((x as number) - (y as number)) * dir;
   });
 
@@ -122,6 +125,7 @@ export function runScreen(rows: StockRow[], query: ScreenQuery): StockRow[] {
 import { demoProvider } from "./demo-provider";
 
 let activeProvider: DataProvider = demoProvider;
+const listeners = new Set<() => void>();
 
 export function getDataProvider(): DataProvider {
   return activeProvider;
@@ -129,4 +133,51 @@ export function getDataProvider(): DataProvider {
 
 export function setDataProvider(provider: DataProvider) {
   activeProvider = provider;
+  listeners.forEach((l) => l());
+}
+
+/** For useSyncExternalStore: re-render when the provider changes. */
+export function subscribeDataProvider(listener: () => void) {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+
+/** Provider backed by a fixed list of rows (e.g. a user's imported file). */
+export function createStaticProvider(id: string, name: string, rows: StockRow[]): DataProvider {
+  return { id, name, isDemo: false, async getUniverse() { return rows; } };
+}
+
+// ─── Persisting an imported dataset (browser only) ─────────────────
+const STORAGE_KEY = "funda-imported-data";
+
+// JSON cannot hold NaN, so missing numbers are stored as null.
+export function saveImportedData(name: string, rows: StockRow[]): boolean {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ name, rows: rows.map((r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typeof v === "number" && !Number.isFinite(v) ? null : v]))) }),
+    );
+    return true;
+  } catch {
+    return false; // storage full or unavailable; data stays in memory for this session
+  }
+}
+
+export function loadImportedData(): DataProvider | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as { name: string; rows: Record<string, unknown>[] };
+    const rows = saved.rows.map((r) =>
+      Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v === null ? NaN : v])),
+    ) as unknown as StockRow[];
+    return rows.length ? createStaticProvider("imported", saved.name || "Imported data", rows) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearImportedData() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+  setDataProvider(demoProvider);
 }
