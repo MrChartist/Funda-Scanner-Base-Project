@@ -48,7 +48,7 @@ export function SearchBar({ variant = "header" }: { variant?: "header" | "hero" 
 
   return (
     <div className="relative">
-      <div className={`relative flex items-center ${isHero ? "w-full max-w-2xl" : "w-64 lg:w-80"}`}>
+      <div className={`relative flex items-center ${isHero ? "w-full max-w-2xl" : "w-44 sm:w-64 lg:w-80"}`}>
         <Search className={`absolute left-3 ${isHero ? "h-5 w-5" : "h-4 w-4"} text-muted-foreground`} />
         <input
           ref={inputRef}

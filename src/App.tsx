@@ -6,20 +6,28 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { DensityProvider } from "@/hooks/use-density";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { AnimatePresence } from "framer-motion";
+import { lazy, Suspense } from "react";
 import { OnboardingTour } from "./components/OnboardingTour";
 import { useMarketNotifications } from "./components/NotificationSystem";
 import { useKeyboardNav, KeyboardShortcutsHelp } from "@/hooks/use-keyboard-nav";
-import Dashboard from "./pages/Dashboard";
-import CompanyDetail from "./pages/CompanyDetail";
-import Screener from "./pages/Screener";
-import Compare from "./pages/Compare";
-import Watchlist from "./pages/Watchlist";
-import DCFCalculator from "./pages/DCFCalculator";
-import Portfolio from "./pages/Portfolio";
-import NotFound from "./pages/NotFound";
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
+const Screener = lazy(() => import("./pages/Screener"));
+const Compare = lazy(() => import("./pages/Compare"));
+const Watchlist = lazy(() => import("./pages/Watchlist"));
+const DCFCalculator = lazy(() => import("./pages/DCFCalculator"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const RouteFallback = () => (
+  <div className="flex items-center justify-center py-24 text-sm text-muted-foreground" role="status" aria-live="polite">
+    Loading…
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -52,7 +60,10 @@ function AppShell() {
       <CommandPalette />
       <OnboardingTour />
       <KeyboardShortcutsHelp open={showHelp} onClose={() => setShowHelp(false)} />
-      <AnimatedRoutes />
+      <Suspense fallback={<RouteFallback />}>
+        <AnimatedRoutes />
+      </Suspense>
+      <Footer />
     </div>
   );
 }

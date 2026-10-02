@@ -17,7 +17,6 @@ import { SearchBar } from "@/components/SearchBar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDashboardLayout, DashboardLayoutEditor } from "@/components/DashboardLayout";
-import { useLivePrices } from "@/hooks/use-live-prices";
 
 // ─── Helpers ─────────────────────────────────────────────────────
 function formatMarketCap(val: number) {
@@ -522,7 +521,6 @@ function MarketPulseCard({ title, companies, type, icon }: {
   title: string; companies: typeof MOCK_COMPANIES; type: "gainers" | "losers" | "active"; icon: React.ReactNode;
 }) {
   const navigate = useNavigate();
-  const { getPrice } = useLivePrices();
 
   return (
     <div className="glass-card p-3">
@@ -532,9 +530,8 @@ function MarketPulseCard({ title, companies, type, icon }: {
       </div>
       <div className="space-y-0.5">
         {companies.slice(0, 5).map((c, i) => {
-          const live = getPrice(c.symbol);
-          const price = live?.price ?? c.price;
-          const changePct = live?.changePct ?? c.change_pct;
+          const price = c.price;
+          const changePct = c.change_pct;
           return (
             <motion.button key={c.symbol} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               transition={{ delay: i * 0.03 }}

@@ -1,7 +1,7 @@
 {
   "name": "Funda Scanner",
   "short_name": "FundaScan",
-  "description": "Institutional-grade financial data for NSE companies",
+  "description": "Open-source fundamental analysis for NSE stocks",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0f1a",

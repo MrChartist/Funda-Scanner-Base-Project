@@ -21,6 +21,16 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+      // Existing code still has loose typing; keep visible as warnings and tighten over time.
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
+  {
+    // shadcn/ui primitives intentionally co-export variants/hooks next to components.
+    files: ["src/components/ui/**/*.{ts,tsx}"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
     },
   },
 );

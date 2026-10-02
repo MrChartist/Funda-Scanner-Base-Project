@@ -40,7 +40,9 @@ export default function CompanyDetail() {
       const recent: string[] = JSON.parse(localStorage.getItem("funda-recent") || "[]");
       const updated = [symbol, ...recent.filter((s) => s !== symbol)].slice(0, 10);
       localStorage.setItem("funda-recent", JSON.stringify(updated));
-    } catch {}
+    } catch {
+      // localStorage unavailable (private mode / blocked) — safe to ignore
+    }
 
     const hash = location.hash.replace("#", "");
     if (hash) {
@@ -72,7 +74,7 @@ export default function CompanyDetail() {
   return (
     <>
       <CompanyPageNav />
-      <div className="container max-w-7xl py-2 md:py-3 space-y-3 xl:ml-48">
+      <div className="container max-w-7xl py-2 md:py-3 space-y-3 xl:pl-48">
         <CompanyBreadcrumb />
 
         <div className="flex justify-end gap-1.5" data-no-print>

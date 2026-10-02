@@ -4,7 +4,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { SearchBar } from "./SearchBar";
 import { AccentColorPicker } from "./AccentColorPicker";
 import { DensityPicker } from "./DensityPicker";
-import { LiveMarketIndicator } from "@/hooks/use-live-prices";
+import { DataSourceBadge } from "./DataSourceBadge";
 import { motion } from "framer-motion";
 
 export function Header() {
@@ -54,7 +54,7 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-1">
-            <LiveMarketIndicator />
+            <DataSourceBadge />
             <SearchBar variant="header" />
             <button onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
               className="flex items-center gap-0.5 rounded border border-border bg-secondary px-1.5 py-0.5 text-muted-foreground hover:bg-accent transition-colors"

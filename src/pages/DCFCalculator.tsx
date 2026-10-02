@@ -14,119 +14,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageTransition } from "@/components/PageTransition";
 import { MOCK_COMPANIES, getMockCompanyIntelligence } from "@/lib/mock-data";
-
-// ─── Types ───────────────────────────────────────────────────────
-interface DCFInputs {
-  symbol: string;
-  fcf: number;
-  growthRate: number;         // Stage 1
-  stage2Growth: number;       // Stage 2 (fade)
-  terminalGrowth: number;
-  discountRate: number;
-  years: number;
-  stage2Years: number;
-  sharesOutstanding: number;
-  terminalMethod: "perpetuity" | "exitMultiple";
-  exitMultiple: number;
-  netDebt: number;
-}
-
-interface WACCInputs {
-  riskFreeRate: number;
-  beta: number;
-  equityRiskPremium: number;
-  costOfDebt: number;
-  taxRate: number;
-  debtToEquity: number;
-}
-
-interface Scenario {
-  label: string;
-  color: string;
-  growthRate: number;
-  stage2Growth: number;
-  terminalGrowth: number;
-  discountRate: number;
-}
-
-// ─── Calculations ────────────────────────────────────────────────
-function calculateWACC(w: WACCInputs): number {
-  const costOfEquity = w.riskFreeRate + w.beta * w.equityRiskPremium;
-  const afterTaxDebt = w.costOfDebt * (1 - w.taxRate / 100);
-  const equityWeight = 1 / (1 + w.debtToEquity);
-  const debtWeight = w.debtToEquity / (1 + w.debtToEquity);
-  return costOfEquity * equityWeight + afterTaxDebt * debtWeight;
-}
-
-function calculateDCF(inputs: DCFInputs): { perShare: number; totalPV: number; pvFCFs: number; pvTerminal: number; projections: { year: number; fcf: number; pv: number; phase: string }[] } {
-  let totalPVFCFs = 0;
-  let fcf = inputs.fcf;
-  const projections: { year: number; fcf: number; pv: number; phase: string }[] = [
-    { year: 0, fcf: inputs.fcf, pv: inputs.fcf, phase: "Current" },
-  ];
-
-  // Stage 1: high growth
-  for (let y = 1; y <= inputs.years; y++) {
-    fcf *= 1 + inputs.growthRate / 100;
-    const pv = fcf / Math.pow(1 + inputs.discountRate / 100, y);
-    totalPVFCFs += pv;
-    projections.push({ year: y, fcf: Math.round(fcf), pv: Math.round(pv), phase: "High Growth" });
-  }
-
-  // Stage 2: fade to terminal
-  for (let y = 1; y <= inputs.stage2Years; y++) {
-    const fadeRate = inputs.growthRate - ((inputs.growthRate - inputs.stage2Growth) * y) / inputs.stage2Years;
-    fcf *= 1 + fadeRate / 100;
-    const totalYear = inputs.years + y;
-    const pv = fcf / Math.pow(1 + inputs.discountRate / 100, totalYear);
-    totalPVFCFs += pv;
-    projections.push({ year: totalYear, fcf: Math.round(fcf), pv: Math.round(pv), phase: "Fade" });
-  }
-
-  const totalProjectionYears = inputs.years + inputs.stage2Years;
-
-  // Terminal value
-  let terminalValue: number;
-  if (inputs.terminalMethod === "exitMultiple") {
-    terminalValue = fcf * inputs.exitMultiple;
-  } else {
-    terminalValue = (fcf * (1 + inputs.terminalGrowth / 100)) / (inputs.discountRate / 100 - inputs.terminalGrowth / 100);
-  }
-  const pvTerminal = terminalValue / Math.pow(1 + inputs.discountRate / 100, totalProjectionYears);
-
-  const enterpriseValue = totalPVFCFs + pvTerminal;
-  const equityValue = enterpriseValue - inputs.netDebt;
-  const perShare = equityValue / inputs.sharesOutstanding;
-
-  return { perShare, totalPV: enterpriseValue, pvFCFs: totalPVFCFs, pvTerminal, projections };
-}
-
-function reverseImpliedGrowth(inputs: DCFInputs, targetPrice: number): number {
-  let lo = -10, hi = 50;
-  for (let i = 0; i < 50; i++) {
-    const mid = (lo + hi) / 2;
-    const result = calculateDCF({ ...inputs, growthRate: mid });
-    if (result.perShare > targetPrice) hi = mid; else lo = mid;
-  }
-  return (lo + hi) / 2;
-}
-
-function monteCarloSimulation(inputs: DCFInputs, iterations: number = 5000): number[] {
-  const results: number[] = [];
-  for (let i = 0; i < iterations; i++) {
-    const randGrowth = inputs.growthRate + (Math.random() - 0.5) * 10;
-    const randDiscount = inputs.discountRate + (Math.random() - 0.5) * 4;
-    const randTerminal = inputs.terminalGrowth + (Math.random() - 0.5) * 2;
-    const { perShare } = calculateDCF({
-      ...inputs,
-      growthRate: Math.max(0, randGrowth),
-      discountRate: Math.max(5, randDiscount),
-      terminalGrowth: Math.max(0, Math.min(randDiscount - 1, randTerminal)),
-    });
-    if (isFinite(perShare) && perShare > 0) results.push(perShare);
-  }
-  return results.sort((a, b) => a - b);
-}
+import {
+  calculateDCF, calculateWACC, monteCarloSimulation, reverseImpliedGrowth,
+  type DCFInputs, type Scenario, type WACCInputs,
+} from "@/lib/dcf";
 
 // ─── Sub-components ──────────────────────────────────────────────
 function InputSlider({ label, value, onChange, min, max, step, unit, tooltip }: {
@@ -459,13 +350,20 @@ export default function DCFCalculator() {
           </div>
         </motion.div>
 
+        {!Number.isFinite(result.perShare) && (
+          <div role="alert" className="glass-card p-3 border-l-4 border-l-chart-amber flex items-center gap-2 text-xs text-foreground">
+            <AlertTriangle className="h-4 w-4 text-chart-amber shrink-0" />
+            Terminal growth must be lower than the discount rate for the perpetuity method. Adjust the assumptions to see a valuation.
+          </div>
+        )}
+
         {/* Verdict */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}
           className={`glass-card p-3 border-l-4 ${isUndervalued ? "border-l-chart-green" : "border-l-chart-red"}`}>
           <div className="flex flex-wrap items-center gap-4 md:gap-6">
             <div>
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">Intrinsic Value</p>
-              <p className="text-2xl font-display font-bold text-foreground">₹{result.perShare.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-2xl font-display font-bold text-foreground">{Number.isFinite(result.perShare) ? `₹${result.perShare.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}</p>
             </div>
             <div>
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">Market Price</p>

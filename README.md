@@ -7,11 +7,12 @@
   <img src="https://img.shields.io/badge/TailwindCSS-3.4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/shadcn%2Fui-49_Components-000?logo=shadcnui&logoColor=white" alt="shadcn/ui" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT" />
+  <a href="https://github.com/MrChartist/Funda-Scanner-Base-Project/actions/workflows/ci.yml"><img src="https://github.com/MrChartist/Funda-Scanner-Base-Project/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
 </p>
 
 <p align="center">
-  <strong>Institutional-grade fundamental analysis platform for 2,229+ NSE-listed companies.</strong><br />
-  An open-source, fully-featured financial data dashboard built with React, TypeScript, and modern web technologies.
+  <strong>Open-source fundamental analysis dashboard for NSE-listed companies.</strong><br />
+  A fundamentals-first React + TypeScript front-end: screener, company deep-dive, DCF, portfolio and watchlist. Ships with demo data; bring your own data.
 </p>
 
 <p align="center">
@@ -23,7 +24,7 @@
   <a href="#-quick-start">Quick Start</a> &bull;
   <a href="#-architecture">Architecture</a> &bull;
   <a href="#-project-structure">Project Structure</a> &bull;
-  <a href="#-connecting-a-backend">Backend Integration</a> &bull;
+  <a href="#-bringing-your-own-data">Bring Your Own Data</a> &bull;
   <a href="#-contributing">Contributing</a>
 </p>
 
@@ -33,14 +34,16 @@
 
 Funda Scanner is a **Bloomberg-terminal-inspired** financial analysis platform designed for the Indian stock market (NSE). It provides deep fundamental data analysis with an institutional-grade UI — including financial statements, ratio trend analysis, DCF valuation, stock screening, portfolio tracking, and peer comparison tools.
 
-**This is the base/frontend project.** It ships with realistic mock data for 20 blue-chip NSE companies and is designed to be easily connected to any backend API for live data.
+**This is the base/frontend project.** It ships with **synthetic demo data** for 20 blue-chip NSE companies (generated, not real). It contains **no third-party market-data integration**: you plug in your own data through a small provider interface (see [Bringing your own data](#-bringing-your-own-data)).
+
+> ⚠️ **Disclaimer:** For education and research only. Not investment advice. Data may be synthetic, delayed or inaccurate — verify independently and consult a SEBI-registered adviser before investing.
 
 ---
 
 ## ✨ Features
 
 ### 📈 Dashboard
-- **Live Market Ticker** — Real-time index tracking (NIFTY 50, SENSEX, Bank Nifty, NIFTY IT, Pharma, India VIX) with sparkline charts
+- **Market Ticker** — Index tiles (NIFTY 50, SENSEX, Bank Nifty, NIFTY IT, Pharma, India VIX) with sparklines (demo data)
 - **Market Overview** — Total market cap, breadth (advancers vs decliners), average ROCE/ROE/D-E across the universe
 - **Fundamental Movers** — YoY ROCE change leaders — improving and deteriorating fundamentals
 - **Quality Compounders** — Auto-filtered stocks with ROCE > 15%, ROE > 12%, D/E < 0.5
@@ -49,15 +52,15 @@ Funda Scanner is a **Bloomberg-terminal-inspired** financial analysis platform d
 - **FII/DII Flow Tracker** — Bar chart visualization of institutional money flows
 - **Market News Feed** — Sentiment-tagged news items (bullish/bearish/neutral)
 - **IPO Calendar** — Upcoming and open IPOs with subscription details
-- **Top Gainers / Losers / Most Active** — Market pulse cards with live price overlay
+- **Top Gainers / Losers / Most Active** — Market pulse cards (demo data)
 - **Recently Viewed** — localStorage-based history tracking
 - **Customizable Layout** — Drag-to-reorder widgets, toggle visibility, persist preferences
 
 ### 🔍 Stock Screener
-- **Real-time TradingView Integration** — Powered by TradingView Scanner API for live NSE data
+- **Provider-based data** — Screens run client-side over whatever your `DataProvider` returns
 - **Custom Filter Builder** — Build complex multi-condition filters with AND logic
-- **16 Screening Metrics** — Market Cap, Price, P/E, EPS, Volume, ROCE, ROE, D/E, Dividend Yield, Sales Growth, Profit Growth, P/B, Debt/EBITDA, FCF Yield, and more
-- **13 Pre-built Presets** — Large Cap, High ROCE, Low Debt, Dividend Stars, Growth Stocks, Value Picks, etc.
+- **13 Fundamental Metrics** — Market Cap, Price, P/E, EPS, P/B, FCF Yield, Dividend Yield, ROCE, ROE, D/E, Debt/EBITDA, Sales Growth, Profit Growth
+- **10 Pre-built Presets** — Large Cap, High ROCE, Low Debt, Dividend Stars, Growth, Value, Quality Compounders, etc.
 - **Export to CSV** — One-click data export
 - **Save Custom Screens** — Persist your filter configurations locally
 
@@ -99,7 +102,7 @@ Funda Scanner is a **Bloomberg-terminal-inspired** financial analysis platform d
 
 ### 👁 Watchlist
 - Create and manage stock watchlists
-- Quick access to favorite stocks with live prices
+- Quick access to favourite stocks
 
 ### 🎨 Customization & UX
 - **Dark/Light Theme** — System-aware with manual toggle
@@ -118,8 +121,8 @@ Funda Scanner is a **Bloomberg-terminal-inspired** financial analysis platform d
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v18+ (recommended: v20+)
-- npm, yarn, bun, or pnpm
+- [Node.js](https://nodejs.org/) v18+ (recommended: v20+, see `.nvmrc`)
+- npm (the repo ships `package-lock.json`)
 
 ### Installation
 
@@ -130,8 +133,9 @@ cd Funda-Scanner-Base-Project
 
 # Install dependencies
 npm install
-# or
-bun install
+
+# Optional: copy the example env file
+cp .env.example .env
 ```
 
 ### Development
@@ -152,14 +156,16 @@ npm run preview  # Preview the production build
 ### Testing
 
 ```bash
-npm run test         # Run tests once
+npm run test         # Run tests once (Vitest + Testing Library)
 npm run test:watch   # Run tests in watch mode
 ```
 
 ### Linting
 
 ```bash
-npm run lint
+npm run lint         # ESLint
+npm run typecheck    # tsc --noEmit
+npm run check        # typecheck + lint + test + build (same as CI)
 ```
 
 ---
@@ -180,15 +186,13 @@ npm run lint
 │  │       │              │                │            │  │
 │  │  ┌────▼──────────────▼────────────────▼─────────┐  │  │
 │  │  │               Lib Layer                       │  │  │
-│  │  │  mock-data │ api │ tradingview │ export-utils  │  │  │
+│  │  │ data-provider │ mock-data │ api │ export-utils  │  │  │
 │  │  └──────────────────┬────────────────────────────┘  │  │
 │  │                     │                               │  │
 │  └─────────────────────┼───────────────────────────────┘  │
 │                        │                                  │
 │  ┌─────────────────────▼──────────────────────────────┐  │
-│  │             Vite Dev Proxy                          │  │
-│  │  /api/tv → scanner.tradingview.com (CORS bypass)   │  │
-│  │  Backend → VITE_API_URL (configurable)             │  │
+│  │  DataProvider (demo by default, swap for yours)    │  │
 │  └────────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -198,7 +202,7 @@ npm run lint
 | Decision | Rationale |
 |----------|-----------|
 | **Mock data first** | Ships with realistic data for 20 companies, allowing full UI development without a backend |
-| **TradingView Scanner API** | Real-time NSE data via Vite proxy, with graceful fallback to mock data |
+| **Provider interface** | The UI depends on `DataProvider`, not on a vendor. Swap the source without touching pages |
 | **CSS variables + HSL** | Theme-aware design system supporting dark/light modes and custom accent colors |
 | **shadcn/ui primitives** | 49 accessible, customizable components — not a dependency, code is in your repo |
 | **Framer Motion** | Smooth page transitions and micro-animations for premium feel |
@@ -210,7 +214,9 @@ npm run lint
 
 ```
 Funda-Scanner-Base-Project/
+├── docs/data-format.md        # Import file format
 ├── public/                    # Static assets
+│   ├── sample-data/           # Fictional sample + template (CSV/JSON)
 │   ├── favicon.ico
 │   ├── manifest.json          # PWA manifest
 │   ├── robots.txt
@@ -224,13 +230,12 @@ Funda-Scanner-Base-Project/
 │   ├── pages/                 # Route-level views
 │   │   ├── Dashboard.tsx      # Main dashboard (664 lines, 10 widget components)
 │   │   ├── CompanyDetail.tsx   # Company deep-dive (24 analysis sections)
-│   │   ├── Screener.tsx       # Stock screener with TradingView integration
+│   │   ├── Screener.tsx       # Fundamentals screener (provider-based)
 │   │   ├── Compare.tsx        # Side-by-side stock comparison
 │   │   ├── DCFCalculator.tsx  # Discounted Cash Flow calculator
 │   │   ├── Portfolio.tsx      # Portfolio tracker
 │   │   ├── Watchlist.tsx      # Stock watchlist
-│   │   ├── Index.tsx          # Placeholder (redirects to Dashboard)
-│   │   └── NotFound.tsx       # 404 page
+│   │   │   └── NotFound.tsx       # 404 page
 │   │
 │   ├── components/
 │   │   ├── Header.tsx         # Desktop header + mobile bottom nav
@@ -243,7 +248,8 @@ Funda-Scanner-Base-Project/
 │   │   ├── PageTransition.tsx # Framer Motion page transitions
 │   │   ├── AnimatedNumber.tsx # Smooth number transitions
 │   │   ├── NavLink.tsx        # Navigation link component
-│   │   ├── NotificationSystem.tsx  # Market notifications
+│   │   ├── NotificationSystem.tsx  # Demo notifications (opt-in)
+│   │   ├── Footer.tsx         # Disclaimer + license footer
 │   │   │
 │   │   ├── company/           # 24 company analysis components
 │   │   │   ├── CompanyHeader.tsx
@@ -277,7 +283,6 @@ Funda-Scanner-Base-Project/
 │   │       └── ... (accordion, card, carousel, etc.)
 │   │
 │   ├── hooks/                 # Custom React hooks
-│   │   ├── use-live-prices.tsx    # TradingView live price service
 │   │   ├── use-theme.tsx          # Dark/light theme provider
 │   │   ├── use-density.tsx        # Display density provider
 │   │   ├── use-keyboard-nav.tsx   # Keyboard shortcuts
@@ -287,8 +292,11 @@ Funda-Scanner-Base-Project/
 │   │
 │   ├── lib/                   # Utilities and services
 │   │   ├── api.ts             # Backend API client (configurable base URL)
-│   │   ├── mock-data.ts       # Mock data for 20 NSE blue-chips
-│   │   ├── tradingview.ts     # TradingView Scanner API integration
+│   │   ├── mock-data.ts       # Deterministic synthetic data for 20 NSE blue-chips
+│   │   ├── dcf.ts             # Pure DCF / WACC / Monte Carlo maths (unit tested)
+│   │   ├── data-provider.ts   # DataProvider contract + pure screening engine
+│   │   ├── demo-provider.ts   # Built-in synthetic provider
+│   │   ├── import-data.ts     # CSV/JSON parser and validator for imported fundamentals
 │   │   ├── export-utils.ts    # PDF and CSV export generators
 │   │   └── utils.ts           # General utilities (cn helper)
 │   │
@@ -296,18 +304,17 @@ Funda-Scanner-Base-Project/
 │
 ├── index.html                 # SPA entry — SEO meta, structured data, OG tags
 ├── package.json               # Dependencies and scripts
-├── vite.config.ts             # Vite config — proxy, aliases, plugins
+├── vite.config.ts             # Vite config — aliases, chunking, plugins
 ├── tailwind.config.ts         # Tailwind — custom colors, fonts, animations
 ├── tsconfig.json              # TypeScript config
 ├── eslint.config.js           # ESLint config
 ├── vitest.config.ts           # Vitest config
-├── playwright.config.ts       # Playwright E2E config
 └── components.json            # shadcn/ui component config
 ```
 
 ---
 
-## 🔌 Connecting a Backend
+## 🔗 Connecting a Backend (optional)
 
 The app is designed to work with **any backend API** that follows the expected data shape. By default, it uses mock data.
 
@@ -322,7 +329,7 @@ VITE_API_URL=https://your-backend-api.com
 Or pass it inline:
 
 ```bash
-VITE_API_URL=https://api.fundascanner.com npm run dev
+VITE_API_URL=https://api.example.com npm run dev
 ```
 
 ### Step 2: API Endpoints Expected
@@ -349,15 +356,37 @@ const data = getMockCompanyIntelligence(symbol);
 const data = await api.getCompanyIntelligence(symbol);
 ```
 
-### TradingView Integration
+## 🔌 Bringing your own data
 
-The Screener page and live prices already use TradingView's Scanner API via a Vite dev proxy:
+### Quickest way: import a file
 
+Open **Screener → Import data** and choose a CSV or JSON file (or paste it). Files are parsed in your browser, never uploaded, and are remembered in `localStorage` until you click *Use demo data*. Start from [`public/sample-data/fundamentals-template.csv`](public/sample-data/fundamentals-template.csv); column names, units and rules are in the [data format guide](docs/data-format.md). Imported data currently powers the **Screener** only.
+
+### For developers: write a provider
+
+The screener and data badges talk to a `DataProvider` (`src/lib/data-provider.ts`), not to any vendor. Implement one method and register it at start-up:
+
+```typescript
+// src/main.tsx (before rendering)
+import { setDataProvider, type DataProvider } from "@/lib/data-provider";
+
+const myProvider: DataProvider = {
+  id: "my-data",
+  name: "My data",
+  isDemo: false, // removes the "Demo data" badge and demo freshness labels
+  async getUniverse() {
+    const res = await fetch("/my/fundamentals.json"); // or a CSV you parse, an API, a DB…
+    return res.json(); // StockRow[]
+  },
+};
+setDataProvider(myProvider);
 ```
-/api/tv → https://scanner.tradingview.com
-```
 
-For production deployment, set up a server-side proxy (e.g., Vercel serverless function, Nginx reverse proxy, or Cloudflare Worker) to bypass CORS restrictions.
+`StockRow` is fundamentals-only (market cap, P/E, P/B, ROE, ROCE, D/E, Debt/EBITDA, dividend yield, growth, FCF yield). Filtering and sorting run client-side via the pure `runScreen()` function, so a plain JSON/CSV file is enough to get started.
+
+> The company detail pages (financial statements, shareholding, etc.) and the Dashboard still read from `getMockCompanyIntelligence()`. Moving them behind the provider interface is the next planned step; see "Extending the Project".
+
+You are responsible for the licence and accuracy of any data you connect.
 
 ---
 
@@ -403,7 +432,8 @@ Users can change the accent color at runtime via the **Accent Color Picker** in 
 | **Routing** | React Router DOM 6.30 |
 | **State Management** | TanStack React Query 5 |
 | **Form Handling** | React Hook Form + Zod validation |
-| **Testing** | Vitest + Testing Library + Playwright |
+| **Testing** | Vitest + Testing Library |
+| **CI** | GitHub Actions (typecheck, lint, test, build on Node 20/22) |
 
 ---
 
@@ -416,6 +446,8 @@ Users can change the accent color at runtime via the **Accent Color Picker** in 
 | `npm run build:dev` | Development build |
 | `npm run preview` | Preview production build |
 | `npm run lint` | Run ESLint |
+| `npm run typecheck` | Type-check with `tsc` |
+| `npm run check` | Typecheck, lint, test and build in one go |
 | `npm run test` | Run unit tests |
 | `npm run test:watch` | Run tests in watch mode |
 
@@ -423,7 +455,7 @@ Users can change the accent color at runtime via the **Accent Color Picker** in 
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how you can help:
+We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues: [SECURITY.md](SECURITY.md).
 
 ### Ways to Contribute
 
@@ -438,18 +470,18 @@ We welcome contributions! Here's how you can help:
 1. **Fork** the repository
 2. **Create** a feature branch: `git checkout -b feature/your-feature`
 3. **Make** your changes
-4. **Test** your changes: `npm run test && npm run lint`
+4. **Verify** your changes: `npm run check`
 5. **Commit** with clear messages: `git commit -m "feat: add sector drill-down"`
 6. **Push** to your fork: `git push origin feature/your-feature`
 7. **Open** a Pull Request
 
 ### Code Style
 
-- TypeScript strict mode enabled
+- TypeScript (non-strict today; avoid `any` — ESLint warns on it and new code should not add more)
 - ESLint configured with React hooks and refresh plugins
 - Tailwind CSS for styling (no inline styles for layout)
 - Component files: PascalCase (e.g., `CompanyHeader.tsx`)
-- Hook files: kebab-case (e.g., `use-live-prices.tsx`)
+- Hook files: kebab-case (e.g., `use-document-title.ts`)
 - Utility files: kebab-case (e.g., `mock-data.ts`)
 
 ### Adding a New Feature
@@ -465,8 +497,8 @@ We welcome contributions! Here's how you can help:
 3. Add the section ID to `CompanyPageNav.tsx` for sidebar navigation
 
 **New Screener Metric:**
-1. Add the metric definition to the `METRICS` array in `src/pages/Screener.tsx`
-2. Map it to the corresponding TradingView field name
+1. Add the metric to `METRICS` (and the field to `StockRow`) in `src/lib/data-provider.ts`
+2. Add the matching field to `StockRow` and `METRICS` in `src/lib/data-provider.ts`
 
 ---
 
@@ -493,17 +525,21 @@ Here are some ideas for extending and improving this base project:
 
 ## 📄 License
 
-This project is open source and free to use. Feel free to use it for personal projects, learning, or as a foundation for your own financial platform.
+Released under the [MIT License](LICENSE).
+
+### Data & trademarks
+
+- Company figures bundled in this repo are synthetic placeholders, not sourced from any exchange or vendor.
+- This repository bundles no third-party market data. If you connect a data source, you are responsible for complying with its licence and any exchange data-redistribution rules.
+- All product names and trademarks belong to their respective owners; this project is not affiliated with NSE or BSE.
 
 ---
 
 ## 🙏 Credits
 
 Built with love by [MrChartist](https://github.com/MrChartist) using:
-- [Lovable](https://lovable.dev) — AI-powered web development
 - [shadcn/ui](https://ui.shadcn.com) — Beautiful UI components
 - [Recharts](https://recharts.org) — Composable charting library
-- [TradingView](https://tradingview.com) — Real-time market data
 
 ---
 
