@@ -59,10 +59,12 @@ describe("query stub", () => {
 
   it("reports unknown metrics and anything else as errors", () => {
     expect(compileQuery("debt_equty < 0.5", store).issues[0].code).toBe("E_UNKNOWN_METRIC");
-    const q = compileQuery("roce >> 15 AND every(roce > 15, 5y)", store);
+    // WS4: the full language recovers after an error and reports every error in one pass.
+    const q = compileQuery("roce >> 15 AND foo(roce) > 1", store);
     expect(q.ok).toBe(false);
-    expect(q.issues.map((i) => i.code)).toEqual(["E_UNEXPECTED_TOKEN", "E_UNEXPECTED_TOKEN"]);
-    expect(q.issues[1].span.start).toBe("roce >> 15 AND ".length);
+    const errors = q.issues.filter((i) => i.level === "error");
+    expect(errors.map((i) => i.code)).toEqual(["E_UNEXPECTED_TOKEN", "E_UNKNOWN_FUNCTION"]);
+    expect(errors[1].span.start).toBe("roce >> 15 AND ".length);
     expect(Array.from(evaluateQuery(q, store, all).whereTri).every((t) => t === TRI_UNKNOWN)).toBe(true);
   });
 
@@ -87,7 +89,7 @@ describe("query stub", () => {
     const ev = evaluateQuery(q, f, Int32Array.of(0));
     const ex = explainClause(q, ev, 0, 0, f);
     expect(ex).toMatchObject({ result: TRI_FALSE, lhs: 14.2, rhs: 15, gapText: "0.8 points short" });
-    expect(ex.detail).toBe("ROCE · 14.2%; needs above 15.0%");
+    expect(ex.detail).toBe("ROCE 14.2%; needs above 15%");
   });
 
   it("round-trips chips, evaluates single-metric expressions and suggests ids", () => {
@@ -97,7 +99,8 @@ describe("query stub", () => {
     expect(fromChips(chips)).toBe("roce > 15\npe < 20");
     expect(fromChips({ chips: [{ kind: "type", id: "t", test: "lender", negated: true }], tail: "LIMIT 5" })).toBe("IS NOT lender\nLIMIT 5");
     expect(evaluateExpression("total_assets", store).column?.id).toBe("total_assets");
-    expect(evaluateExpression("total_assets / 2", store).column).toBeNull();
+    expect(evaluateExpression("total_assets / 2", store).column?.id).toBe("total_assets / 2");
+    expect(evaluateExpression("total_assets >", store).column).toBeNull();
     const s = suggestAt("roce > 1 AND debt_eq", 20, store);
     expect(s.span).toEqual({ start: 13, end: 20 });
     expect(s.items.map((i) => i.insert)).toContain("debt_equity");
@@ -112,7 +115,7 @@ describe("screen stub", () => {
     expect(run.ok).toBe(true);
     expect(Array.from(run.matched).map(sym)).toEqual(["TINYSOFT", "TINYSNAP", "TINYMFG", "TINYBANK"]);
     expect(run.matchCount).toBe(4);
-    expect(run.funnel).toEqual([]);
+    expect(run.funnel).toMatchObject([{ clause: 0, passed: 4, remainingAfter: 4, dropOneMatches: 6 }]);
     expect(run.columns.map((c) => c.key)).toEqual(["market_cap", "pe", "roce", "roe", "debt_equity", "sales_cagr_3y", "dividend_yield"]);
     expect(run.medians.market_cap).toBe((5000 + 4200) / 2);
     const sorted = runScreen(store, { query: "market_cap > 1000", columns: [{ kind: "metric", id: "total_assets" }], sort: { key: "pe", dir: "asc" }, universe: { kind: "all" } }, { watchlist: [], portfolio: [] });
@@ -128,8 +131,8 @@ describe("screen stub", () => {
     expect(Array.from(sector.matched).map(sym)).toEqual(["TINYBANK"]);
   });
 
-  it("keeps TEMPLATES empty until WS4 (stub)", () => {
-    expect(TEMPLATES).toEqual([]);
+  it("ships the seven guided templates (WS4)", () => {
+    expect(TEMPLATES.map((t) => t.id)).toEqual(["quality", "value", "growth", "dividend", "turnaround", "lenders", "ey_roc_rank"]);
   });
 
   it("round-trips URL state, including Unicode and legacy ?sector=", () => {
