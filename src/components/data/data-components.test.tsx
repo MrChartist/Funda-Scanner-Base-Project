@@ -79,7 +79,7 @@ describe("DatasetBanner (§F.6 copy)", () => {
     render(<DatasetBanner />, { wrapper });
     await waitFor(() => expect(screen.getByText(/fictional companies with generated figures/)).toBeInTheDocument());
     const text = screen.getByLabelText("About the data").textContent ?? "";
-    expect(text).toContain("Sample data: 6 fictional companies with generated figures. They describe no real business. Fiscal-year labels are for illustration only.");
+    expect(text).toContain("Sample data: 150 fictional companies with generated figures. They describe no real business. Fiscal-year labels are for illustration only.");
     expect(screen.getByRole("button", { name: /Import your data/ })).toBeInTheDocument();
     expect(text).not.toContain(SNAPSHOT_ONLY_TEXT);
     expect(text).not.toMatch(FORBIDDEN);
@@ -183,6 +183,7 @@ describe("DataSourceBadge", () => {
 
 describe("useDataProvider (legacy view for the original Screener)", () => {
   it("gives v2 providers a getUniverse() that reads through the store, and keeps the view stable", async () => {
+    act(() => setDataProvider(providerFor(createTinyDataset(), "tiny")));
     const { result, rerender } = renderHook(() => useDataProvider());
     const first = result.current;
     rerender();

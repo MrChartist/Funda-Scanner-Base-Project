@@ -83,7 +83,7 @@ describe("small components", () => {
   });
 
   it("MetricInfo opens a formula card that falls back to the catalogue", () => {
-    render(<MetricInfo def={def("roce_avg_5y")} />);
+    render(<MetricInfo def={def("roce_avg_5y")} glossary={null} />);
     fireEvent.click(screen.getByRole("button", { name: "About Return on capital employed · 5Y avg" }));
     expect(screen.getByText("Pre-tax return on all money from shareholders and lenders.")).toBeInTheDocument();
     expect(screen.getByText(/^avg\(roce, 5y\), where roce = ebit/)).toBeInTheDocument();

@@ -248,17 +248,18 @@ describe("metrics stub extras", () => {
   });
 });
 
-describe("insights, learn and sample stubs", () => {
+describe("insights stub; learn and sample content (WS2)", () => {
   it("are empty but well-formed", () => {
     expect(CHECK_RULES).toEqual([]);
     expect(evaluateChecks(store, 0)).toEqual([]);
     expect(summariseAreas(store, 0)).toEqual([]);
     expect(insightColumnProviders).toEqual([]);
-    expect(GLOSSARY).toEqual({});
-    expect(CONCEPTS).toEqual([]);
+    // learn: replaced by WS2 content (tested in src/lib/learn/learn.test.ts)
+    expect(Object.keys(GLOSSARY).length).toBeGreaterThanOrEqual(25);
+    expect(CONCEPTS).toHaveLength(10);
   });
 
-  it("the sample is the fictional tiny dataset, deterministic and undated", async () => {
+  it("the sample is 150 fictional companies, deterministic and undated (WS2)", async () => {
     expect(SAMPLE_SEED).toBe(24301);
     const a = generateSampleDataset();
     expect(a).toEqual(generateSampleDataset({ seed: SAMPLE_SEED }));
@@ -266,7 +267,7 @@ describe("insights, learn and sample stubs", () => {
     expect(a.meta.asOf).toBeNull();
     const p = createSampleProvider();
     expect(p.isDemo).toBe(true);
-    expect((await p.getDataset?.())?.companies).toHaveLength(6);
+    expect((await p.getDataset?.())?.companies).toHaveLength(150);
   });
 });
 
@@ -362,13 +363,13 @@ describe("use-dataset hook stub", () => {
 
   it("loads the sample provider and resolves companies", async () => {
     await clearImportedData();
-    render(<Probe symbol="tinymfg" />, { wrapper });
+    render(<Probe symbol="varnexinfo" />, { wrapper });
     expect(rtl.getByText(/^loading/)).toBeInTheDocument();
-    await waitFor(() => expect(rtl.getByText("ready:6:ready")).toBeInTheDocument());
+    await waitFor(() => expect(rtl.getByText("ready:150:ready")).toBeInTheDocument());
   });
 
   it("reports an unknown symbol as not found", async () => {
     render(<Probe symbol="RELIANCE" />, { wrapper });
-    await waitFor(() => expect(rtl.getByText("ready:6:not_found")).toBeInTheDocument());
+    await waitFor(() => expect(rtl.getByText("ready:150:not_found")).toBeInTheDocument());
   });
 });
