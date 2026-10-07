@@ -11,12 +11,14 @@ export function DensityPicker() {
   ];
 
   return (
-    <div className="flex items-center rounded-full border border-border/60 bg-secondary/50 p-0.5">
+    <div role="group" aria-label="Table density" className="flex items-center rounded-full border border-border/60 bg-secondary/50 p-0.5">
       {options.map(({ mode, icon: Icon, label }) => (
         <button
           key={mode}
           onClick={() => setDensity(mode)}
           title={label}
+          aria-label={label}
+          aria-pressed={density === mode}
           className={`rounded-full p-1.5 transition-all duration-200 ${
             density === mode
               ? "bg-card text-foreground shadow-sm"

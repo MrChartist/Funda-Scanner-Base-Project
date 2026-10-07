@@ -1,4 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { formatNumberIN } from "@/lib/format/indian";
+
+function prefersReducedMotion(): boolean {
+  try {
+    return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+}
 
 interface AnimatedNumberProps {
   value: number;
@@ -17,7 +26,7 @@ export function AnimatedNumber({ value, duration = 800, decimals = 2, prefix = "
   useEffect(() => {
     const start = prevRef.current;
     const diff = value - start;
-    if (Math.abs(diff) < 0.001) {
+    if (Math.abs(diff) < 0.001 || prefersReducedMotion()) {
       setDisplay(value);
       prevRef.current = value;
       return;
@@ -49,7 +58,7 @@ export function AnimatedNumber({ value, duration = 800, decimals = 2, prefix = "
 
   return (
     <span className={`animate-count-up ${className}`}>
-      {prefix}{display.toFixed(decimals)}{suffix}
+      {prefix}{formatNumberIN(display, decimals)}{suffix}
     </span>
   );
 }

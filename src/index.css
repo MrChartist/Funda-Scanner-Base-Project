@@ -51,7 +51,7 @@
     --density-padding: 1rem;
     --density-gap: 0.75rem;
     --density-text-sm: 0.8125rem;
-    --density-text-xs: 0.6875rem;
+    --density-text-xs: 0.75rem;
     --density-cell-py: 0.5rem;
     --density-cell-px: 0.75rem;
   }
@@ -103,7 +103,7 @@
     --density-padding: 0.5rem;
     --density-gap: 0.375rem;
     --density-text-sm: 0.75rem;
-    --density-text-xs: 0.625rem;
+    --density-text-xs: 0.75rem;
     --density-cell-py: 0.25rem;
     --density-cell-px: 0.375rem;
   }
@@ -159,7 +159,7 @@
   .section-title {
     @apply text-sm font-semibold text-foreground tracking-tight flex items-center gap-2 uppercase;
     letter-spacing: 0.04em;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .section-title::before {
@@ -178,13 +178,13 @@
   .data-header {
     padding: var(--density-cell-py) var(--density-cell-px);
     @apply text-left font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap;
-    font-size: 10px;
-    letter-spacing: 0.06em;
+    font-size: 12px;
+    letter-spacing: 0.04em;
   }
 
   .metric-badge {
     @apply inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-semibold font-mono;
-    font-size: 10px;
+    font-size: 12px;
   }
 
   /* Subtle glow effects */
@@ -279,14 +279,14 @@
 
   .kbd {
     @apply inline-flex items-center justify-center rounded border border-border bg-muted px-1 py-0.5 font-mono text-muted-foreground;
-    font-size: 9px;
+    font-size: 12px;
   }
 
   /* Mobile responsive tables */
   @media (max-width: 768px) {
     .data-header, .data-cell {
       padding: 4px 6px;
-      font-size: 10px;
+      font-size: 12px;
     }
     .glass-card {
       border-radius: 8px;
@@ -296,7 +296,7 @@
   /* Data freshness indicator */
   .freshness-badge {
     @apply inline-flex items-center gap-1 font-mono text-muted-foreground;
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .freshness-dot {
@@ -410,5 +410,21 @@
     border-bottom: 2px solid #333;
     padding-bottom: 6pt;
     margin-bottom: 12pt;
+  }
+}
+
+/* Anchors such as /learn#roce land below the sticky header. */
+[id] {
+  scroll-margin-top: 4.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

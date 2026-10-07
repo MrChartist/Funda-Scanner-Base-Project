@@ -1,105 +1,130 @@
-import { useState, useRef, useEffect } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
-import { searchCompanies } from "@/lib/mock-data";
-import { motion, AnimatePresence } from "framer-motion";
+import { CompanyName } from "@/components/common/CompanyName";
+import { buildSearchItems } from "@/components/common/search";
+import { useStore } from "@/hooks/use-dataset";
 
 export function SearchBar({ variant = "header" }: { variant?: "header" | "hero" }) {
+  const store = useStore();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<ReturnType<typeof searchCompanies>>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const listId = useId();
 
-  useEffect(() => {
-    if (query.length >= 1) {
-      setResults(searchCompanies(query));
-      setIsOpen(true);
-      setSelectedIndex(0);
-    } else {
-      setResults([]);
-      setIsOpen(false);
-    }
-  }, [query]);
+  const items = useMemo(() => (store && query.trim() ? buildSearchItems(store, query) : []), [store, query]);
+  const showList = open && query.trim().length > 0;
 
-  const handleSelect = (symbol: string) => {
+  const choose = (href: string) => {
     setQuery("");
-    setIsOpen(false);
-    navigate(`/company/${symbol}`);
+    setOpen(false);
+    navigate(href);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((i) => Math.min(i + 1, results.length - 1));
+      setOpen(true);
+      setActive((i) => Math.min(i + 1, Math.max(items.length - 1, 0)));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter" && results[selectedIndex]) {
-      handleSelect(results[selectedIndex].symbol);
+      setActive((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter" && items[active]) {
+      e.preventDefault();
+      choose(items[active].href);
     } else if (e.key === "Escape") {
-      setIsOpen(false);
+      setOpen(false);
       inputRef.current?.blur();
     }
   };
 
   const isHero = variant === "hero";
+  const synthetic = store?.meta.isSynthetic ?? false;
 
   return (
     <div className="relative">
-      <div className={`relative flex items-center ${isHero ? "w-full max-w-2xl" : "w-44 sm:w-64 lg:w-80"}`}>
-        <Search className={`absolute left-3 ${isHero ? "h-5 w-5" : "h-4 w-4"} text-muted-foreground`} />
+      <div className={`relative flex items-center ${isHero ? "w-full max-w-2xl" : "w-40 sm:w-60 md:w-44 lg:w-52 xl:w-64"}`}>
+        <Search className={`absolute left-3 ${isHero ? "h-5 w-5" : "h-4 w-4"} text-muted-foreground`} aria-hidden="true" />
         <input
           ref={inputRef}
+          type="search"
+          role="combobox"
+          aria-expanded={showList}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={showList && items[active] ? `${listId}-${active}` : undefined}
+          aria-label="Search companies, metrics and guided screens"
+          data-global-search=""
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => query.length >= 1 && setIsOpen(true)}
-          onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-          placeholder="Search company or symbol..."
-          className={`w-full rounded-lg border border-input bg-card ${isHero ? "py-4 pl-12 pr-10 text-lg" : "py-2 pl-9 pr-8 text-sm"} text-foreground placeholder:text-muted-foreground outline-none ring-offset-background focus:ring-2 focus:ring-primary/30 transition-all`}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+            setActive(0);
+          }}
+          onKeyDown={onKeyDown}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          placeholder="Search company, symbol or metric"
+          className={`w-full rounded-lg border border-input bg-card ${isHero ? "py-4 pl-12 pr-10 text-lg" : "py-2 pl-9 pr-8 text-sm"} text-foreground outline-none ring-offset-background transition-all placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 [&::-webkit-search-cancel-button]:hidden`}
         />
         {query && (
-          <button onClick={() => setQuery("")} className={`absolute right-3 text-muted-foreground hover:text-foreground`}>
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              inputRef.current?.focus();
+            }}
+            aria-label="Clear search"
+            className="absolute right-1 flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
+          >
             <X className="h-4 w-4" />
           </button>
         )}
       </div>
 
-      <AnimatePresence>
-        {isOpen && results.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
-            className={`absolute z-50 mt-1 ${isHero ? "w-full" : "w-full min-w-[360px]"} rounded-lg border border-border bg-card shadow-lg overflow-hidden`}
-          >
-            {results.map((c, i) => (
-              <button
-                key={c.symbol}
-                onMouseDown={() => handleSelect(c.symbol)}
-                onMouseEnter={() => setSelectedIndex(i)}
-                className={`flex w-full items-center justify-between px-4 py-3 text-left transition-colors ${
-                  i === selectedIndex ? "bg-accent" : "hover:bg-accent/50"
-                }`}
-              >
-                <div>
-                  <span className="font-mono text-sm font-semibold text-foreground">{c.symbol}</span>
-                  <span className="ml-2 text-sm text-muted-foreground">{c.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{c.sector}</span>
-                  <span className={`text-xs font-mono ${c.change_pct >= 0 ? "text-positive" : "text-negative"}`}>
-                    {c.change_pct >= 0 ? "+" : ""}{c.change_pct.toFixed(2)}%
-                  </span>
-                </div>
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {showList && (
+        <ul
+          id={listId}
+          role="listbox"
+          aria-label="Search results"
+          className={`absolute right-0 z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-border bg-card shadow-lg ${isHero ? "w-full" : "w-[min(92vw,26rem)]"}`}
+        >
+          {items.length === 0 && <li className="px-4 py-3 text-sm text-muted-foreground">No match in the loaded data.</li>}
+          {items.map((item, i) => (
+            <li
+              key={item.key}
+              id={`${listId}-${i}`}
+              role="option"
+              aria-selected={i === active}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                choose(item.href);
+              }}
+              onMouseEnter={() => setActive(i)}
+              className={`flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 py-2 text-left ${i === active ? "bg-accent" : ""}`}
+            >
+              <span className="min-w-0">
+                {item.kind === "company" ? (
+                  <>
+                    <span className="font-mono text-sm font-semibold text-foreground">{item.detail}</span>
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      <CompanyName name={item.label} isSynthetic={synthetic} />
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-medium text-foreground">{item.label}</span>
+                    <span className="ml-2 font-mono text-xs text-muted-foreground">{item.detail}</span>
+                  </>
+                )}
+              </span>
+              <span className="shrink-0 text-xs text-muted-foreground">{item.note}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
