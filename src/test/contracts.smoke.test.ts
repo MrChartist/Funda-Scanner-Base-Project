@@ -232,7 +232,7 @@ describe("stubs compile and serve the tiny dataset (§B.11)", () => {
     expect(store.get("total_assets", mfg).v).toBeGreaterThan(0);
     expect(store.get("roce", bank)).toEqual({ v: null, reason: "not_applicable_financial", flags: 0 });
     expect(store.get("pe", snap).v).toBe(22.4);
-    expect(store.get("roce", mfg)).toEqual({ v: null, reason: "missing_input", flags: 0 });
+    expect(store.get("roce", mfg).v).toBeCloseTo(18.77, 2); // WS3: derived metrics are real now
     expect(() => store.column("not_a_metric")).toThrow(UnknownMetricError);
   });
 

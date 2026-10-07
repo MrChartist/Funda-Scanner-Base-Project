@@ -116,7 +116,7 @@ describe("screen stub", () => {
     expect(run.columns.map((c) => c.key)).toEqual(["market_cap", "pe", "roce", "roe", "debt_equity", "sales_cagr_3y", "dividend_yield"]);
     expect(run.medians.market_cap).toBe((5000 + 4200) / 2);
     const sorted = runScreen(store, { query: "market_cap > 1000", columns: [{ kind: "metric", id: "total_assets" }], sort: { key: "pe", dir: "asc" }, universe: { kind: "all" } }, { watchlist: [], portfolio: [] });
-    expect(sym(sorted.matched[0])).toBe("TINYSNAP");
+    expect(sym(sorted.matched[0])).toBe("TINYBANK"); // WS3: every match has a real P/E now; the bank's is the lowest
     expect(sorted.columns.at(-1)?.key).toBe("total_assets");
   });
 
@@ -234,12 +234,13 @@ describe("metrics stub extras", () => {
     expect(snap).toMatchObject({ pe: 22.4, price_book: 3.1, market_cap: 5000, price: 250, roce: 17.8 });
     const mfg = rows.find((r) => r.symbol === "TINYMFG") as StockRow;
     expect(mfg.market_cap).toBe(4200);
-    expect(Number.isNaN(mfg.pe)).toBe(true);
+    expect(mfg.pe).toBeCloseTo(4200 / (44.17 + 45.17 + 44.32 + 41.76), 9); // WS3: derived from the statements
+    expect(Number.isNaN((rows.find((r) => r.symbol === "TINYBANK") as StockRow).roce)).toBe(true); // N/A for lenders
   });
 
-  it("score explainers report nothing evaluated yet (stub)", () => {
+  it("score explainers evaluate every criterion (WS3)", () => {
     const p = explainPiotroski(store, store.indexOf("TINYMFG"));
-    expect(p).toMatchObject({ scoreId: "piotroski_f", evaluable: 0, total: 9, value: { v: null, reason: "too_few_inputs" } });
+    expect(p).toMatchObject({ scoreId: "piotroski_f", evaluable: 9, total: 9, value: { v: 8, reason: null } });
     expect(explainAltman(store, store.indexOf("TINYBANK")).value.reason).toBe("not_applicable_financial");
   });
 });
