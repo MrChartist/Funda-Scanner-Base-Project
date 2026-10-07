@@ -20,7 +20,7 @@ interface Entry {
   companyName?: string;
 }
 
-/** Opens from Cmd/Ctrl+K and "/" (handled in use-keyboard-nav) or the Header button, never by its own key handling. */
+/** Opens from Cmd/Ctrl+K (handled in use-keyboard-nav) or the Header button, never by its own key handling. */
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");

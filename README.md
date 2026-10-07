@@ -103,6 +103,9 @@ npm run test           # Vitest + Testing Library
 npm run lint           # ESLint
 npm run typecheck      # tsc --noEmit
 npm run check          # typecheck, strict typecheck, lint, test and build (same as CI)
+npm run test:perf      # performance budgets (PERF=1 for the strict targets)
+npm run sample:files   # regenerate the public sample files after a generator change
+npm run docs:metrics   # regenerate docs/metrics.md after a catalogue change
 ```
 
 ---
@@ -183,6 +186,9 @@ src/
     ├── learn/             Glossary and concept notes
     ├── sample/            The fictional sample generator
     ├── format/            en-IN number and metric formatting
+    ├── time/              Calendar maths without reading the clock (fiscal years, quarters)
+    ├── views/             View models for the company page
+    ├── export-utils.ts    Company CSV export and print view
     ├── user/              Versioned browser storage: watchlist, portfolio, layout
     └── dcf.ts             Pure DCF, WACC and Monte Carlo maths
 docs/                      data-format.md, metrics.md, methodology.md, query-language.md
@@ -192,7 +198,7 @@ docs/                      data-format.md, metrics.md, methodology.md, query-lan
 
 ## Tech stack
 
-React 18, TypeScript 5, Vite 5, Tailwind CSS, shadcn/ui (Radix), Recharts, Framer Motion, React Router, TanStack Query, Vitest and Testing Library. CI runs typecheck, lint, tests and build on Node 20 and 22.
+React 18, TypeScript 5, Vite 5, Tailwind CSS, shadcn/ui (Radix), Recharts, Framer Motion, React Router, TanStack Query, Vitest and Testing Library. CI runs typecheck, strict typecheck, lint, tests and build on Node 20 and 22.
 
 ---
 
