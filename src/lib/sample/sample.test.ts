@@ -402,11 +402,13 @@ describe("archetype intent (local arithmetic on raw fields)", () => {
     }
   });
 
-  it("turnarounds move from losses to profit", () => {
+  it("turnarounds move from recent losses back to profit", () => {
     for (const c of byArchetype("turnaround")) {
-      expect(c.annual.filter((r) => r.fiscal_year <= 2020).some((r) => n(r, "net_profit") < 0), c.symbol).toBe(true);
+      // Loss years FY2020–FY2024, including the first year of the 3-year window the template reads.
+      expect(c.annual.filter((r) => r.fiscal_year >= 2020 && r.fiscal_year <= 2024).every((r) => n(r, "net_profit") < 0), c.symbol).toBe(true);
+      expect(n(fy(c, 2024), "net_profit"), c.symbol).toBeLessThan(0);
       expect(n(fy(c, 2026), "net_profit"), c.symbol).toBeGreaterThan(0);
-      expect(n(fy(c, 2025), "net_profit"), c.symbol).toBeGreaterThan(0);
+      expect(c.quarterly.slice(-4).reduce((s, q) => s + (q.net_profit ?? Number.NaN), 0), c.symbol).toBeGreaterThan(0);
     }
   });
 

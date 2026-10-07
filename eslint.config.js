@@ -13,7 +13,7 @@ const NO_HTML_SINK = [
 const DOC_WRITE = { object: "document", property: "write", message: "Build print views with DOM methods and textContent." };
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  { ignores: ["dist", "coverage", ".claude/**", "**/.claude/**"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

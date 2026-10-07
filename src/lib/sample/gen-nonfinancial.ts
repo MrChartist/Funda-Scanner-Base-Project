@@ -144,7 +144,8 @@ function applyArchetype(d: NonFinancialDraw, a: Archetype, rng: Rng): void {
       d.cycleAmp *= 0.5;
       break;
     case "turnaround":
-      d.debtEquity = between(rng, 0.9, 1.3);
+      // Borrowing was cut during the loss years, so the recovery is not swamped by interest.
+      d.debtEquity = between(rng, 0.55, 0.85);
       d.payout = between(rng, 0.1, 0.2);
       break;
     case "expensive_grower":
@@ -153,7 +154,7 @@ function applyArchetype(d: NonFinancialDraw, a: Archetype, rng: Rng): void {
       d.noiseAmp *= 0.8;
       break;
     case "dividend_payer":
-      d.payout = between(rng, 0.75, 0.9);
+      d.payout = between(rng, 0.62, 0.78);
       d.growth = between(rng, 0.03, 0.07);
       d.debtEquity = Math.min(d.debtEquity, 0.2);
       break;
@@ -182,7 +183,14 @@ function applyArchetype(d: NonFinancialDraw, a: Archetype, rng: Rng): void {
       d.growth = between(rng, 0, 0.04);
       break;
     case "typical":
+      // A typical company grows a little slower, and earns a little less, than the sector's leaders.
+      d.growth -= 0.025;
+      d.opm *= 0.88;
+      break;
     case "rf_pledge":
+      // Promoters who pledge shares often run more leveraged businesses.
+      d.debtEquity = Math.max(0.6, d.debtEquity * 1.5);
+      break;
     case "good_bank":
     case "stressed_bank":
       break;
@@ -196,8 +204,10 @@ function opmAt(d: NonFinancialDraw, a: Archetype, y: number, rng: Rng): number {
     case "value_trap":
       return Math.max(d.opm * 0.65, base * (1 - 0.025 * y));
     case "turnaround":
-      if (y <= 4) return -0.04 + 0.006 * y + noise(rng, 0.004);
-      if (y <= 6) return d.opm * (y === 5 ? 0.45 : 0.8);
+      // Modest profits, then five loss years (FY2020–FY2024), then a recovery from FY2025.
+      if (y <= 3) return base * 0.6;
+      if (y <= 8) return -0.04 + 0.006 * (y - 4) + noise(rng, 0.004);
+      if (y <= 10) return d.opm * (y === 9 ? 0.6 : 0.95);
       return base + 0.01;
     case "loss_maker":
       return d.opm + 0.003 * y;
@@ -299,7 +309,7 @@ export function simulateNonFinancial(d: NonFinancialDraw, a: Archetype, traits: 
     const financeCost = round2(d.interestRate * (s.bnc + s.bc) + 0.09 * s.lease);
     const otherIncome = round2(d.otherIncomeYield * (s.cash + ci));
     let exceptional = 0;
-    if (a === "turnaround" && y === 3) exceptional = round2(-0.04 * revenue);
+    if (a === "turnaround" && y === 4) exceptional = round2(-0.04 * revenue);
     if (a === "value_trap" && y === 9) exceptional = round2(-0.03 * revenue);
     const pbt = round2(ebitda + otherIncome - depreciation - financeCost + exceptional);
     const tax = round2(d.taxRate * Math.max(pbt, 0));
@@ -327,7 +337,7 @@ export function simulateNonFinancial(d: NonFinancialDraw, a: Archetype, traits: 
       issuance = round2(0.5 * s.revenue);
       issuePb = 1.5;
     }
-    if (a === "turnaround" && y <= 6 && prevNw < 0.3 * s.revenue) {
+    if (a === "turnaround" && y <= 9 && prevNw < 0.3 * s.revenue) {
       issuance = round2(0.3 * s.revenue);
       issuePb = 1;
     }
@@ -339,7 +349,7 @@ export function simulateNonFinancial(d: NonFinancialDraw, a: Archetype, traits: 
     const premium = round2(issuance - (esc - s.esc));
 
     // ── Dividends ──
-    const paysDividend = owners > 0 && d.payout > 0 && !(a === "turnaround" && y < 8);
+    const paysDividend = owners > 0 && d.payout > 0 && !(a === "turnaround" && y < 10);
     const dps = paysDividend ? round2((d.payout * owners) / shares) : 0;
     const dividends = round2(dps * shares);
 

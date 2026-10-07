@@ -298,7 +298,7 @@ export const SECTORS: Readonly<Record<SectorKey, SectorSpec>> = {
     nouns: [n("Realty", "REAL"), n("Estates", "EST"), n("Developers", "DEV")],
     promoter: ["family"], seasonality: [0.2, 0.22, 0.25], pe: [25, 40], ps: [3, 6], faceValues: [2, 10],
     nf: nf({
-      revenue: [200, 3000], growth: [0.06, 0.12], opm: [0.22, 0.32], cogsShare: [0.7, 0.8],
+      revenue: [200, 3000], growth: [0.06, 0.12], opm: [0.18, 0.26], cogsShare: [0.7, 0.8],
       debtorDays: [30, 60], inventoryDays: [250, 380], payableDays: [90, 150], fixedAssetRatio: [0.1, 0.25],
       depreciationRate: [0.05, 0.07], capexIntensity: [0.02, 0.04], debtEquity: [0.3, 0.7], leaseRatio: [0.001, 0.003],
       cashRatio: [0.05, 0.1], payout: [0.05, 0.15], nciShare: [0, 0.05], cycleAmp: 0.12, marginCycle: 0.02, noiseAmp: 0.08,
@@ -369,7 +369,7 @@ export const SECTORS: Readonly<Record<SectorKey, SectorSpec>> = {
       revenue: [40, 200], growth: [0.05, 0.1], opm: [0.75, 0.9], cogsShare: null,
       debtorDays: [0, 5], inventoryDays: [0, 0], payableDays: [5, 10], fixedAssetRatio: [0.05, 0.1],
       depreciationRate: [0.05, 0.05], capexIntensity: [0.005, 0.01], debtEquity: [0, 0.05], leaseRatio: [0, 0],
-      cashRatio: [0.5, 1], currentInvestmentRatio: [2, 4], taxRate: [0.2, 0.25], payout: [0.3, 0.5],
+      cashRatio: [0.5, 1], currentInvestmentRatio: [8, 14], taxRate: [0.2, 0.25], payout: [0.3, 0.5],
       nciShare: [0, 0], otherIncomeYield: [0.01, 0.02], otherCurrentRatio: [0.02, 0.03], cycleAmp: 0.03, noiseAmp: 0.06,
     }),
     lender: null, insurer: null,

@@ -10,12 +10,12 @@ export const TEMPLATES: readonly ScreenTemplate[] = [
     level: "Beginner",
     idea:
       "Businesses that have earned a high return on their capital year after year without leaning on borrowed money, and whose reported profits turn into cash.",
-    query: ["every(roce > 15, 5y)", "debt_equity < 0.5", "cum_cfo_to_pat_5y > 0.8", "sales_cagr_5y > 8"].join("\n"),
+    query: ["every(roce > 15, 5y)", "debt_equity < 0.5", "cum_cfo_to_pat_5y > 0.8", "sales_cagr_5y > 10"].join("\n"),
     clauseNotes: [
       "ROCE above 15% in each of the last five financial years shows returns that held up through good and bad years, not one strong year.",
       "Debt below half of shareholders' funds keeps the returns from being driven by borrowing.",
       "Cash from operations of at least 80% of net profit over five years suggests the profits arrived as cash, not only as accounting entries.",
-      "Sales growing faster than 8% a year over five years shows the business is still expanding.",
+      "Sales growing faster than 10% a year over five years shows the business is still expanding.",
     ],
     misses: [
       "Companies with less than six years of history, because the five-year tests need it.",
@@ -66,12 +66,12 @@ export const TEMPLATES: readonly ScreenTemplate[] = [
     level: "Beginner",
     idea:
       "Companies whose sales and profits have both compounded at a healthy pace for five years, with growth in most individual years and a fair return on equity.",
-    query: ["sales_cagr_5y > 12", "net_profit_cagr_5y > 12", "count(sales_growth > 0, 5y) >= 4", "roe_avg_3y > 12"].join("\n"),
+    query: ["sales_cagr_5y > 15", "net_profit_cagr_5y > 15", "count(sales_growth > 0, 5y) >= 4", "roe_avg_3y > 15"].join("\n"),
     clauseNotes: [
-      "Sales compounding faster than 12% a year over five years.",
-      "Net profit compounding faster than 12% a year, so the growth reaches the bottom line.",
+      "Sales compounding faster than 15% a year over five years.",
+      "Net profit compounding faster than 15% a year, so the growth reaches the bottom line.",
       "Sales grew in at least four of the last five years, which separates steady growth from a single large jump.",
-      "An average ROE above 12% over three years shows the growth earns a fair return for shareholders.",
+      "An average ROE above 15% over three years shows the growth earns a good return for shareholders.",
     ],
     misses: [
       "Young companies without five years of history.",
@@ -79,7 +79,7 @@ export const TEMPLATES: readonly ScreenTemplate[] = [
       "Growth that came from one large acquisition, which a five-year CAGR can hide.",
     ],
     notFor: ["Judging whether the growth is already reflected in the price; add a valuation rule for that."],
-    tryChanging: "Raise 12 to 15 in the first two rules for faster growers, or lower the count to 3 to allow one more weak year.",
+    tryChanging: "Lower 15 to 12 in the first two rules to include slower but steady growers, or lower the count to 3 to allow one more weak year.",
     columns: ["sales_cagr_5y", "net_profit_cagr_5y", "sales_growth", "roe_avg_3y", "pe"],
     sort: { key: "sales_cagr_5y", dir: "desc" },
     inspiredBy: null,
@@ -90,10 +90,10 @@ export const TEMPLATES: readonly ScreenTemplate[] = [
     level: "Beginner",
     idea:
       "Companies that have paid a dividend every year for at least five years, at a meaningful yield, from a payout that leaves money in the business and is backed by cash.",
-    query: ["dividend_streak >= 5", "dividend_yield > 2", "dividend_payout_avg_3y BETWEEN 20 AND 80", "cum_cfo_to_pat_5y > 0.8"].join("\n"),
+    query: ["dividend_streak >= 5", "dividend_yield > 3", "dividend_payout_avg_3y BETWEEN 20 AND 80", "cum_cfo_to_pat_5y > 0.8"].join("\n"),
     clauseNotes: [
       "A dividend in each of at least the last five financial years.",
-      "A dividend yield above 2% at the reference price in your data.",
+      "A dividend yield above 3% at the reference price in your data.",
       "Paying out between 20% and 80% of profit on average over three years: enough to matter, but not more than the business earns.",
       "Profits that turn into cash, so the dividend comes from cash rather than from borrowing.",
     ],
@@ -105,7 +105,7 @@ export const TEMPLATES: readonly ScreenTemplate[] = [
       "Anyone who needs a fixed income: a company can reduce or stop its dividend in any year.",
       "Comparing yields without checking the price date in your data.",
     ],
-    tryChanging: "Lower the yield from 2 to 1.5 to widen the list, or raise the streak to 8 for longer records.",
+    tryChanging: "Lower the yield from 3 to 2 to widen the list, or raise the streak to 8 for longer records.",
     columns: ["dividend_streak", "dividend_yield", "dividend_payout_avg_3y", "cum_cfo_to_pat_5y", "dps"],
     sort: { key: "dividend_yield", dir: "desc" },
     inspiredBy: null,
@@ -169,9 +169,9 @@ export const TEMPLATES: readonly ScreenTemplate[] = [
     title: "Earnings yield and return on capital rank",
     level: "Intermediate",
     idea:
-      "Ranks non-financial companies on two measures at once, how much operating profit they earn for their price and how well they use their capital, and keeps the 30 with the best combined rank.",
+      "Ranks non-financial companies on two measures at once, how much operating profit they earn for their price and how well they use their capital, and keeps the 20 with the best combined rank.",
     query: [
-      "is non_financial", "market_cap > 500", "earnings_yield > 0", "roic > 0", "SORT BY rank(earnings_yield) + rank(roic) ASC", "LIMIT 30",
+      "is non_financial", "market_cap > 500", "earnings_yield > 0", "roic > 0", "SORT BY rank(earnings_yield) + rank(roic) ASC", "LIMIT 20",
     ].join("\n"),
     clauseNotes: [
       "Non-financial companies only, because EBIT and invested capital do not apply to lenders.",
@@ -184,7 +184,7 @@ export const TEMPLATES: readonly ScreenTemplate[] = [
       "Banks, NBFCs and insurers.",
     ],
     notFor: ["Readers who want a reason for each company; read each result's statements before drawing conclusions."],
-    tryChanging: "Change LIMIT 30 to LIMIT 50, or add debt_equity < 1 as a new rule.",
+    tryChanging: "Change LIMIT 20 to LIMIT 50, or add debt_equity < 1 as a new rule.",
     columns: ["earnings_yield", "roic", "market_cap", "pe"],
     sort: null,
     inspiredBy: "Greenblatt, J. (2005), The Little Book That Beats the Market",

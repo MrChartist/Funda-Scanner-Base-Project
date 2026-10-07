@@ -32,3 +32,6 @@ dist-ssr
 coverage
 playwright-report
 test-results
+
+# Agent worktrees
+.claude/worktrees/

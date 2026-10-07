@@ -47,16 +47,16 @@ Every company has one behaviour **archetype** and any number of structural **tra
 | Cash-rich and debt-free | 6 | No borrowings or leases, so finance cost is exactly 0 and interest coverage is "No interest cost" |
 | Leveraged utility | 6 | Heavy fixed assets funded mostly with debt; thin interest cover |
 | Value trap | 6 | Low P/E with shrinking sales and slipping margins |
-| Turnaround | 6 | Losses in FY2016–FY2020, then a return to profit |
+| Turnaround | 6 | Thin profits, then losses in FY2020–FY2024, then a return to profit from FY2025 with lower borrowing |
 | Expensive grower | 6 | Fast growth with a very high P/E |
-| Dividend payer | 6 | High payout, modest growth |
+| Dividend payer | 6 | High payout (about 60–80% of profit), modest growth |
 | Red-flag cases | 6 | 2 receivable build-up, 2 high and rising promoter pledge, 2 weak cash conversion |
 | Serial diluter | 3 | New shares issued every year (share count up more than 5% a year) |
 | Loss-maker | 4 | Operating losses funded by equity and debt; priced on sales |
 | Negative net worth | 2 | Accumulated losses exceed capital |
 | Good bank | 6 | Steady loan growth, low NPAs, healthy ROA |
 | Stressed bank | 4 | NPA cycle in the middle years, loss years and fresh capital |
-| Typical | rest | Ordinary members that make peer groups large enough for medians and percentiles |
+| Typical | rest | Ordinary members that make peer groups large enough for medians and percentiles; they grow a little slower and earn slightly lower margins than the sector leaders |
 
 | Trait | Count | Effect |
 |---|---|---|

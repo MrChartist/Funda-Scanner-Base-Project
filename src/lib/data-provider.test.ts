@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { runScreen, getDataProvider, setDataProvider, METRICS, type DataProvider, type StockRow } from "./data-provider";
 import { demoProvider } from "./demo-provider";
+import { createStore } from "@/lib/engine";
+import { toStockRows } from "@/lib/metrics";
 
 const row = (o: Partial<StockRow>): StockRow => ({
   symbol: "X", name: "X Ltd", sector: "IT", industry: "IT", market_cap: 1000, price: 100, pe: 20, eps: 5,
@@ -45,11 +47,19 @@ describe("runScreen", () => {
 });
 
 describe("providers", () => {
-  it("demo provider returns a complete, flagged universe", async () => {
+  it("demo provider is the sample: 150 synthetic rows through toStockRows", async () => {
     expect(demoProvider.isDemo).toBe(true);
-    const u = await demoProvider.getUniverse();
-    expect(u).toHaveLength(20);
-    for (const r of u) for (const m of METRICS) expect(Number.isFinite(r[m.key])).toBe(true);
+    const ds = await demoProvider.getDataset!();
+    expect(ds.meta.isSynthetic).toBe(true);
+    const u = toStockRows(createStore(ds));
+    expect(u).toHaveLength(150);
+    expect(new Set(u.map((r) => r.symbol)).size).toBe(150);
+    // Every legacy metric is either a finite number or NaN (missing), never a made-up 0 placeholder.
+    for (const r of u) for (const m of METRICS) expect(typeof r[m.key]).toBe("number");
+    const finite = (k: (typeof METRICS)[number]["key"]) => u.filter((r) => Number.isFinite(r[k])).length;
+    expect(finite("market_cap")).toBe(150);
+    expect(finite("pe")).toBeGreaterThan(100);
+    expect(finite("roce")).toBeGreaterThan(100);
   });
 
   it("a custom provider can be plugged in", async () => {

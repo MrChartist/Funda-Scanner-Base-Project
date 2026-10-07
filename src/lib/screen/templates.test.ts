@@ -53,13 +53,13 @@ describe("templates (§D.13)", () => {
   }
 
   it("matches the specified queries", () => {
-    expect(templateById("quality")?.query).toBe("every(roce > 15, 5y)\ndebt_equity < 0.5\ncum_cfo_to_pat_5y > 0.8\nsales_cagr_5y > 8");
+    expect(templateById("quality")?.query).toBe("every(roce > 15, 5y)\ndebt_equity < 0.5\ncum_cfo_to_pat_5y > 0.8\nsales_cagr_5y > 10");
     expect(templateById("ey_roc_rank")?.query).toBe(
-      "is non_financial\nmarket_cap > 500\nearnings_yield > 0\nroic > 0\nSORT BY rank(earnings_yield) + rank(roic) ASC\nLIMIT 30",
+      "is non_financial\nmarket_cap > 500\nearnings_yield > 0\nroic > 0\nSORT BY rank(earnings_yield) + rank(roic) ASC\nLIMIT 20",
     );
     expect(templateById("ey_roc_rank")?.inspiredBy).toBe("Greenblatt, J. (2005), The Little Book That Beats the Market");
     const rank = compileQuery(templateById("ey_roc_rank")?.query ?? "", store);
-    expect(rank.limit).toBe(30);
+    expect(rank.limit).toBe(20);
     expect(rank.sort[0]).toMatchObject({ dir: "asc", usesRank: true });
   });
 });
