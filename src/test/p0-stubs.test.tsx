@@ -42,6 +42,14 @@ describe("query stub", () => {
     expect(q.ast && printQuery(q.ast)).toBe("roce > 15 AND pe <= 25 AND market_cap > 100");
   });
 
+  it("ignores # comments, including words such as AND inside them", () => {
+    const src = "roce > 15 # strong and steady\n# a whole-line comment and more\npe < 30";
+    const q = compileQuery(src, store);
+    expect(q.ok).toBe(true);
+    expect(q.clauses.map((c) => c.text)).toEqual(["roce > 15", "pe < 30"]);
+    expect(q.clauses[1].span.start).toBe(src.indexOf("pe < 30"));
+  });
+
   it("treats an empty query as matching everything", () => {
     const q = compileQuery("   ", store);
     expect(q.ok).toBe(true);
@@ -153,6 +161,31 @@ describe("screen stub", () => {
     expect(screens[0].query).toBe("pb < 3\nroe BETWEEN 15 AND 25");
     saveScreen({ name: "New", description: "", query: "pe < 20", columns: [], sort: null, universe: { kind: "all" }, templateId: null });
     expect(localStorage.getItem(`${STORAGE_KEYS.screens}.v0-backup`)).toBe(v0);
+  });
+
+  it("reads v0 named screens as the old Screener page stored them", () => {
+    const v0 = JSON.stringify([
+      { name: "Cheap quality", filters: [{ metric: "roce", operator: "gt", value: 15 }, { metric: "price_book", operator: "lt", value: 3 }] },
+      { name: "Cheap quality", filters: [{ metric: "pe", operator: "eq", value: 12.5 }] },
+      { name: "Empty", filters: [] },
+      { name: "Broken", filters: [{ metric: "pe", operator: "near", value: 1 }] },
+    ]);
+    localStorage.setItem(STORAGE_KEYS.screens, v0);
+    const screens = loadSavedScreens();
+    expect(screens.map((s) => s.name)).toEqual(["Cheap quality", "Cheap quality (2)"]);
+    expect(screens.map((s) => s.query)).toEqual(["roce > 15\npb < 3", "pe = 12.5"]);
+    expect(new Set(screens.map((s) => s.id)).size).toBe(2);
+    saveScreen({ name: "New", description: "", query: "pe < 20", columns: [], sort: null, universe: { kind: "all" }, templateId: null });
+    expect(localStorage.getItem(`${STORAGE_KEYS.screens}.v0-backup`)).toBe(v0);
+    expect(loadSavedScreens()).toHaveLength(3);
+  });
+
+  it("keeps CSV header comments on one line", () => {
+    const run = runScreen(store, { query: "", columns: null, sort: null, universe: { kind: "all" } }, { watchlist: [], portfolio: [] });
+    const named = { ...store, meta: { ...store.meta, name: "Line one\r\n=HYPERLINK(1)" } };
+    const csv = screenToCsv(run, named);
+    expect(csv).toContain("# Dataset: Line one =HYPERLINK(1)\r\n");
+    expect(csv.split("\r\n").some((l) => l.startsWith("=HYPERLINK"))).toBe(false);
   });
 
   it("exports and imports the screen library, renaming clashes", () => {

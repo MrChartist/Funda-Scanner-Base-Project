@@ -246,38 +246,61 @@ interface V0Filter {
   value2?: number;
 }
 
+const V0_OPS: Readonly<Record<V0Filter["operator"], string>> = { gt: ">", lt: "<", eq: "=", between: "BETWEEN" };
+
 function v0ToQuery(filters: readonly V0Filter[]): string {
-  const ops = { gt: ">", lt: "<", eq: "=" } as const;
   return filters
     .map((f) => {
       const id = f.metric === "price_book" ? "pb" : f.metric;
       if (f.operator === "between") return `${id} BETWEEN ${f.value} AND ${f.value2 ?? f.value}`;
-      return `${id} ${ops[f.operator]} ${f.value}`;
+      return `${id} ${V0_OPS[f.operator]} ${f.value}`;
     })
     .join("\n");
 }
 
 function isV0Filter(x: unknown): x is V0Filter {
   return typeof x === "object" && x !== null && typeof (x as V0Filter).metric === "string"
-    && typeof (x as V0Filter).operator === "string" && typeof (x as V0Filter).value === "number";
+    && typeof (x as V0Filter).operator === "string" && Object.prototype.hasOwnProperty.call(V0_OPS, (x as V0Filter).operator)
+    && typeof (x as V0Filter).value === "number" && Number.isFinite((x as V0Filter).value);
+}
+
+/** A v0 named screen as the old Screener page wrote it: `{ name, filters: FilterCondition[] }`. */
+interface V0NamedScreen {
+  name: string;
+  filters: unknown[];
+}
+
+function isV0NamedScreen(x: unknown): x is V0NamedScreen {
+  return typeof x === "object" && x !== null && Array.isArray((x as V0NamedScreen).filters);
 }
 
 function migrateScreens(raw: unknown): SavedScreensFile | null {
-  // v0: a bare FilterCondition[] (the old Screener kept only the current filters).
-  if (Array.isArray(raw)) {
-    const filters = raw.filter(isV0Filter);
-    if (filters.length === 0) return { v: SAVED_SCREENS_VERSION, screens: [] };
-    const stamp = nowIso();
-    return {
-      v: SAVED_SCREENS_VERSION,
-      screens: [{
-        v: SAVED_SCREENS_VERSION, id: createId(), name: "Saved screen", description: "", query: v0ToQuery(filters),
-        columns: [], sort: null, universe: { kind: "all" }, templateId: null, createdAt: stamp, updatedAt: stamp,
-        catalogueVersion: CATALOGUE_VERSION,
-      }],
-    };
+  // v0 comes in two shapes: the old Screener page stored an array of named screens
+  // `{ name, filters: FilterCondition[] }[]`, and older builds a bare FilterCondition[].
+  if (!Array.isArray(raw)) return null;
+  const stamp = nowIso();
+  const make = (name: string, filters: readonly V0Filter[]): ScreenDefinition => ({
+    v: SAVED_SCREENS_VERSION, id: createId(), name, description: "", query: v0ToQuery(filters),
+    columns: [], sort: null, universe: { kind: "all" }, templateId: null, createdAt: stamp, updatedAt: stamp,
+    catalogueVersion: CATALOGUE_VERSION,
+  });
+  const screens: ScreenDefinition[] = [];
+  const names = new Set<string>();
+  const uniqueName = (wanted: string): string => {
+    const base = wanted.trim() || "Saved screen";
+    let name = base;
+    for (let k = 2; names.has(name); k++) name = `${base} (${k})`;
+    names.add(name);
+    return name;
+  };
+  for (const item of raw) {
+    if (!isV0NamedScreen(item)) continue;
+    const filters = item.filters.filter(isV0Filter);
+    if (filters.length > 0) screens.push(make(uniqueName(typeof item.name === "string" ? item.name : ""), filters));
   }
-  return null;
+  const bare = raw.filter(isV0Filter);
+  if (bare.length > 0) screens.push(make(uniqueName("Saved screen"), bare));
+  return { v: SAVED_SCREENS_VERSION, screens };
 }
 
 function readFile(): SavedScreensFile {
@@ -397,16 +420,21 @@ export function toCsvCell(v: string | number | null): string {
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+/** Header comment text on one line, so user-supplied names cannot start a new CSV row. */
+function oneLine(text: string): string {
+  return text.replace(/[\r\n]+/g, " ");
+}
+
 export function screenToCsv(run: ScreenRun, store: MetricStore): string {
   const meta = store.meta;
   const header = [
     "# Funda Scanner screen export",
-    `# Dataset: ${meta.name}`,
+    `# Dataset: ${oneLine(meta.name)}`,
     `# Synthetic: ${meta.isSynthetic ? "yes (fictional companies)" : "no"}`,
-    `# Imported at: ${meta.importedAt ?? "not applicable"}`,
-    `# As of: ${meta.asOf ?? "not provided"}`,
-    `# Query: ${run.compiled.canonical.replace(/[\r\n]+/g, " ")}`,
-    `# In plain English: ${run.compiled.english.replace(/[\r\n]+/g, " ")}`,
+    `# Imported at: ${oneLine(meta.importedAt ?? "not applicable")}`,
+    `# As of: ${oneLine(meta.asOf ?? "not provided")}`,
+    `# Query: ${oneLine(run.compiled.canonical)}`,
+    `# In plain English: ${oneLine(run.compiled.english)}`,
     `# Catalogue version: ${CATALOGUE_VERSION}`,
     "# Blank cells mean missing or not applicable",
   ];

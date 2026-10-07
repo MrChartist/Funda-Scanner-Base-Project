@@ -27,6 +27,11 @@ describe("groupIndian / formatNumberIN", () => {
     expect(formatNumberIN(Number.NaN, 2)).toBe("—");
     expect(formatNumberIN(Infinity, 2)).toBe("—");
   });
+
+  it("never falls back to exponent notation for very large values", () => {
+    expect(formatNumberIN(1e21, 0)).toBe("1,00,00,00,00,00,00,00,00,00,000");
+    expect(formatNumberIN(-2e21, 1)).toBe("-2,00,00,00,00,00,00,00,00,00,000.0");
+  });
 });
 
 describe("formatInrCrore", () => {

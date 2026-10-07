@@ -26,23 +26,31 @@ function normaliseOp(op: string): CmpOp | null {
   }
 }
 
-/** Splits the source at top-level AND keywords and new lines, keeping character offsets. */
+/**
+ * Splits the source into clauses at new lines and top-level AND keywords, keeping character
+ * offsets. A `#` comment runs to the end of its line and is dropped before splitting, so words
+ * inside a comment (such as "and") never create clauses.
+ */
 function splitClauses(source: string): { text: string; start: number }[] {
   const parts: { text: string; start: number }[] = [];
-  const re = /\s+and\s+|\r?\n/gi;
-  let last = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(source)) !== null) {
-    parts.push({ text: source.slice(last, m.index), start: last });
-    last = m.index + m[0].length;
+  let lineStart = 0;
+  for (const rawLine of source.split("\n")) {
+    const commentAt = rawLine.indexOf("#");
+    const line = (commentAt >= 0 ? rawLine.slice(0, commentAt) : rawLine).replace(/\r$/, "");
+    const re = /\s+and\s+/gi;
+    let last = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(line)) !== null) {
+      parts.push({ text: line.slice(last, m.index), start: lineStart + last });
+      last = m.index + m[0].length;
+    }
+    parts.push({ text: line.slice(last), start: lineStart + last });
+    lineStart += rawLine.length + 1;
   }
-  parts.push({ text: source.slice(last), start: last });
   return parts
     .map((p) => {
-      const commentAt = p.text.indexOf("#");
-      const body = commentAt >= 0 ? p.text.slice(0, commentAt) : p.text;
-      const lead = body.length - body.trimStart().length;
-      return { text: body.trim(), start: p.start + lead };
+      const lead = p.text.length - p.text.trimStart().length;
+      return { text: p.text.trim(), start: p.start + lead };
     })
     .filter((p) => p.text.length > 0);
 }

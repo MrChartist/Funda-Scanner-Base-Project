@@ -23,6 +23,8 @@ export function groupIndian(intDigits: string): string {
 /** Rounds half away from zero at `decimals` places and returns a plain decimal string. */
 function fixed(abs: number, decimals: number): string {
   const d = Math.max(0, Math.min(10, Math.floor(decimals)));
+  // toFixed switches to exponent notation from 1e21; such values are whole numbers anyway.
+  if (abs >= 1e21) return d > 0 ? `${BigInt(abs).toString()}.${"0".repeat(d)}` : BigInt(abs).toString();
   // toFixed has binary-representation surprises (1.005 → "1.00"); nudge by a relative epsilon.
   const nudged = abs + abs * Number.EPSILON * 4;
   return nudged.toFixed(d);

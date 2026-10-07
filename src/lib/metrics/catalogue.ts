@@ -12,7 +12,7 @@ import type {
 import { ANNUAL_FIELD_INFO, QUARTER_FIELD_INFO, SHAREHOLDING_FIELD_INFO } from "@/lib/contracts";
 
 /** Bump when a metric is added, removed or its formula changes (stored with saved screens). */
-export const CATALOGUE_VERSION = "2026.1";
+export const CATALOGUE_VERSION: string = "2026.1";
 
 /** Number of curated base metrics in §C.3. */
 export const CURATED_METRIC_COUNT = 92;
