@@ -40,7 +40,7 @@ export function RuleChip({ chip, index, store, beginner, onChange, onRemove, onE
     return (
       <li className={shell} aria-label={`Rule ${n}`}>
         <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium">Advanced rule</span>
-        <span className="min-w-0 flex-1 text-sm">{chip.english}</span>
+        <span className="min-w-[14rem] flex-1 basis-full text-sm sm:basis-0">{chip.english}</span>
         <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={onEditAsText}>Edit as text</Button>
         {remove}
       </li>
