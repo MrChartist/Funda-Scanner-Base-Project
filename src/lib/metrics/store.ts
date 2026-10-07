@@ -377,13 +377,19 @@ export const createMetricStore: CreateMetricStore = (dataset: FundamentalsDatase
   }
 
   /** Present values only (NaN elsewhere), so peer statistics never read a null as a number. */
+  /** Present values of a column (NaN where null). Columns are immutable once built, so this is remembered per column. */
+  const presentCache = new WeakMap<MetricColumn, Float64Array>();
   function presentValues(col: MetricColumn): Float64Array {
+    const hit = presentCache.get(col);
+    if (hit) return hit;
     const out = new Float64Array(n);
     for (let i = 0; i < n; i++) out[i] = isPresent(col, i) ? col.values[i] : Number.NaN;
+    presentCache.set(col, out);
     return out;
   }
 
   let fingerprint: string | null = null;
+  const medianCache = new WeakMap<Float64Array, Map<PeerScope, MetricColumn>>();
 
   const store: MetricStore = {
     get key() {
@@ -428,7 +434,21 @@ export const createMetricStore: CreateMetricStore = (dataset: FundamentalsDatase
     },
     groups,
     percentileOf: (values, scope) => percentileColumn(values, groups(scope), `pctl:${scope}`),
-    medianOf: (values, scope) => medianColumn(values, groups(scope), `median:${scope}`),
+    medianOf(values, scope) {
+      // Callers such as the company page's ratio table pass the store's own cached columns again and
+      // again, so the result is remembered per array (and per scope). A fresh array is a fresh entry.
+      let byScope = medianCache.get(values);
+      if (!byScope) {
+        byScope = new Map();
+        medianCache.set(values, byScope);
+      }
+      let m = byScope.get(scope);
+      if (!m) {
+        m = medianColumn(values, groups(scope), `median:${scope}`);
+        byScope.set(scope, m);
+      }
+      return m;
+    },
     percentile(id, i, scope) {
       const col = column(id);
       if (!isPresent(col, i)) return valueAt(col, i);

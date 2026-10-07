@@ -21,7 +21,7 @@ are marked as synthetic.
   internally and publishes only its first quarter, so trailing-twelve-month (TTM) figures differ
   from FY2026.
 - **No invented dates:** `meta.asOf` and every `price_date` are `null`. The app shows
-  "Sample · no date". The financial-year labels are for illustration only and describe no real
+  "price date not provided" and "Data as of: not provided" instead. The financial-year labels are for illustration only and describe no real
   period.
 - **Units:** money in ₹ crore, share counts in crore shares, percentages as percent numbers.
 - **Generator metadata:** `meta.generator = { name: "funda-sample", version: "1.0.0", seed }`,
