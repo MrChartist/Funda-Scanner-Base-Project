@@ -39,8 +39,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
     "lint:fix": "eslint . --fix",
-    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+    "check": "npm run typecheck && npm run typecheck:strict && npm run lint && npm test && npm run build",
+    "sample:files": "vitest run src/lib/sample/sample-files.test.ts -u",
+    "docs:metrics": "vitest run src/lib/metrics/docs.test.ts -u",
+    "test:perf": "vitest run src/test/perf"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

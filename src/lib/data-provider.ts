@@ -4,27 +4,11 @@
 //
 // Fundamentals only: no live prices, no price-action fields.
 
-export interface StockRow {
-  symbol: string;
-  name: string;
-  sector: string;
-  industry: string;
-  /** Market cap in ₹ crore */
-  market_cap: number;
-  /** Last close in ₹ (a reference input for valuation, not a live quote) */
-  price: number;
-  pe: number;
-  eps: number;
-  price_book: number;
-  roe: number;
-  roce: number;
-  debt_equity: number;
-  debt_ebitda: number;
-  dividend_yield: number;
-  sales_growth: number;
-  profit_growth: number;
-  fcf_yield: number;
-}
+import type { StockRow } from "./contracts/legacy";
+import type { DataProvider } from "./contracts/provider";
+
+export type { StockRow } from "./contracts/legacy";
+export type { DataProvider } from "./contracts/provider";
 
 export type MetricKey = keyof Pick<
   StockRow,
@@ -75,15 +59,6 @@ export interface ScreenQuery {
   sortKey?: SortKey;
   sortDir?: "asc" | "desc";
   limit?: number;
-}
-
-export interface DataProvider {
-  id: string;
-  name: string;
-  /** True when the data is synthetic, so the UI can say so. */
-  isDemo: boolean;
-  /** Return the full universe of companies with their fundamentals. */
-  getUniverse(): Promise<StockRow[]>;
 }
 
 /** Pure, provider-independent screening: AND of all conditions, then sort, then limit. */
