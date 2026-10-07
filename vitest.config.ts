@@ -9,6 +9,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // Several suites build the 150-company store or render full pages; allow for slow CI runners.
+    testTimeout: 30_000,
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },

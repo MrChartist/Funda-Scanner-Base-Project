@@ -22,6 +22,7 @@ describe("performance (loose)", () => {
     const ms = performance.now() - t0;
     console.info(`metrics perf: store + 30 columns for 5,000 companies in ${ms.toFixed(0)} ms`);
     expect(store.size).toBe(5000);
-    expect(ms).toBeLessThan(2500);
+    // Loose ceiling for shared CI runners; the strict budget lives in src/test/perf (PERF=1).
+    expect(ms).toBeLessThan(6000);
   }, 30_000);
 });

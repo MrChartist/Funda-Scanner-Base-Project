@@ -43,7 +43,7 @@ export default tseslint.config(
   },
   {
     files: ["src/**/*.{ts,tsx}"],
-    ignores: ["src/components/ui/**", "src/lib/export-utils.ts" /* removed by WS8 */],
+    ignores: ["src/components/ui/**"],
     rules: { "no-restricted-syntax": ["error", ...NO_HTML_SINK], "no-restricted-properties": ["error", DOC_WRITE] },
   },
   {
@@ -56,6 +56,16 @@ export default tseslint.config(
       "no-restricted-syntax": ["error", ...NO_HTML_SINK,
         { selector: "NewExpression[callee.name='Date']", message: "Core code must not read the clock. Use src/lib/time/clock.ts." },
         { selector: "CallExpression[callee.name='Date']", message: "Core code must not read the clock. Use src/lib/time/clock.ts." }],
+    },
+  },
+  {
+    // Every metric value is rendered through <ValueCell> / formatMetric() so units, periods and
+    // null reasons stay consistent across pages.
+    files: ["src/components/{screener,company,compare}/**/*.tsx", "src/pages/{Screener,CompanyDetail,Compare}.tsx"],
+    ignores: ["**/*.test.tsx"],
+    rules: {
+      "no-restricted-syntax": ["error", ...NO_HTML_SINK,
+        { selector: "CallExpression[callee.property.name='toFixed']", message: "Render metric values with <ValueCell> / formatMetric()." }],
     },
   },
 );

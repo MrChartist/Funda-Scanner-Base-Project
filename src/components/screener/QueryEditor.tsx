@@ -123,6 +123,7 @@ export function QueryEditor({ store, value, issues, onChange, onRunNow }: QueryE
           autoCorrect="off"
           rows={6}
           aria-label="Query"
+          data-slash-focus
           aria-describedby={issuesId}
           aria-autocomplete="list"
           aria-controls={isOpen ? listId : undefined}
