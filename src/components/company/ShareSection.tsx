@@ -1,47 +1,38 @@
 import { useState } from "react";
-import { Share2, Link2, Check, Twitter } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Check, Link2 } from "lucide-react";
 
-interface ShareSectionProps {
+export interface ShareSectionProps {
+  symbol: string;
   sectionId?: string;
   sectionLabel?: string;
 }
 
-export function ShareSection({ sectionId, sectionLabel }: ShareSectionProps) {
-  const { symbol } = useParams<{ symbol: string }>();
+/** Copies the link to this company (or one section of it). No external sharing. */
+export function ShareSection({ symbol, sectionId, sectionLabel }: ShareSectionProps) {
   const [copied, setCopied] = useState(false);
 
-  const getUrl = () => {
-    const base = `${window.location.origin}/company/${symbol}`;
-    return sectionId ? `${base}#${sectionId}` : base;
-  };
-
   const copyLink = async () => {
-    await navigator.clipboard.writeText(getUrl());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const shareTwitter = () => {
-    const text = sectionLabel
-      ? `Check out ${symbol} - ${sectionLabel} on FundaScanner`
-      : `Check out ${symbol} on FundaScanner`;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(getUrl())}`, "_blank");
+    const base = `${window.location.origin}/company/${encodeURIComponent(symbol)}`;
+    const url = sectionId ? `${base}#${sectionId}` : base;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard blocked: the address bar still holds the link.
+    }
   };
 
   return (
-    <div className="flex items-center gap-1" data-no-print>
-      <button onClick={copyLink}
-        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-1 rounded-md hover:bg-secondary"
-        title="Copy link">
-        {copied ? <Check className="h-3 w-3 text-positive" /> : <Link2 className="h-3 w-3" />}
-        {copied ? "Copied!" : "Link"}
-      </button>
-      <button onClick={shareTwitter}
-        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-1 rounded-md hover:bg-secondary"
-        title="Share on Twitter">
-        <Twitter className="h-3 w-3" />
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={copyLink}
+      data-no-print
+      aria-label={`Copy link to ${sectionLabel ?? "this company"}`}
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-md px-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Link2 className="h-4 w-4" aria-hidden="true" />}
+      <span className="hidden sm:inline">{copied ? "Link copied" : "Copy link"}</span>
+    </button>
   );
 }
