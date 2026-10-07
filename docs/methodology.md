@@ -215,5 +215,158 @@ micro and small enterprises. These should be re-checked whenever the rules chang
 
 ## 3. Checks and red flags
 
-The rule-based checks and red flags (§C.9 of the specification) are documented here together
-with their thresholds when the insight rules are implemented.
+The company page shows a set of rule-based **checks** (a "met" result is a pass) and **red flags**
+(a "met" result means the flag is triggered; the UI heading for these is "Worth checking"). The
+rules live in `src/lib/insights/checks/*.ts` and implement §C.9 of the specification.
+
+Every block that shows them carries the footer: "Rule-based observations on the data you loaded.
+Not a recommendation."
+
+### 3.1 How a rule works
+
+- **Each rule is a visible FSQL query** (see `docs/query-language.md`), for example
+  `roce_avg_5y > 15`. The query is shown next to the result, so anyone can run the same rule as a
+  screen. Rules are compiled by the same query engine as the Screener, once per loaded dataset,
+  and evaluated for every company in one pass.
+- **Thresholds are rules of thumb**, not standards or regulatory limits. They are common
+  starting points for reading Indian company accounts and are meant to prompt questions, not to
+  rank companies. A company can fail a check for good reasons (a capital-heavy business, a
+  cyclical low), and a red flag can have an innocent explanation that the annual report gives.
+- **Results.** For each company a rule is:
+  - *not applicable* when it is not designed for the company's family (for example, ROCE checks
+    for a bank, or bad-loan checks for a manufacturer);
+  - *not evaluated* when a value it needs is missing, with the reason (not enough history,
+    loss-making, negative net worth, a transition year inside the window, and so on). Missing data
+    is never treated as a pass, a fail or a zero;
+  - otherwise *met* or *not met*, using three-valued logic: an `AND` with one false part is not
+    met even if another part is missing, and an `OR` with one true part is met.
+- **No interest cost.** A company that reports no finance cost has no interest coverage ratio.
+  "Interest well covered" treats it as passing and "Weak interest cover" as not triggered, and the
+  message says "no interest cost".
+- **Messages** are filled from the query engine's explanation of each clause, so they always
+  quote the measured value, its period and the threshold, for example "ROCE · 5Y avg 22.4%
+  (FY22–FY26); needs above 15%." Yearly rules list every year's value; rules that compare two
+  measures ("at most 1.2 times debtor days three years earlier") also list the inputs.
+- **Evidence** lists the metrics behind each rule with their values, so the reader can open the
+  relevant section of the company page and the glossary entry for each metric.
+
+### 3.2 Checks
+
+`NF` = non-financial companies (including brokers and asset managers), `L` = lenders (banks, NBFCs,
+housing finance companies), `All` = every family including insurers.
+
+| Area | Id | Title | Query | Applies to |
+|---|---|---|---|---|
+| Profitability | PR-01 | Earns well on its capital | `roce_avg_5y > 15` | NF |
+| Profitability | PR-02 | Return held up every year | `every(roce > 12, 5y)` | NF |
+| Profitability | PR-03 | Margin is steady | `opm_stdev_5y < 4` | NF |
+| Profitability | PR-04 | Margin not falling | `opm >= opm_avg_5y - 1` | NF |
+| Growth record | GR-01 | Sales compounding | `sales_cagr_5y > 10` | NF |
+| Growth record | GR-02 | Profit compounding | `net_profit_cagr_5y > 10` | NF |
+| Growth record | GR-03 | Grew in most years | `count(sales_growth > 0, 5y) >= 4` | NF |
+| Growth record | GR-04 | Growth not diluted | `eps_cagr_5y >= net_profit_cagr_5y - 2` | NF |
+| Balance-sheet strength | BS-01 | Modest borrowing | `debt_equity < 0.5` | NF |
+| Balance-sheet strength | BS-02 | Interest well covered | `interest_coverage > 4` | NF |
+| Balance-sheet strength | BS-03 | Short-term bills covered | `current_ratio > 1.2` | NF |
+| Balance-sheet strength | BS-04 | Outside the distress zone | `altman_z > 2.6` | NF |
+| Cash conversion | CC-01 | Profit backed by cash | `cum_cfo_to_pat_5y > 0.8` | NF |
+| Cash conversion | CC-02 | Positive free cash in most years | `count(fcf > 0, 5y) >= 3` | NF |
+| Cash conversion | CC-03 | Low accruals | `accruals_ratio < 5` | NF |
+| Cash conversion | CC-04 | Collections not slowing | `debtor_days <= 1.2 * debtor_days[fy-3]` | NF |
+| Valuation vs peers | VA-01 | P/E below industry median | `pe < industry_median(pe)` | NF |
+| Valuation vs peers | VA-02 | Earnings yield above industry median | `earnings_yield > industry_median(earnings_yield)` | NF |
+| Valuation vs peers | VA-03 | Reasonable FCF yield | `fcf_yield_3y > 3` | NF |
+| Shareholder returns | SR-01 | Dividend paid 5 years in a row | `dividend_streak >= 5` | All |
+| Shareholder returns | SR-02 | Shares part of profit | `dividend_payout_avg_3y >= 15` | All |
+| Shareholder returns | SR-03 | Book value per share compounding | `bvps_cagr_5y > 10` | All |
+| Profitability | LP-01 | Earns well on its assets | `roa_avg_3y > 1` | L |
+| Profitability | LP-02 | Earns well on shareholders' equity | `roe_avg_3y > 12` | L |
+| Asset quality | AQ-01 | Few bad loans | `gnpa_ratio < 4` | L |
+| Asset quality | AQ-02 | Few bad loans after provisions | `nnpa_ratio < 1.5` | L |
+| Asset quality | AQ-03 | Bad loans well provided for | `provision_coverage > 60` | L |
+| Efficiency | EF-01 | Runs at a reasonable cost | `cost_to_income < 50` | L |
+| Efficiency | EF-02 | Loan losses kept low | `credit_cost < 1.5` | L |
+
+That is 29 checks: 19 for non-financial companies, 3 shareholder-return checks for every family
+and 7 for lenders. (The specification's summary line says 26; its table, implemented here, lists
+29.)
+
+Notes on the thresholds:
+
+- **Returns (PR-01, PR-02, LP-01, LP-02).** ROCE of 15% and ROE of 12% to 15% are widely used
+  rules of thumb for a business that earns more than its cost of capital in India; ROA of 1% is a
+  common yardstick for lenders, whose assets are mostly loans.
+- **Margins (PR-03, PR-04).** A standard deviation below 4 percentage points means the operating
+  margin moved in a narrow band; "not falling" allows a 1-point dip below the 5-year average.
+- **Growth (GR-01 to GR-04).** 10% a year roughly doubles a figure in seven years. GR-04 asks
+  whether earnings per share kept pace with total profit, which they do not when new shares are
+  issued.
+- **Balance sheet (BS-01 to BS-04).** Debt below half of equity, interest covered more than four
+  times and current assets above 1.2 times current liabilities are conservative starting points.
+  The Altman Z'' cut-offs (above 2.6 safe, below 1.1 distress) come from the model itself
+  (§C.6 of the specification and `docs/metrics.md`).
+- **Cash conversion (CC-01 to CC-04).** Over five years, operating cash flow should be close to
+  reported profit; 0.8 allows for growth in working capital. Accruals below 5% of assets and
+  debtor days that have not risen by more than a fifth in three years point the same way.
+- **Valuation (VA-01 to VA-03).** These compare the company with the median of its industry
+  **among the companies in your data** (falling back to the sector or peer class when the industry
+  has fewer than five members). A cheaper-than-median company is not necessarily good value.
+- **Lender asset quality and cost (AQ, EF).** Gross NPAs below 4%, net NPAs below 1.5%,
+  provision coverage above 60%, cost to income below 50% and credit cost below 1.5% are common
+  reference points in Indian bank and NBFC analysis.
+
+### 3.3 Red flags ("Worth checking")
+
+| Id | Title | Query | Applies to |
+|---|---|---|---|
+| RF-01 | Profit not backed by cash | `cum_cfo_to_pat_5y < 0.7` | NF |
+| RF-02 | Receivables rising faster than sales | `debtor_days > 1.3 * debtor_days[fy-3] AND sales_cagr_3y < 10` | NF |
+| RF-03 | High or rising pledge | `pledged_pct > 25 OR pledged_pct_chg_1y > 5` | All |
+| RF-04 | Promoters cut stake sharply | `promoter_holding_chg_1y < -5` | All |
+| RF-05 | Large other income | `other_income_to_pbt > 30` | NF |
+| RF-06 | Weak interest cover | `interest_coverage < 1.5` | NF |
+| RF-07 | Negative net worth | `net_worth < 0` | All |
+| RF-08 | Persistently low tax | `every(effective_tax_rate < 10, 3y)` | All |
+| RF-09 | Distress zone | `altman_z < 1.1` | NF |
+| RF-10 | Repeated exceptional items | `count(abs(exceptional_items) > 0.2 * abs(pbt), 3y) >= 2` | All |
+| RF-11 | Equity dilution | `shares_outstanding_ye > 1.05 * shares_outstanding_ye[prev]` | All |
+| RF-12 | Inventory building up | `inventory_days > 1.3 * inventory_days[fy-3] AND sales_cagr_3y < 10` | NF |
+| LF-01 | Bad loans rising | `gnpa_ratio - gnpa_ratio[prev] > 1` | L |
+| LF-02 | Thin provisions | `provision_coverage < 50` | L |
+| LF-03 | High credit cost | `credit_cost > 2.5` | L |
+| LF-04 | High pledge (lenders) | `pledged_pct > 25` | L |
+
+A red flag is a prompt to read the annual report and the notes to accounts, not a verdict. Some
+have ordinary explanations: a holding company earns mostly other income (RF-05); a company in a
+tax holiday pays little tax (RF-08); a fast-growing company may raise equity (RF-11). Pledge is
+measured as a share of the promoters' own holding; when there is no promoter holding the pledge
+ratio is not meaningful and RF-03 and LF-04 are not evaluated.
+
+### 3.4 Red-flag count
+
+`red_flag_count` is a column on the metric store, so it can be shown in the Screener and used in
+queries (the "Value with a safety check" template uses `red_flag_count = 0`). It is the number of
+red flags of the company's family that are triggered. When more than four of the family's red
+flags cannot be evaluated, the count is shown as missing ("Too few inputs to calculate") instead
+of a reassuring 0. No rule may use `red_flag_count` itself, which a test checks.
+
+### 3.5 Area summaries
+
+The "At a glance" row groups the checks that apply to a company by area (Profitability, Growth
+record, Balance-sheet strength, Cash conversion, Valuation vs peers, Shareholder returns, Asset
+quality, Efficiency) and reports "met of evaluated" with the total, so "3 of 4 checks passed, 1 not
+evaluated" is distinguishable from "3 of 4 failed". Red flags are counted separately.
+
+### 3.6 Calibration on the sample
+
+Tests in `src/lib/insights/*.test.ts` run every rule on the 150-company sample and on small crafted
+fictional companies, and check that:
+
+- every rule compiles without errors, uses only catalogue metrics and never `red_flag_count`;
+- each message quotes its thresholds and the values compared;
+- the compounders pass at least 14 of their 16 quality checks;
+- the red-flag teaching cases trigger the flag they were built for (receivables, pledge, cash
+  conversion, negative net worth), and every red flag can be triggered by a crafted case;
+- at least 70% of non-financial companies have at most one red flag, and no flag fires for more
+  than a fifth of the companies it applies to;
+- lenders get the lender checks, and the non-financial checks show as not applicable for them.

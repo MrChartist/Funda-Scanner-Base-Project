@@ -248,12 +248,13 @@ describe("metrics stub extras", () => {
   });
 });
 
-describe("insights stub; learn and sample content (WS2)", () => {
-  it("are empty but well-formed", () => {
-    expect(CHECK_RULES).toEqual([]);
-    expect(evaluateChecks(store, 0)).toEqual([]);
-    expect(summariseAreas(store, 0)).toEqual([]);
-    expect(insightColumnProviders).toEqual([]);
+describe("insights, learn and sample content (WS2)", () => {
+  it("are replaced by the real modules", () => {
+    // insights: replaced by WS2 rules (tested in src/lib/insights/*.test.ts)
+    expect(CHECK_RULES.length).toBeGreaterThan(0);
+    expect(evaluateChecks(store, 0)).toHaveLength(CHECK_RULES.length);
+    expect(summariseAreas(store, 0).length).toBeGreaterThan(0);
+    expect(insightColumnProviders.flatMap((p) => p.ids)).toEqual(["red_flag_count"]);
     // learn: replaced by WS2 content (tested in src/lib/learn/learn.test.ts)
     expect(Object.keys(GLOSSARY).length).toBeGreaterThanOrEqual(25);
     expect(CONCEPTS).toHaveLength(10);
