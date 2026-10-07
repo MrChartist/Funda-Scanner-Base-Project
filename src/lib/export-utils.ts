@@ -1,178 +1,192 @@
-import { getMockCompanyIntelligence } from "@/lib/mock-data";
+// src/lib/export-utils.ts — company exports (WS6).
+// CSV: labelled long format with a "#" provenance header, an is_synthetic column and the SAMPLE- file prefix.
+// Print view: built with DOM methods and textContent only. No HTML strings are ever written into a page.
+import type { MetricDef, MetricStore, MetricValue, Unit } from "@/lib/contracts";
+import { evaluateChecks, INSIGHTS_FOOTER, RED_FLAG_HEADING } from "@/lib/insights";
+import { DASH, formatMetric, nullReasonText } from "@/lib/format/metric-value";
+import { CATALOGUE_VERSION } from "@/lib/metrics";
+import { toCsvCell } from "@/lib/screen/export-csv";
+import { localDateStamp } from "@/lib/time/clock";
+import {
+  keyMetricGroups, NOT_EVALUATED_HEADING, quarterlyView, ratioView, shareholdingView, statementView, TYPE_LABEL,
+  type GridRow, type PeriodColumn,
+} from "@/lib/views/company-view";
 
-export function exportCompanyPDF(symbol: string) {
-  const data = getMockCompanyIntelligence(symbol);
-  const c = data.company;
-  const intel = data.intelligence;
+const BOM = String.fromCharCode(0xfeff);
 
-  // Build a print-friendly HTML document
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>${c.name} - Report</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a2e; padding: 40px; max-width: 800px; margin: 0 auto; }
-    h1 { font-size: 24px; margin-bottom: 4px; }
-    h2 { font-size: 16px; margin: 24px 0 12px; padding-bottom: 4px; border-bottom: 2px solid #0ea5e9; color: #0ea5e9; }
-    .subtitle { color: #666; font-size: 13px; margin-bottom: 20px; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0; }
-    .metric { background: #f8f9fa; padding: 12px; border-radius: 8px; }
-    .metric .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-    .metric .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0; }
-    th { background: #f0f4f8; padding: 8px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
-    td { padding: 8px 12px; border-bottom: 1px solid #eee; }
-    .positive { color: #16a34a; }
-    .negative { color: #dc2626; }
-    .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #ddd; font-size: 10px; color: #999; text-align: center; }
-    .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .pros-cons ul { list-style: none; padding: 0; }
-    .pros-cons li { font-size: 12px; padding: 4px 0; padding-left: 16px; position: relative; }
-    .pros-cons li::before { position: absolute; left: 0; }
-    .pros li::before { content: "✓"; color: #16a34a; }
-    .cons li::before { content: "✗"; color: #dc2626; }
-    @media print { body { padding: 20px; } }
-  </style>
-</head>
-<body>
-  <h1>${c.name}</h1>
-  <div class="subtitle">${c.symbol} · ${c.sector} · ${c.industry}</div>
-  
-  <h2>Key Metrics</h2>
-  <div class="grid">
-    <div class="metric"><div class="label">Price</div><div class="value">₹${c.price.toLocaleString()}</div></div>
-    <div class="metric"><div class="label">Market Cap</div><div class="value">₹${c.market_cap >= 100000 ? (c.market_cap / 100000).toFixed(1) + 'L Cr' : (c.market_cap / 1000).toFixed(0) + 'K Cr'}</div></div>
-    <div class="metric"><div class="label">P/E</div><div class="value">${c.pe}</div></div>
-    <div class="metric"><div class="label">ROCE</div><div class="value">${c.roce}%</div></div>
-    <div class="metric"><div class="label">ROE</div><div class="value">${c.roe}%</div></div>
-    <div class="metric"><div class="label">D/E</div><div class="value">${c.de}</div></div>
-    <div class="metric"><div class="label">EPS</div><div class="value">₹${c.eps}</div></div>
-    <div class="metric"><div class="label">NPM</div><div class="value">${c.npm}%</div></div>
-    <div class="metric"><div class="label">Div. Yield</div><div class="value">${c.dividend_yield}%</div></div>
-  </div>
+const UNIT_LABEL: Readonly<Record<Unit, string>> = {
+  inr_cr: "₹ Cr", inr: "₹", pct: "%", pp: "pp", x: "x", days: "days", years: "years", count: "count", score: "score",
+  crore_shares: "Cr shares", fy_year: "FY",
+};
 
-  <h2>Pros & Cons</h2>
-  <div class="pros-cons">
-    <div class="pros"><ul>${c.pros.map((p: string) => `<li>${p}</li>`).join('')}</ul></div>
-    <div class="cons"><ul>${c.cons.map((cn: string) => `<li>${cn}</li>`).join('')}</ul></div>
-  </div>
+const oneLine = (text: string): string => text.replace(/[\r\n]+/g, " ");
 
-  <h2>Financial Summary (Last 5 Years)</h2>
-  <table>
-    <thead><tr><th>Year</th><th>Revenue</th><th>Net Profit</th><th>EBITDA</th><th>Total Assets</th></tr></thead>
-    <tbody>
-      ${intel.statement_rows.slice(-5).map((r: any) => `
-        <tr>
-          <td>${r.year}</td>
-          <td>₹${r.revenue.toLocaleString()} Cr</td>
-          <td>₹${r.net_profit.toLocaleString()} Cr</td>
-          <td>₹${r.ebitda.toLocaleString()} Cr</td>
-          <td>₹${r.total_assets.toLocaleString()} Cr</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
+/** Name with the inline "(fictional)" label for generated data (spec F.6 rule 2). */
+export function exportName(store: MetricStore, i: number): string {
+  const name = store.company(i).name;
+  return store.meta.isSynthetic && !/\(fictional\)/i.test(name) ? `${name} (fictional)` : name;
+}
 
-  <h2>Quarterly Results</h2>
-  <table>
-    <thead><tr><th>Quarter</th><th>Revenue</th><th>Net Profit</th><th>OPM %</th></tr></thead>
-    <tbody>
-      ${intel.quarterly_rows.slice(0, 4).map((r: any) => `
-        <tr>
-          <td>${r.quarter}</td>
-          <td>₹${r.revenue.toLocaleString()} Cr</td>
-          <td>₹${r.net_profit.toLocaleString()} Cr</td>
-          <td>${r.opm_pct}%</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
+export function companyCsvFilename(store: MetricStore, i: number): string {
+  return `${store.meta.isSynthetic ? "SAMPLE-" : ""}funda-company-${store.company(i).symbol.toLowerCase()}-${localDateStamp()}.csv`;
+}
 
-  <h2>Shareholding Pattern</h2>
-  <table>
-    <thead><tr><th>Quarter</th><th>Promoter</th><th>FII</th><th>DII</th><th>Public</th></tr></thead>
-    <tbody>
-      ${intel.shareholding.slice(0, 4).map((s: any) => `
-        <tr>
-          <td>${s.quarter}</td>
-          <td>${s.promoter_pct}%</td>
-          <td>${s.fii_pct}%</td>
-          <td>${s.dii_pct}%</td>
-          <td>${s.public_pct}%</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
+interface Section {
+  title: string;
+  periods: readonly PeriodColumn[];
+  rows: readonly GridRow[];
+}
 
-  <div class="footer">
-    Generated by Funda Scanner · ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} · For informational purposes only
-  </div>
-</body>
-</html>`;
+/** Every table that appears on the company page, as plain sections. */
+function sections(store: MetricStore, i: number): Section[] {
+  const out: Section[] = [];
+  const keyRows: GridRow[] = keyMetricGroups(store.family(i)).flatMap((g) =>
+    g.ids.flatMap((id) => {
+      const def = store.def(id);
+      return def ? [{ id, label: def.label, def, values: [store.get(id, i)], derived: false } satisfies GridRow] : [];
+    }),
+  );
+  out.push({ title: "Key metrics (latest)", periods: [{ key: "latest", label: "Latest", note: null }], rows: keyRows });
+  for (const [title, statement] of [["Profit and loss", "pnl"], ["Balance sheet", "balance_sheet"], ["Cash flow", "cash_flow"]] as const) {
+    const v = statementView(store, i, statement);
+    if (v.rows.length > 0) out.push({ title, periods: v.periods, rows: v.rows });
+  }
+  const q = quarterlyView(store, i);
+  if (q.rows.length > 0) out.push({ title: "Quarterly results", periods: q.periods, rows: [...q.rows, ...q.growth] });
+  const r = ratioView(store, i);
+  if (r.rows.length > 0) out.push({ title: "Ratios", periods: r.periods, rows: r.rows });
+  const s = shareholdingView(store, i);
+  if (s.rows.length > 0) out.push({ title: "Shareholding", periods: s.periods, rows: [...s.rows, ...s.changes] });
+  return out;
+}
 
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(html);
-    printWindow.document.close();
-    setTimeout(() => printWindow.print(), 500);
+function csvValue(v: MetricValue): number | null {
+  return v.v !== null && Number.isFinite(v.v) ? v.v : null;
+}
+
+/** Long-format CSV: one row per figure and period. Blank cells mean missing or not applicable. */
+export function companyToCsv(store: MetricStore, i: number): string {
+  const meta = store.meta;
+  const c = store.company(i);
+  const type = store.companyType(i);
+  const header = [
+    "# Funda Scanner company export",
+    `# Company: ${oneLine(exportName(store, i))} (${oneLine(c.symbol)})`,
+    `# Dataset: ${oneLine(meta.name)}`,
+    `# Synthetic: ${meta.isSynthetic ? "yes (fictional companies)" : "no"}`,
+    `# Imported at: ${oneLine(meta.importedAt ?? "not applicable")}`,
+    `# As of: ${oneLine(meta.asOf ?? "not provided")}`,
+    `# Statement basis: ${c.statement_basis}`,
+    `# Type: ${TYPE_LABEL[type.type]}${type.inferred ? " (inferred from sector)" : ""}`,
+    `# Catalogue version: ${CATALOGUE_VERSION}`,
+    "# Blank cells mean missing or not applicable",
+  ];
+  const lines = [["symbol", "name", "section", "figure", "metric_id", "period", "unit", "value", "is_synthetic"].map(toCsvCell).join(",")];
+  for (const sec of sections(store, i)) {
+    for (const row of sec.rows) {
+      row.values.forEach((v, k) => {
+        const cells: (string | number | null)[] = [
+          c.symbol, exportName(store, i), sec.title, row.label, row.id, sec.periods[k]?.label ?? "", UNIT_LABEL[row.def.unit], csvValue(v),
+          meta.isSynthetic ? "true" : "false",
+        ];
+        lines.push(cells.map(toCsvCell).join(","));
+      });
+    }
+  }
+  return `${BOM}${[...header, ...lines].join("\r\n")}\r\n`;
+}
+
+/** Downloads the CSV. Returns false where the browser cannot create a download. */
+export function downloadCompanyCsv(store: MetricStore, i: number): boolean {
+  try {
+    const blob = new Blob([companyToCsv(store, i)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = companyCsvFilename(store, i);
+    a.click();
+    URL.revokeObjectURL(url);
+    return true;
+  } catch {
+    return false;
   }
 }
 
-export function exportCompanyExcel(symbol: string) {
-  const data = getMockCompanyIntelligence(symbol);
-  const c = data.company;
-  const intel = data.intelligence;
+// ── Print view ──────────────────────────────────────────────────────────────
+function el<K extends keyof HTMLElementTagNameMap>(doc: Document, tag: K, text?: string, className?: string): HTMLElementTagNameMap[K] {
+  const node = doc.createElement(tag);
+  if (text !== undefined) node.textContent = text;
+  if (className) node.className = className;
+  return node;
+}
 
-  const sheets: string[] = [];
+const PRINT_CSS = [
+  "body{font-family:system-ui,Arial,sans-serif;color:#111;margin:24px;max-width:960px;line-height:1.4}",
+  "h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:20px 0 6px;border-bottom:1px solid #999}",
+  "p,li{font-size:13px}.note{color:#444;font-size:12px}",
+  "table{border-collapse:collapse;width:100%;font-size:12px;margin:6px 0}",
+  "th,td{border-bottom:1px solid #ccc;padding:3px 6px;text-align:right}th:first-child,td:first-child{text-align:left}",
+].join("\n");
 
-  // Key Metrics sheet
-  const metrics = [
-    ['Metric', 'Value'],
-    ['Company', c.name],
-    ['Symbol', c.symbol],
-    ['Sector', c.sector],
-    ['Price', `₹${c.price}`],
-    ['Market Cap', `₹${c.market_cap} Cr`],
-    ['P/E', String(c.pe)],
-    ['P/B', String(c.pb)],
-    ['ROCE', `${c.roce}%`],
-    ['ROE', `${c.roe}%`],
-    ['EPS', `₹${c.eps}`],
-    ['D/E', String(c.de)],
-    ['NPM', `${c.npm}%`],
-    ['Div Yield', `${c.dividend_yield}%`],
-    ['Book Value', `₹${c.book_value}`],
-  ];
+function cellText(def: MetricDef, v: MetricValue, family: ReturnType<MetricStore["family"]>): string {
+  if (v.v === null) return v.reason === "not_applicable_financial" ? nullReasonText("not_applicable_financial", family).short : DASH;
+  return formatMetric(def, v);
+}
 
-  // Financial statements
-  const finHeaders = ['Year', 'Revenue', 'EBITDA', 'Net Profit', 'Total Assets', 'Debt', 'OCF'];
-  const finRows = intel.statement_rows.map((r: any) => [r.year, r.revenue, r.ebitda, r.net_profit, r.total_assets, r.debt, r.ocf]);
+/** Fills `doc` with a printable summary of the company. Uses createElement and textContent only. */
+export function buildPrintDocument(doc: Document, store: MetricStore, i: number): void {
+  const c = store.company(i);
+  const type = store.companyType(i);
+  const family = store.family(i);
+  const meta = store.meta;
+  doc.title = `${exportName(store, i)} (${c.symbol})`;
+  const style = el(doc, "style", PRINT_CSS);
+  doc.head.appendChild(style);
+  const body = doc.body;
+  body.textContent = "";
+  body.appendChild(el(doc, "h1", exportName(store, i)));
+  body.appendChild(el(doc, "p", `${c.symbol} · ${c.sector} › ${store.industry(i)} · ${TYPE_LABEL[type.type]}${type.inferred ? " (inferred from sector)" : ""} · ${c.statement_basis} figures`));
+  body.appendChild(
+    el(doc, "p", `${meta.isSynthetic ? "Sample data: generated figures that describe no real company. " : ""}Dataset: ${meta.name}. As of: ${meta.asOf ?? "not provided"}. Reference price date: ${c.market.price_date ?? "not provided"}.`, "note"),
+  );
 
-  // Quarterly
-  const qHeaders = ['Quarter', 'Revenue', 'Net Profit', 'OPM %'];
-  const qRows = intel.quarterly_rows.map((r: any) => [r.quarter, r.revenue, r.net_profit, r.opm_pct]);
+  for (const sec of sections(store, i)) {
+    body.appendChild(el(doc, "h2", sec.title));
+    const table = el(doc, "table");
+    const head = el(doc, "tr");
+    head.appendChild(el(doc, "th", "Figure"));
+    for (const p of sec.periods) head.appendChild(el(doc, "th", p.label));
+    table.appendChild(head);
+    for (const row of sec.rows) {
+      const tr = el(doc, "tr");
+      tr.appendChild(el(doc, "td", row.label));
+      for (const v of row.values) tr.appendChild(el(doc, "td", cellText(row.def, v, family)));
+      table.appendChild(tr);
+    }
+    body.appendChild(table);
+  }
 
-  // Combine into CSV (multi-sheet simulation)
-  const csvContent = [
-    '--- KEY METRICS ---',
-    ...metrics.map(r => r.join(',')),
-    '',
-    '--- FINANCIAL STATEMENTS ---',
-    finHeaders.join(','),
-    ...finRows.map((r: any) => r.join(',')),
-    '',
-    '--- QUARTERLY RESULTS ---',
-    qHeaders.join(','),
-    ...qRows.map((r: any) => r.join(',')),
-  ].join('\n');
+  const outcomes = evaluateChecks(store, i).filter((o) => o.result !== "not_applicable");
+  const addList = (heading: string, items: readonly string[]) => {
+    if (items.length === 0) return;
+    body.appendChild(el(doc, "h2", heading));
+    const ul = el(doc, "ul");
+    for (const t of items) ul.appendChild(el(doc, "li", t));
+    body.appendChild(ul);
+  };
+  addList("Checks passed", outcomes.filter((o) => o.kind === "check" && o.result === "met").map((o) => `${o.title}. ${o.message}`));
+  addList("Checks not passed", outcomes.filter((o) => o.kind === "check" && o.result === "not_met").map((o) => `${o.title}. ${o.message}`));
+  addList(RED_FLAG_HEADING, outcomes.filter((o) => o.kind === "red_flag" && o.result === "met").map((o) => `${o.title}. ${o.message}`));
+  addList(NOT_EVALUATED_HEADING, outcomes.filter((o) => o.result === "not_evaluated").map((o) => `${o.title}: ${nullReasonText(o.reason ?? "missing_input").short}`));
+  body.appendChild(el(doc, "p", INSIGHTS_FOOTER, "note"));
+}
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${symbol}_report_${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+/** Opens the print view in a new window and starts printing. Returns false when the window is blocked. */
+export function openPrintView(store: MetricStore, i: number): boolean {
+  const w = window.open("", "_blank");
+  if (!w) return false;
+  buildPrintDocument(w.document, store, i);
+  w.focus();
+  w.print();
+  return true;
 }

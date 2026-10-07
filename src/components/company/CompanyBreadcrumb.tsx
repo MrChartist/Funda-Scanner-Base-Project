@@ -1,34 +1,38 @@
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ChevronRight, Home } from "lucide-react";
-import { MOCK_COMPANIES } from "@/lib/mock-data";
+import type { MetricStore } from "@/lib/contracts";
+import { CompanyName } from "@/components/common/CompanyName";
 
-export function CompanyBreadcrumb() {
-  const { symbol } = useParams<{ symbol: string }>();
-  const company = MOCK_COMPANIES.find(c => c.symbol === symbol);
+export interface CompanyBreadcrumbProps {
+  /** Absent while loading or when the symbol is not in the data. */
+  store?: MetricStore | null;
+  index?: number;
+  symbol: string;
+}
 
+export function CompanyBreadcrumb({ store, index, symbol }: CompanyBreadcrumbProps) {
+  const company = store && index !== undefined && index >= 0 ? store.company(index) : null;
   return (
-    <nav className="flex items-center gap-1 text-xs text-muted-foreground py-3 overflow-x-auto scrollbar-thin">
-      <Link to="/" className="flex items-center gap-1 hover:text-foreground transition-colors flex-shrink-0">
-        <Home className="h-3 w-3" />
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1 overflow-x-auto py-2 text-sm text-muted-foreground">
+      <Link to="/" className="inline-flex min-h-11 shrink-0 items-center gap-1 hover:text-foreground">
+        <Home className="h-4 w-4" aria-hidden="true" />
         <span>Home</span>
       </Link>
-      <ChevronRight className="h-3 w-3 flex-shrink-0" />
-      {company?.sector && (
+      <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <Link to="/screener" className="inline-flex min-h-11 shrink-0 items-center hover:text-foreground">Screener</Link>
+      <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+      {company ? (
         <>
-          <Link to={`/screener?sector=${company.sector}`}
-            className="hover:text-foreground transition-colors flex-shrink-0 max-w-[120px] truncate">
+          <Link to={`/screener?u=${encodeURIComponent(`sector:${company.sector}`)}`} className="inline-flex min-h-11 max-w-[10rem] shrink-0 items-center truncate hover:text-foreground">
             {company.sector}
           </Link>
-          <ChevronRight className="h-3 w-3 flex-shrink-0" />
+          <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="shrink-0 font-medium text-foreground" aria-current="page">
+            <CompanyName name={company.name} isSynthetic={store?.meta.isSynthetic ?? false} />
+          </span>
         </>
-      )}
-      <span className="font-medium text-foreground flex-shrink-0">
-        {company?.name || symbol}
-      </span>
-      {symbol && (
-        <span className="font-mono text-muted-foreground ml-1 flex-shrink-0">
-          ({symbol})
-        </span>
+      ) : (
+        <span className="shrink-0 font-mono text-foreground" aria-current="page">{symbol}</span>
       )}
     </nav>
   );
