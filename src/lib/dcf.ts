@@ -1,4 +1,5 @@
 // Pure DCF maths. Educational model only — not investment advice.
+import { fnv1a32, mulberry32, nextFloat } from "@/lib/sample/prng";
 
 // ─── Types ───────────────────────────────────────────────────────
 export interface DCFInputs {
@@ -102,20 +103,31 @@ export function calculateDCF(inputs: DCFInputs): DCFResult {
   return { perShare, totalPV: enterpriseValue, pvFCFs: totalPVFCFs, pvTerminal, projections };
 }
 
-export function reverseImpliedGrowth(inputs: DCFInputs, targetPrice: number): number {
+/** Growth rate (percent) at which the model value equals `referencePrice`; searched between -10 and 50. */
+export function reverseImpliedGrowth(inputs: DCFInputs, referencePrice: number): number {
   let lo = -10, hi = 50;
   for (let i = 0; i < 50; i++) {
     const mid = (lo + hi) / 2;
     const result = calculateDCF({ ...inputs, growthRate: mid });
-    if (result.perShare > targetPrice) hi = mid; else lo = mid;
+    if (result.perShare > referencePrice) hi = mid; else lo = mid;
   }
   return (lo + hi) / 2;
 }
 
+/** A repeatable random source for one symbol: mulberry32 seeded from a hash of the symbol. */
+export function seededRandom(symbol: string): () => number {
+  const rng = mulberry32(fnv1a32(symbol.trim().toUpperCase()));
+  return () => nextFloat(rng);
+}
+
+/**
+ * Monte Carlo over growth, discount rate and terminal growth. The default random source is seeded
+ * from `inputs.symbol`, so the same inputs always give the same result.
+ */
 export function monteCarloSimulation(
   inputs: DCFInputs,
   iterations: number = 5000,
-  random: () => number = Math.random,
+  random: () => number = seededRandom(inputs.symbol),
 ): number[] {
   const results: number[] = [];
   for (let i = 0; i < iterations; i++) {
@@ -131,4 +143,19 @@ export function monteCarloSimulation(
     if (isFinite(perShare) && perShare > 0) results.push(perShare);
   }
   return results.sort((a, b) => a - b);
+}
+
+export interface SimulationSummary {
+  p10: number;
+  p50: number;
+  p90: number;
+  mean: number;
+  count: number;
+}
+
+/** Percentiles and mean of a sorted list of simulated values; null when there are none. */
+export function summariseSimulation(sorted: readonly number[]): SimulationSummary | null {
+  if (sorted.length === 0) return null;
+  const at = (q: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))];
+  return { p10: at(0.1), p50: at(0.5), p90: at(0.9), mean: sorted.reduce((a, b) => a + b, 0) / sorted.length, count: sorted.length };
 }

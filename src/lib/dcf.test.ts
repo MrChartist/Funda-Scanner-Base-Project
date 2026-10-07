@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateDCF, calculateWACC, monteCarloSimulation, reverseImpliedGrowth, type DCFInputs } from "./dcf";
+import { calculateDCF, calculateWACC, monteCarloSimulation, reverseImpliedGrowth, seededRandom, summariseSimulation, type DCFInputs } from "./dcf";
 
 const base: DCFInputs = {
   symbol: "TEST",
@@ -83,5 +83,25 @@ describe("monteCarloSimulation", () => {
     expect(a).toEqual(b);
     expect(a.length).toBeGreaterThan(0);
     expect(a.every((v, i) => v > 0 && (i === 0 || a[i - 1] <= v))).toBe(true);
+  });
+});
+
+describe("seeded Monte Carlo", () => {
+  it("gives the same result for the same symbol and different results for different symbols", () => {
+    const a = monteCarloSimulation({ ...base, symbol: "AAA" }, 400);
+    const b = monteCarloSimulation({ ...base, symbol: "AAA" }, 400);
+    const c = monteCarloSimulation({ ...base, symbol: "BBB" }, 400);
+    expect(a).toEqual(b);
+    expect(a).not.toEqual(c);
+  });
+
+  it("treats the symbol's case and spaces alike", () => {
+    expect(seededRandom(" abc ")()).toBe(seededRandom("ABC")());
+  });
+
+  it("summarises sorted values and returns null for none", () => {
+    expect(summariseSimulation([])).toBeNull();
+    const s = summariseSimulation([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(s).toMatchObject({ p10: 2, p50: 6, p90: 10, mean: 5.5, count: 10 });
   });
 });

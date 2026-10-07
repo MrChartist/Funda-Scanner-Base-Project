@@ -63,7 +63,9 @@ export function AccentColorPicker() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-center h-8 w-8 rounded-lg hover:bg-accent transition-colors"
-        title="Accent Color"
+        title="Accent colour"
+        aria-label="Accent colour"
+        aria-expanded={isOpen}
       >
         <Palette className="h-4 w-4 text-muted-foreground" />
       </button>
@@ -76,7 +78,7 @@ export function AccentColorPicker() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             className="absolute right-0 top-full mt-2 z-50 w-56 glass-card-elevated p-3 space-y-3"
           >
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Accent Color</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Accent colour</p>
             <div className="grid grid-cols-4 gap-2">
               {ACCENT_PRESETS.map((preset) => {
                 const isActive = activeAccent === preset.name;
@@ -95,7 +97,7 @@ export function AccentColorPicker() {
                         <Check className="h-4 w-4 text-white absolute inset-0 m-auto" />
                       )}
                     </div>
-                    <span className="text-[9px] text-muted-foreground">{preset.name.split(" ")[0]}</span>
+                    <span className="text-xs text-muted-foreground">{preset.name.split(" ")[0]}</span>
                   </button>
                 );
               })}

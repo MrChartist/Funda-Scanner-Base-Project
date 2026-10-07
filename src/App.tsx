@@ -9,11 +9,13 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useDocumentTitle } from "@/hooks/use-document-title";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, MotionConfig } from "framer-motion";
 import { lazy, Suspense } from "react";
 import { OnboardingTour } from "./components/OnboardingTour";
-import { useMarketNotifications } from "./components/NotificationSystem";
+import { DatasetBanner } from "@/components/data/DatasetBanner";
+import { LearnModeProvider } from "@/hooks/use-learn-mode";
 import { useKeyboardNav, KeyboardShortcutsHelp } from "@/hooks/use-keyboard-nav";
+const Learn = lazy(() => import("./pages/Learn"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
 const Screener = lazy(() => import("./pages/Screener"));
@@ -43,6 +45,7 @@ function AnimatedRoutes() {
         <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/dcf" element={<DCFCalculator />} />
         <Route path="/portfolio" element={<Portfolio />} />
+        <Route path="/learn" element={<Learn />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
@@ -50,19 +53,24 @@ function AnimatedRoutes() {
 }
 
 function AppShell() {
-  useMarketNotifications();
   useDocumentTitle();
   const { showHelp, setShowHelp } = useKeyboardNav();
 
   return (
     <div className="min-h-screen bg-background pb-14 md:pb-0">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[200] focus:rounded focus:bg-card focus:px-3 focus:py-2 focus:text-sm focus:text-foreground focus:shadow">
+        Skip to the content
+      </a>
       <Header />
+      <DatasetBanner />
       <CommandPalette />
       <OnboardingTour />
       <KeyboardShortcutsHelp open={showHelp} onClose={() => setShowHelp(false)} />
-      <Suspense fallback={<RouteFallback />}>
-        <AnimatedRoutes />
-      </Suspense>
+      <main id="main" tabIndex={-1} className="outline-none">
+        <Suspense fallback={<RouteFallback />}>
+          <AnimatedRoutes />
+        </Suspense>
+      </main>
       <Footer />
     </div>
   );
@@ -72,13 +80,17 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <DensityProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppShell />
-          </BrowserRouter>
-        </TooltipProvider>
+        <MotionConfig reducedMotion="user">
+          <LearnModeProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AppShell />
+              </BrowserRouter>
+            </TooltipProvider>
+          </LearnModeProvider>
+        </MotionConfig>
       </DensityProvider>
     </ThemeProvider>
   </QueryClientProvider>
