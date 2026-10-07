@@ -317,11 +317,14 @@ describe("data stub", () => {
     const bad = await importFiles([{ name: "a.csv", text: "symbol,fiscal_year\nA,2026\n" }]);
     expect(bad.dataset).toBeNull();
     expect(bad.report.ok).toBe(false);
-    expect(await activateImportedDataset(out)).toEqual({ persisted: "memory" });
+    // WS1: jsdom has no IndexedDB, so the dataset falls back to localStorage (2 MB or smaller).
+    expect(await activateImportedDataset(out)).toEqual({ persisted: "localstorage" });
     const p = getDataProvider();
     expect(p.id).toBe("imported");
     const ds = await p.getDataset?.();
-    expect(ds?.meta.isSynthetic).toBe(false);
+    // WS1: a file that declares itself synthetic (the tiny fixture does) stays labelled fictional.
+    expect(ds?.meta.isSynthetic).toBe(true);
+    expect(ds?.meta.source).toBe("user_import");
     expect(ds?.meta.importedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     await clearImportedData();
   });

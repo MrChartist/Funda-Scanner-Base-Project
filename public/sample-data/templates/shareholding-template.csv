@@ -1,0 +1,5 @@
+# Funda Scanner template: shareholding pattern (one row per company and quarter). The example rows describe a fictional company; replace them with your own data.
+# Percentages as numbers (55.2 means 55.2%). promoter_pledged_pct is the share of the PROMOTER holding that is pledged, not of all shares. Lines starting with # are ignored.
+symbol,period_end,promoter_pct,promoter_pledged_pct,fii_pct,dii_pct,num_shareholders
+EXAMPLE,2025-12-31,55.2,0,14.1,12.3,52000
+EXAMPLE,2026-03-31,55.2,0,14.6,12.5,53500

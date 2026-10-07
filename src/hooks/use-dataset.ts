@@ -1,10 +1,11 @@
 // src/hooks/use-dataset.ts — React access to the active dataset and its metric store (WS1).
-// P0 STUB: React Query over getDataProvider(), keyed by provider id and revision so that a
-// provider switch mid-load always shows the latest provider's data.
+// React Query keyed by ["dataset", provider.id, provider.revision ?? 0] with staleTime Infinity:
+// a provider switch mid-load always shows the latest provider's data, and a dataset is turned
+// into a store once (createStore caches one store per dataset object).
 import { useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { CompanyState, DatasetState, FundamentalsDataset, MetricStore } from "@/lib/contracts";
-import { getDataProvider, loadDataset, subscribeDataProvider } from "@/lib/data";
+import type { CompanyState, DataProvider, DatasetState, FundamentalsDataset, MetricStore } from "@/lib/contracts";
+import { getDataProvider, loadDataset, providerInfo, subscribeDataProvider } from "@/lib/data";
 import { createStore } from "@/lib/engine";
 
 interface Loaded {
@@ -12,18 +13,29 @@ interface Loaded {
   store: MetricStore;
 }
 
+/** The React Query key for a provider's dataset. */
+export function datasetQueryKey(p: DataProvider): readonly [string, string, number] {
+  return ["dataset", p.id, p.revision ?? 0] as const;
+}
+
+/** The active provider; re-renders when it is swapped. */
+export function useActiveProvider(): DataProvider {
+  return useSyncExternalStore(subscribeDataProvider, getDataProvider, getDataProvider);
+}
+
 export function useDataset(): DatasetState {
-  const provider = useSyncExternalStore(subscribeDataProvider, getDataProvider, getDataProvider);
+  const provider = useActiveProvider();
   const query = useQuery<Loaded, Error>({
-    queryKey: ["dataset", provider.id, provider.revision ?? 0],
+    queryKey: datasetQueryKey(provider),
     staleTime: Infinity,
+    retry: false,
     queryFn: async ({ signal }) => {
       const dataset = await loadDataset(provider, signal);
       return { dataset, store: createStore(dataset) };
     },
   });
   if (query.data) {
-    return { status: "ready", provider, dataset: query.data.dataset, store: query.data.store, report: null };
+    return { status: "ready", provider, dataset: query.data.dataset, store: query.data.store, report: providerInfo(provider).report };
   }
   if (query.error) {
     return {

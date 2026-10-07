@@ -1,23 +1,28 @@
-// Data-provider contract for fundamentals. The UI only talks to this module, so any
-// source (your own API, a CSV/JSON import, a database) can be plugged in by
-// implementing `DataProvider` and calling `setDataProvider()` at start-up.
+// Legacy compatibility module (WS1, §B.12). New code imports from "@/lib/data" and "@/lib/contracts".
 //
+// What stays here: the v0 types (StockRow, DataProvider), the deprecated METRICS list and
+// runScreen() used by the original Screener page, and thin wrappers over the data registry.
 // Fundamentals only: no live prices, no price-action fields.
 
 import type { StockRow } from "./contracts/legacy";
 import type { DataProvider } from "./contracts/provider";
+import { datasetFromStockRows } from "./data/providers/legacy-adapter";
+import { clearImportedData as clearImportedDataset } from "./data";
 
 export type { StockRow } from "./contracts/legacy";
 export type { DataProvider } from "./contracts/provider";
 
+/** @deprecated Use metric ids from the catalogue (`@/lib/metrics`). */
 export type MetricKey = keyof Pick<
   StockRow,
   | "market_cap" | "price" | "pe" | "eps" | "price_book" | "roe" | "roce"
   | "debt_equity" | "debt_ebitda" | "dividend_yield" | "sales_growth" | "profit_growth" | "fcf_yield"
 >;
 
+/** @deprecated */
 export type MetricCategory = "Valuation" | "Profitability" | "Leverage" | "Growth";
 
+/** @deprecated Use MetricDef from `@/lib/contracts`. */
 export interface MetricDef {
   key: MetricKey;
   label: string;
@@ -26,6 +31,7 @@ export interface MetricDef {
   unit: string;
 }
 
+/** @deprecated The 13 legacy snapshot metrics; the catalogue in `@/lib/metrics` replaces them. */
 export const METRICS: MetricDef[] = [
   { key: "market_cap", label: "Market Cap", category: "Valuation", unit: "₹ Cr" },
   { key: "price", label: "Price", category: "Valuation", unit: "₹" },
@@ -42,8 +48,10 @@ export const METRICS: MetricDef[] = [
   { key: "profit_growth", label: "Profit Growth", category: "Growth", unit: "%" },
 ];
 
+/** @deprecated */
 export type Operator = "gt" | "lt" | "between" | "eq";
 
+/** @deprecated Saved screens are FSQL text now (`@/lib/screen`). */
 export interface FilterCondition {
   metric: MetricKey;
   operator: Operator;
@@ -52,8 +60,10 @@ export interface FilterCondition {
   value2?: number;
 }
 
+/** @deprecated */
 export type SortKey = keyof StockRow;
 
+/** @deprecated */
 export interface ScreenQuery {
   filters: FilterCondition[];
   sortKey?: SortKey;
@@ -61,7 +71,10 @@ export interface ScreenQuery {
   limit?: number;
 }
 
-/** Pure, provider-independent screening: AND of all conditions, then sort, then limit. */
+/**
+ * Pure, provider-independent screening: AND of all conditions, then sort, then limit.
+ * @deprecated Use runScreen from `@/lib/screen` (FSQL over the metric store).
+ */
 export function runScreen(rows: StockRow[], query: ScreenQuery): StockRow[] {
   const { filters, sortKey = "market_cap", sortDir = "desc", limit } = query;
 
@@ -96,36 +109,35 @@ export function runScreen(rows: StockRow[], query: ScreenQuery): StockRow[] {
   return limit ? sorted.slice(0, limit) : sorted;
 }
 
-// ─── Active provider ───────────────────────────────────────────────
-import { demoProvider } from "./demo-provider";
+// ─── Active provider (re-exported from the data registry) ───────────
+export { getDataProvider, setDataProvider, subscribeDataProvider } from "./data/registry";
 
-let activeProvider: DataProvider = demoProvider;
-const listeners = new Set<() => void>();
-
-export function getDataProvider(): DataProvider {
-  return activeProvider;
-}
-
-export function setDataProvider(provider: DataProvider) {
-  activeProvider = provider;
-  listeners.forEach((l) => l());
-}
-
-/** For useSyncExternalStore: re-render when the provider changes. */
-export function subscribeDataProvider(listener: () => void) {
-  listeners.add(listener);
-  return () => { listeners.delete(listener); };
-}
-
-/** Provider backed by a fixed list of rows (e.g. a user's imported file). */
+/**
+ * Provider backed by a fixed list of legacy rows. It is a v2 provider (getDataset, through the
+ * legacy adapter) that also keeps getUniverse() for v0 callers.
+ */
 export function createStaticProvider(id: string, name: string, rows: StockRow[]): DataProvider {
-  return { id, name, isDemo: false, async getUniverse() { return rows; } };
+  return {
+    id,
+    name,
+    isDemo: false,
+    revision: 0,
+    async getDataset() {
+      return datasetFromStockRows(rows, { name, isSynthetic: false, source: "custom_provider" });
+    },
+    async getUniverse() {
+      return rows;
+    },
+  };
 }
 
-// ─── Persisting an imported dataset (browser only) ─────────────────
+// ─── Persisting an imported dataset (v0 key only) ──────────────────
 const STORAGE_KEY = "funda-imported-data";
 
-// JSON cannot hold NaN, so missing numbers are stored as null.
+/**
+ * Writes legacy rows to the v0 key. JSON cannot hold NaN, so missing numbers are stored as null.
+ * @deprecated Use importFiles() and activateImportedDataset() from `@/lib/data`.
+ */
 export function saveImportedData(name: string, rows: StockRow[]): boolean {
   try {
     localStorage.setItem(
@@ -138,6 +150,10 @@ export function saveImportedData(name: string, rows: StockRow[]): boolean {
   }
 }
 
+/**
+ * Reads the v0 key as a provider, or null.
+ * @deprecated restoreActiveProvider() in `@/lib/data` migrates this key once at start-up.
+ */
 export function loadImportedData(): DataProvider | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -152,7 +168,7 @@ export function loadImportedData(): DataProvider | null {
   }
 }
 
-export function clearImportedData() {
-  try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
-  setDataProvider(demoProvider);
+/** Forgets every imported dataset (all stored copies and the v0 key) and returns to the sample data. */
+export function clearImportedData(): Promise<void> {
+  return clearImportedDataset();
 }

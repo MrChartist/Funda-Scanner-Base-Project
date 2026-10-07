@@ -1,0 +1,4 @@
+# Funda Scanner template: company list (one row per company). The example row describes a fictional company; replace it with your own data.
+# Required: symbol. Prices in ₹ per share, shares in crore, market cap in ₹ crore. Leave a cell blank when you do not have the figure. Lines starting with # are ignored.
+symbol,name,sector,industry,isin,company_type,statement_basis,fy_end_month,price,price_date,shares_outstanding,face_value,market_cap,source_note
+EXAMPLE,Example Manufacturing Ltd (fictional),Capital goods,Industrial machinery,,non_financial,consolidated,3,150,,10,10,,Example row from the template

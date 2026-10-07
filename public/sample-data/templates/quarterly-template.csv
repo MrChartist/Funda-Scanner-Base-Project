@@ -1,0 +1,7 @@
+# Funda Scanner template: quarterly results (one row per company and quarter). The example rows describe a fictional company; replace them with your own data.
+# period_end is the last day of the quarter (YYYY-MM-DD). Money in ₹ crore. Lines starting with # are ignored.
+symbol,period_end,revenue,operating_expenses,depreciation,net_profit,net_profit_owners
+EXAMPLE,2025-06-30,235,193,10,22,22
+EXAMPLE,2025-09-30,245,201,10,24,24
+EXAMPLE,2025-12-31,255,209,10,25,25
+EXAMPLE,2026-03-31,265,217,10,26.5,26.5
