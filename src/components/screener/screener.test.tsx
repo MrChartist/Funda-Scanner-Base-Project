@@ -103,7 +103,7 @@ function expectedCount(query: string): number {
 
 /** Applies a template from the template bar (the chips above the results). */
 function useTemplateCard(title: string) {
-  fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${title}(,|$)`) }));
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${title}( |,|$)`) }));
 }
 
 describe("Screener: default view and honest labelling", () => {
@@ -114,7 +114,7 @@ describe("Screener: default view and honest labelling", () => {
     expect(await screen.findByRole("table")).toBeInTheDocument();
     expect(summary()).toHaveTextContent("150 of 150 match");
     expect(screen.queryByRole("heading", { name: /about the templates/i })).toBeNull();
-    for (const t of TEMPLATES) expect(screen.getByRole("button", { name: new RegExp(`^${t.title}(,|$)`) })).toBeInTheDocument();
+    for (const t of TEMPLATES) expect(screen.getByRole("button", { name: new RegExp(`^${t.title}( |,|$)`) })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /import data/i })).toBeInTheDocument();
     // The one data-source badge lives in the Header, not on this page.
     expect(screen.queryByLabelText(/data source/i)).toBeNull();
@@ -162,7 +162,7 @@ describe("Screener: templates", () => {
     await ready("/screener?v=1&t=quality");
     expect(screen.getByRole("listitem", { name: "Rule 1" })).toBeInTheDocument();
     expect(summary()).not.toHaveTextContent("150 of 150 match");
-    expect(screen.getByRole("button", { name: /^Quality compounders(,|$)/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^Quality compounders( |,|$)/ })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("applies a template to an empty screen and shows an Undo toast", async () => {
@@ -424,7 +424,7 @@ describe("Screener: results", () => {
   it("opens the Why drawer from a table row", async () => {
     await ready("/screener?q=" + encodeURIComponent("roce > 15"));
     const table = await screen.findByRole("table");
-    fireEvent.click(within(table).getAllByRole("button", { name: /^Why .* matched$/ })[0]);
+    fireEvent.click(within(table).getAllByRole("button", { name: /^Why it matched/ })[0]);
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText(/Why it matched/)).toBeInTheDocument();
     expect(within(dialog).getByText(/Rule 1/)).toBeInTheDocument();
@@ -436,7 +436,7 @@ describe("Screener: results", () => {
     await waitFor(() => expect(screen.queryByRole("table")).toBeNull());
     const cards = await screen.findAllByRole("listitem", { name: /fictional|\w/ });
     expect(cards.length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: /^Why .* matched$/ })[0]).toHaveTextContent("Why it matched ▸");
+    expect(screen.getAllByRole("button", { name: /^Why it matched/ })[0]).toHaveTextContent("Why it matched ▸");
     expect(screen.getAllByText("(fictional)").length).toBeGreaterThan(0);
     expect(screen.getAllByText("2/2").length).toBeGreaterThan(0);
     expect(screen.getAllByRole("link")[0].getAttribute("href")).toMatch(/^\/company\//);
@@ -566,7 +566,7 @@ describe("Screener: results-first template bar", () => {
     await ready();
     for (const t of TEMPLATES) {
       const n = expectedCount(t.query);
-      const label = `${t.title}, ${n} ${n === 1 ? "match" : "matches"}`;
+      const label = `${t.title} ${n} ${n === 1 ? "match" : "matches"}`;
       expect(await screen.findByRole("button", { name: label })).toBeInTheDocument();
     }
   });
@@ -574,7 +574,7 @@ describe("Screener: results-first template bar", () => {
   it("marks the applied template chip as pressed and keeps 'Details' reachable from the rules line", async () => {
     await ready();
     useTemplateCard("Quality compounders");
-    const chip = await screen.findByRole("button", { name: /^Quality compounders, \d+ match/ });
+    const chip = await screen.findByRole("button", { name: /^Quality compounders \d+ match/ });
     expect(chip).toHaveAttribute("aria-pressed", "true");
     const line = screen.getByTestId("rules-summary");
     expect(line).toHaveTextContent("from Quality compounders");

@@ -33,7 +33,7 @@ export function ResultsSummary({ run, stale, trailing }: ResultsSummaryProps) {
         <div className="flex items-center gap-3 text-xs">
           {run.skipped.length > 0 && (
             <Popover>
-              <PopoverTrigger className={LINK} aria-label={`Why ${skipped} ${skipped === 1 ? "company was" : "companies were"} not evaluated`}>
+              <PopoverTrigger className={LINK} aria-label={`Why not evaluated? ${skipped} ${skipped === 1 ? "company was" : "companies were"} not checked`}>
                 <CircleAlert className="h-3.5 w-3.5" aria-hidden="true" />
                 Why not evaluated?
               </PopoverTrigger>

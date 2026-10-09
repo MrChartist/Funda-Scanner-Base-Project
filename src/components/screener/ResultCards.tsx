@@ -111,7 +111,7 @@ export function ResultCards(props: ResultCardsProps) {
                   );
                 })}
               </dl>
-              <Button type="button" variant="ghost" className="-mb-2 mt-1 min-h-11 gap-0 px-0 text-primary hover:bg-transparent" onClick={() => onWhy(i)} aria-label={`Why ${name} matched`}>
+              <Button type="button" variant="ghost" className="-mb-2 mt-1 min-h-11 gap-0 px-0 text-primary hover:bg-transparent" onClick={() => onWhy(i)} aria-label={`Why it matched: ${name}`}>
                 Why it matched ▸
               </Button>
             </li>

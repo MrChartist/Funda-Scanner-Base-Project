@@ -77,11 +77,11 @@ export function BarValue({ column, store, index, scale }: { column: ResolvedColu
         <span
           aria-hidden="true"
           data-bar={Math.round(pct * 100)}
-          className={cn("absolute inset-y-[3px] left-0 rounded-[3px]", negative ? "bg-destructive/20" : "bg-primary/20")}
+          className={cn("absolute inset-y-[3px] left-0 rounded-[3px]", negative ? "bg-destructive/15" : "bg-primary/15")}
           style={{ width: `${Math.max(4, Math.round(pct * 100))}%` }}
         />
       )}
-      <span className={cn("relative z-[1] inline-flex items-center gap-1 px-1", negative && "text-negative", signed && !negative && "text-positive")}>
+      <span className={cn("relative z-[1] inline-flex items-center gap-1 px-1", negative && "text-red-800 dark:text-negative", signed && !negative && "text-green-800 dark:text-positive")}>
         {arrow && <span aria-hidden="true" className="text-[9px] leading-none">{arrow}</span>}
         <ColumnValue column={column} store={store} index={index} />
       </span>
@@ -280,7 +280,7 @@ export function ResultsTable(props: ResultsTableProps) {
                     </td>
                   ))}
                   <td className={cn(CELL, "border-t")}>
-                    <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-primary [@media(pointer:coarse)]:min-h-11" aria-label={`Why ${name} matched`} onClick={() => onWhy(i)}>
+                    <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-primary [@media(pointer:coarse)]:min-h-11" aria-label={`Why it matched: ${name}`} onClick={() => onWhy(i)}>
                       Why it matched
                     </Button>
                   </td>

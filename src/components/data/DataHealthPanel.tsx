@@ -88,7 +88,7 @@ export function DataHealthPanel({ store, index, health, className }: DataHealthP
 
       {h.assumedZero.length > 0 && (
         <div className="space-y-1">
-          <h4 className="text-xs font-semibold text-foreground">Assumptions</h4>
+          <h3 className="text-xs font-semibold text-foreground">Assumptions</h3>
           <ul className="space-y-1 text-muted-foreground">
             {h.assumedZero.map((a) => (
               <li key={a.field}>{ASSUMED_ZERO_TEXT[a.field] ?? `${fieldLabel(a.field)} not provided; treated as 0.`} ({plural(a.years, "year", "years")})</li>
@@ -99,7 +99,7 @@ export function DataHealthPanel({ store, index, health, className }: DataHealthP
 
       {h.missingRequired.length > 0 && (
         <div className="space-y-1">
-          <h4 className="text-xs font-semibold text-foreground">Inputs not provided</h4>
+          <h3 className="text-xs font-semibold text-foreground">Inputs not provided</h3>
           <ul className="space-y-1 text-muted-foreground">
             {h.missingRequired.map((m) => (
               <li key={m.period}><span className="font-medium text-foreground">{m.period}:</span> {m.fields.map((f) => fieldLabel(f as AnnualField)).join(", ")}</li>
@@ -111,7 +111,7 @@ export function DataHealthPanel({ store, index, health, className }: DataHealthP
 
       {h.mismatches.length > 0 && (
         <div className="space-y-1">
-          <h4 className="text-xs font-semibold text-foreground">Supplied values that differ from the statements by more than {MISMATCH_THRESHOLD_PCT}%</h4>
+          <h3 className="text-xs font-semibold text-foreground">Supplied values that differ from the statements by more than {MISMATCH_THRESHOLD_PCT}%</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="text-muted-foreground">
@@ -138,7 +138,7 @@ export function DataHealthPanel({ store, index, health, className }: DataHealthP
 
       {h.issues.length > 0 && (
         <div className="space-y-1">
-          <h4 className="text-xs font-semibold text-foreground">Checks on the figures</h4>
+          <h3 className="text-xs font-semibold text-foreground">Checks on the figures</h3>
           <ul className="space-y-1 text-muted-foreground">
             {h.issues.map((i, k) => <IssueLine key={`${i.code}-${k}`} issue={i} />)}
           </ul>

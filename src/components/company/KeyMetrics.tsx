@@ -87,18 +87,18 @@ export function KeyMetrics({ store, index }: KeyMetricsProps) {
             <h3 className="text-sm font-semibold">{g.title}</h3>
             {g.caption && <p className="mt-0.5 text-sm text-muted-foreground">{g.caption}</p>}
             {g.note && <p className="mt-0.5 text-sm text-muted-foreground">{g.note}</p>}
-            <dl className="mt-2 grid gap-x-4 sm:grid-cols-2">
+            <ul className="mt-2 grid gap-x-4 sm:grid-cols-2">
               {g.kpis.map((k) => (
-                <div key={k.def.id} className="border-t py-2.5">
+                <li key={k.def.id} className="border-t py-2.5">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <dt className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <span>{k.def.label}</span>
                         <MetricInfo def={k.def} />
-                      </dt>
-                      <dd className="mt-0.5 text-lg font-semibold leading-tight">
+                      </div>
+                      <div className="mt-0.5 text-lg font-semibold leading-tight">
                         <ValueCell def={k.def} value={k.value} family={family} showPeriod />
-                      </dd>
+                      </div>
                     </div>
                     {k.history && (
                       <div className="flex flex-col items-end gap-0.5">
@@ -110,9 +110,9 @@ export function KeyMetrics({ store, index }: KeyMetricsProps) {
                     )}
                   </div>
                   <Position kpi={k} />
-                </div>
+                </li>
               ))}
-            </dl>
+            </ul>
           </section>
         ))}
       </div>

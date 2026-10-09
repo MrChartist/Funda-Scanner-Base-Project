@@ -168,7 +168,7 @@ export function UniverseScatter({ store }: { store: MetricStore }) {
       }
     >
       <div className="relative" role="img" aria-label={ariaLabel}>
-        <div className="h-[340px] w-full sm:h-[400px]">
+        <div className="h-[340px] w-full sm:h-[400px]" aria-hidden="true">
           {typeof ResizeObserver !== "undefined" && (
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 10, right: 16, bottom: 30, left: 4 }}>

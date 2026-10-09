@@ -26,7 +26,6 @@ export function TemplateBar({ counts, activeId, onUse, galleryOpen, onToggleGall
               <button
                 type="button"
                 aria-pressed={active}
-                aria-label={n === undefined ? t.title : `${t.title}, ${n} ${n === 1 ? "match" : "matches"}`}
                 title={t.idea}
                 onClick={() => onUse(t)}
                 data-template={t.id}
@@ -38,11 +37,11 @@ export function TemplateBar({ counts, activeId, onUse, galleryOpen, onToggleGall
               >
                 <span>{t.title}</span>
                 <span
-                  aria-hidden="true"
-                  className={cn("num min-w-[1.75rem] rounded-full bg-muted px-1.5 py-0.5 text-center text-xs font-semibold text-muted-foreground", active && "bg-primary/15 text-primary")}
+                  className={cn("num min-w-[1.75rem] rounded-full bg-muted px-1.5 py-0.5 text-center text-xs font-semibold text-muted-foreground", active && "bg-primary/20 text-foreground")}
                 >
                   {n === undefined ? "…" : n}
                 </span>
+                {n !== undefined && <span className="sr-only">{n === 1 ? "match" : "matches"}</span>}
               </button>
             </li>
           );

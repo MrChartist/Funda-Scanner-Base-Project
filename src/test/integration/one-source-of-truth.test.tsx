@@ -121,10 +121,10 @@ describe("one source of truth (§G.4 #2)", () => {
       const summary = document.getElementById("summary") as HTMLElement;
       for (const m of METRICS) {
         const label = store.def(m)?.label ?? m;
-        const dt = within(summary).getAllByText(label).map((n) => n.closest("dt")).find((d) => d !== null);
-        expect(dt, `${sym} ${m} tile`).toBeTruthy();
-        const tile = (dt as HTMLElement).parentElement as HTMLElement;
-        expect(cellText(tile.querySelector(`dd [data-metric="${m}"]`)), `${sym} ${m}`).toBe(expected(sym, m));
+        // Each headline figure is a list item that holds its label and its value.
+        const item = within(summary).getAllByText(label).map((n) => n.closest("li")).find((d) => d !== null);
+        expect(item, `${sym} ${m} tile`).toBeTruthy();
+        expect(cellText((item as HTMLElement).querySelector(`[data-metric="${m}"]`)), `${sym} ${m}`).toBe(expected(sym, m));
       }
       cleanup();
     }

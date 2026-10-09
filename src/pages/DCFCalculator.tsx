@@ -115,7 +115,7 @@ function SensitivityTable({ inputs }: { inputs: DCFInputs }) {
   const discount = [-2, -1, 0, 1, 2].map((d) => inputs.discountRate + d);
   const base = calculateDCF(inputs).perShare;
   return (
-    <div className="relative overflow-x-auto">
+    <div className="relative overflow-x-auto" tabIndex={0} role="region" aria-label="Sensitivity table, scrolls sideways on narrow screens">
       <table className="w-full text-xs">
         <caption className="sr-only">Model value per share for different growth and discount rates</caption>
         <thead>

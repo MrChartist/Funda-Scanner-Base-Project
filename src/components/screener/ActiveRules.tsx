@@ -26,7 +26,7 @@ export function ActiveRules({ compiled, total, editable, templateTitle, onRemove
         <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         <span>
           No rules yet: all {total} companies, largest first. Pick a template, or{" "}
-          <button type="button" onClick={onAddRule} className="relative rounded text-primary underline underline-offset-2 before:absolute before:-inset-2 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">add a rule</button>.
+          <button type="button" onClick={onAddRule} className="relative inline-flex min-h-6 items-center rounded text-primary underline underline-offset-2 before:absolute before:-inset-2 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">add a rule</button>.
         </span>
       </p>
     );
@@ -38,13 +38,13 @@ export function ActiveRules({ compiled, total, editable, templateTitle, onRemove
         {templateTitle && (
           <span>
             from {templateTitle}
-            <button type="button" onClick={onTemplateDetails} className="relative ml-1.5 rounded text-primary underline-offset-2 before:absolute before:-inset-2 before:content-[''] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <button type="button" onClick={onTemplateDetails} className="relative inline-flex min-h-6 items-center ml-1.5 rounded text-primary underline-offset-2 before:absolute before:-inset-2 before:content-[''] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Details
             </button>
           </span>
         )}
         {editable && (
-          <button type="button" onClick={onClear} className="relative ml-auto rounded text-primary underline-offset-2 before:absolute before:-inset-2 before:content-[''] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <button type="button" onClick={onClear} className="relative inline-flex min-h-6 items-center ml-auto rounded text-primary underline-offset-2 before:absolute before:-inset-2 before:content-[''] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             Clear all rules
           </button>
         )}
@@ -64,7 +64,7 @@ export function ActiveRules({ compiled, total, editable, templateTitle, onRemove
               disabled={!editable}
               aria-label={`Remove rule: ${c.english}`}
               onClick={() => onRemove(i)}
-              className="relative ml-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground before:absolute before:-inset-1.5 before:content-[''] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
+              className="relative inline-flex min-h-6 items-center ml-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground before:absolute before:-inset-1.5 before:content-[''] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
             >
               <X className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
