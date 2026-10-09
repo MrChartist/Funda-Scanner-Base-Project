@@ -11,6 +11,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { AnimatePresence, MotionConfig } from "framer-motion";
 import { lazy, Suspense } from "react";
+import { ROUTER_BASENAME } from "@/lib/base-path";
 import { OnboardingTour } from "./components/OnboardingTour";
 import { DatasetBanner } from "@/components/data/DatasetBanner";
 import { LearnModeProvider } from "@/hooks/use-learn-mode";
@@ -85,7 +86,7 @@ const App = () => (
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <BrowserRouter>
+              <BrowserRouter basename={ROUTER_BASENAME}>
                 <AppShell />
               </BrowserRouter>
             </TooltipProvider>
