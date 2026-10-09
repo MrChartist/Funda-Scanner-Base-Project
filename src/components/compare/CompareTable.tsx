@@ -1,23 +1,35 @@
 import { Link } from "react-router-dom";
-import { Star, X } from "lucide-react";
+import { Star } from "lucide-react";
 import type { MetricStore } from "@/lib/contracts";
 import { CompanyName } from "@/components/common/CompanyName";
 import { MetricInfo } from "@/components/common/MetricInfo";
 import { ValueCell } from "@/components/common/ValueCell";
-import { Button } from "@/components/ui/button";
 import { TYPE_LABEL } from "@/lib/views/company-view";
 import { cn } from "@/lib/utils";
-import type { CompareModel } from "./compare-view";
+import type { CompareModel, CompareRow } from "./compare-view";
 
 export interface CompareTableProps {
   store: MetricStore;
   indices: readonly number[];
   model: CompareModel;
-  onRemove: (symbol: string) => void;
+}
+
+const rowMax = (row: CompareRow): number =>
+  Math.max(0, ...row.cells.map((c) => Math.abs(c.value.v ?? 0)), Math.abs(row.median.v ?? 0));
+
+/** Magnitude bar on the scale of the compared set; the tick marks the industry median. Decorative: the number is above it. */
+function RowBar({ value, median, max, lead }: { value: number; median: number | null; max: number; lead: boolean }) {
+  const w = Math.max(2, (Math.abs(value) / max) * 100);
+  return (
+    <span aria-hidden="true" className="relative mt-1 block h-1.5 w-full rounded-full bg-muted">
+      <span className={cn("absolute inset-y-0 left-0 rounded-full", lead ? "bg-primary" : "bg-primary/45")} style={{ width: `${w}%` }} />
+      {median !== null && <span className="absolute -inset-y-0.5 w-0.5 bg-foreground/70" style={{ left: `${(Math.abs(median) / max) * 100}%` }} />}
+    </span>
+  );
 }
 
 /** Side-by-side figures, an industry-median column and a "Leads on" count per company. */
-export function CompareTable({ store, indices, model, onRemove }: CompareTableProps) {
+export function CompareTable({ store, indices, model }: CompareTableProps) {
   const synthetic = store.meta.isSynthetic;
   return (
     <div className="relative overflow-x-auto rounded-md border" tabIndex={0} role="region" aria-label="Comparison table">
@@ -35,9 +47,6 @@ export function CompareTable({ store, indices, model, onRemove }: CompareTablePr
                     <CompanyName name={c.name} isSynthetic={synthetic} />
                   </Link>
                   <span className="block text-xs text-muted-foreground">{c.symbol} · {TYPE_LABEL[t.type]}{t.inferred ? " (inferred)" : ""}</span>
-                  <Button type="button" variant="ghost" size="sm" className="-ml-2 mt-1 min-h-11 gap-1 px-2 text-xs" onClick={() => onRemove(c.symbol)} aria-label={`Remove ${c.name} from the comparison`}>
-                    <X className="h-4 w-4" aria-hidden="true" /> Remove
-                  </Button>
                 </th>
               );
             })}
@@ -62,16 +71,20 @@ export function CompareTable({ store, indices, model, onRemove }: CompareTablePr
               <th scope="row" className="sticky left-0 z-10 bg-card px-3 py-2 text-left text-sm font-normal">
                 <span className="inline-flex items-center gap-1"><span className="block w-32 sm:w-52">{row.def.label}</span><MetricInfo def={row.def} /></span>
               </th>
-              {row.cells.map((cell, k) => (
-                <td key={store.symbols[indices[k]]} className={cn("px-3 py-2", cell.leads && "bg-primary/5 font-medium")}>
+              {row.cells.map((cell, k) => {
+                const max = rowMax(row);
+                return (
+                <td key={store.symbols[indices[k]]} className={cn("min-w-40 px-3 py-2", cell.leads && "bg-primary/5 font-medium")}>
                   <ValueCell def={row.def} value={cell.value} family={store.family(indices[k])} showPeriod />
                   {cell.leads && (
                     <span className="ml-2 inline-flex items-center gap-0.5 text-xs text-primary">
                       <Star className="h-3 w-3" aria-hidden="true" /> Leads
                     </span>
                   )}
+                  {cell.value.v !== null && max > 0 && <RowBar value={cell.value.v} median={k === 0 ? row.median.v : null} max={max} lead={cell.leads} />}
                 </td>
-              ))}
+                );
+              })}
               <td className="px-3 py-2 text-muted-foreground">
                 <ValueCell def={row.def} value={row.median} family={store.family(indices[0])} />
               </td>

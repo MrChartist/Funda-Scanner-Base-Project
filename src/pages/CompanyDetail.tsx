@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { Download, Printer } from "lucide-react";
 import type { MetricStore } from "@/lib/contracts";
 import { useCompany } from "@/hooks/use-dataset";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -9,11 +8,12 @@ import { Button } from "@/components/ui/button";
 import { AtAGlance } from "@/components/company/AtAGlance";
 import { CashFlowQuality } from "@/components/company/CashFlowQuality";
 import { CompanyBreadcrumb } from "@/components/company/CompanyBreadcrumb";
-import { CompanyHeader } from "@/components/company/CompanyHeader";
+import { CompanyHeader, CompanyMiniHeader } from "@/components/company/CompanyHeader";
 import { CompanyPageNav } from "@/components/company/CompanyPageNav";
 import { CompanySection } from "@/components/company/CompanySection";
 import { DividendAnalysis } from "@/components/company/DividendAnalysis";
 import { FinancialStatement } from "@/components/company/FinancialStatements";
+import { FinancialHistoryStrip } from "@/components/company/FinancialHistoryStrip";
 import { KeyMetrics } from "@/components/company/KeyMetrics";
 import { PeerComparison } from "@/components/company/PeerComparison";
 import { ProvenanceNote } from "@/components/company/ProvenanceNote";
@@ -84,20 +84,18 @@ function CompanyView({ store, index }: { store: MetricStore; index: number }) {
   return (
     <>
       <CompanyBreadcrumb store={store} index={index} symbol={symbol} />
-      <div className="flex flex-wrap justify-end gap-2" data-no-print>
-        <Button type="button" variant="outline" className="min-h-11 gap-1.5" onClick={() => downloadCompanyCsv(store, index)}>
-          <Download className="h-4 w-4" aria-hidden="true" /> Download CSV
-        </Button>
-        <Button type="button" variant="outline" className="min-h-11 gap-1.5" onClick={() => { if (!openPrintView(store, index)) noPopup(); }}>
-          <Printer className="h-4 w-4" aria-hidden="true" /> Print view
-        </Button>
-      </div>
-      <CompanyHeader store={store} index={index} />
+      <CompanyHeader
+        store={store}
+        index={index}
+        onDownload={() => downloadCompanyCsv(store, index)}
+        onPrint={() => { if (!openPrintView(store, index)) noPopup(); }}
+      />
       <ProvenanceNote store={store} index={index} />
-      <CompanyPageNav />
+      <CompanyPageNav mini={<CompanyMiniHeader store={store} index={index} />} />
 
-      <CompanySection id="summary" title="Summary" symbol={symbol} description="Checks by area, then the headline figures.">
+      <CompanySection id="summary" title="Summary" symbol={symbol} description="Ten-year history, checks by area, then the headline figures with their place among peers.">
         <div className="space-y-5">
+          <FinancialHistoryStrip store={store} index={index} />
           <AtAGlance store={store} index={index} />
           <KeyMetrics store={store} index={index} />
         </div>

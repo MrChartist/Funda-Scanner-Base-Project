@@ -13,17 +13,17 @@ export interface CompanyBreadcrumbProps {
 export function CompanyBreadcrumb({ store, index, symbol }: CompanyBreadcrumbProps) {
   const company = store && index !== undefined && index >= 0 ? store.company(index) : null;
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1 overflow-x-auto py-2 text-sm text-muted-foreground">
-      <Link to="/" className="inline-flex min-h-11 shrink-0 items-center gap-1 hover:text-foreground">
+    <nav aria-label="Breadcrumb" className="flex items-center gap-0.5 overflow-x-auto text-sm text-muted-foreground">
+      <Link to="/" className="inline-flex min-h-11 md:min-h-8 shrink-0 items-center gap-1 hover:text-foreground">
         <Home className="h-4 w-4" aria-hidden="true" />
         <span>Home</span>
       </Link>
       <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
-      <Link to="/screener" className="inline-flex min-h-11 shrink-0 items-center hover:text-foreground">Screener</Link>
+      <Link to="/screener" className="inline-flex min-h-11 md:min-h-8 shrink-0 items-center hover:text-foreground">Screener</Link>
       <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
       {company ? (
         <>
-          <Link to={`/screener?u=${encodeURIComponent(`sector:${company.sector}`)}`} className="inline-flex min-h-11 max-w-[10rem] shrink-0 items-center truncate hover:text-foreground">
+          <Link to={`/screener?u=${encodeURIComponent(`sector:${company.sector}`)}`} className="inline-flex min-h-11 md:min-h-8 max-w-[10rem] shrink-0 items-center truncate hover:text-foreground">
             {company.sector}
           </Link>
           <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />

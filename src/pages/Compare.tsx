@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useDataset } from "@/hooks/use-dataset";
 import { EmptyState } from "@/components/common/EmptyState";
 import { CompareHistory } from "@/components/compare/CompareHistory";
+import { CompareCards } from "@/components/compare/CompareCards";
 import { CompareTable } from "@/components/compare/CompareTable";
 import { CompanyPicker } from "@/components/compare/CompanyPicker";
 import { buildCompare, MAX_COMPARE, parseSymbols } from "@/components/compare/compare-view";
@@ -49,9 +50,10 @@ function ReadyCompare({ store }: { store: Extract<ReturnType<typeof useDataset>,
       ) : (
         <>
           {symbols.length === 1 && <p className="text-sm text-muted-foreground" role="status">Add one more company to see who leads on each figure.</p>}
-          <CompareTable store={store} indices={parsed.indices} model={model} onRemove={(s) => write(everything.filter((x) => x !== s))} />
+          <CompareCards store={store} indices={parsed.indices} model={model} onRemove={(s) => write(everything.filter((x) => x !== s))} />
+          <CompareTable store={store} indices={parsed.indices} model={model} />
           <p className="text-xs text-muted-foreground">
-            "Leads" marks the better value in a row by the usual reading of that figure (for example higher return or lower debt). Figures with no better side are not counted. The industry median is that of the first company's industry. {INSIGHTS_FOOTER}
+            "Leads" marks the better value in a row by the usual reading of that figure (for example higher return or lower debt). Figures with no better side are not counted. The industry median is that of the first company's industry. Bars show each figure relative to the largest in its row; the tick on the first company's bar marks that median. {INSIGHTS_FOOTER}
           </p>
           <section aria-labelledby="compare-history-title" className="rounded-lg border bg-card p-3 sm:p-4">
             <h2 id="compare-history-title" className="mb-3 text-base font-semibold">Ten-year history</h2>

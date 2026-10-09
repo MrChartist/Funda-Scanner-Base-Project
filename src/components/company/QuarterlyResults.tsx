@@ -17,9 +17,9 @@ export function QuarterlyResults({ store, index }: QuarterlyResultsProps) {
   }
   return (
     <div className="space-y-3">
-      <PeriodTable caption="Quarterly results in rupees crore, oldest quarter first" periods={view.periods} rows={view.rows} family={store.family(index)} />
+      <PeriodTable caption="Quarterly results in rupees crore, oldest quarter first" periods={view.periods} rows={view.rows} family={store.family(index)} kind="quarterly" />
       {view.growth.length > 0 && (
-        <PeriodTable caption="Quarterly changes, matched by date" periods={view.periods} rows={view.growth} family={store.family(index)} />
+        <PeriodTable caption="Quarterly changes, matched by date" periods={view.periods} rows={view.growth} family={store.family(index)} kind="quarterly" trend={false} />
       )}
       <p className="text-xs text-muted-foreground">
         Quarters are matched by their end date, so a missing quarter leaves a gap instead of shifting later figures. A change is not shown when the earlier figure is zero or negative.
