@@ -9,9 +9,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useDocumentTitle } from "@/hooks/use-document-title";
-import { AnimatePresence, MotionConfig } from "framer-motion";
+import { MotionConfig } from "framer-motion";
 import { lazy, Suspense } from "react";
 import { OnboardingTour } from "./components/OnboardingTour";
+import { LoadingState } from "@/components/layout";
 import { DatasetBanner } from "@/components/data/DatasetBanner";
 import { LearnModeProvider } from "@/hooks/use-learn-mode";
 import { useKeyboardNav, KeyboardShortcutsHelp } from "@/hooks/use-keyboard-nav";
@@ -25,18 +26,15 @@ const DCFCalculator = lazy(() => import("./pages/DCFCalculator"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const RouteFallback = () => (
-  <div className="flex items-center justify-center py-24 text-sm text-muted-foreground" role="status" aria-live="polite">
-    Loading…
-  </div>
-);
+const RouteFallback = () => <LoadingState className="py-24" />;
 
 const queryClient = new QueryClient();
 
-function AnimatedRoutes() {
+/** Each page animates itself in (PageShell, CSS only), so there is no exit animation to wait for. */
+function AppRoutes() {
   const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
+    <>
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/company/:symbol" element={<CompanyDetail />} />
@@ -48,7 +46,7 @@ function AnimatedRoutes() {
         <Route path="/learn" element={<Learn />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </AnimatePresence>
+    </>
   );
 }
 
@@ -57,8 +55,8 @@ function AppShell() {
   const { showHelp, setShowHelp } = useKeyboardNav();
 
   return (
-    <div className="min-h-screen bg-background pb-14 md:pb-0">
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[200] focus:rounded focus:bg-card focus:px-3 focus:py-2 focus:text-sm focus:text-foreground focus:shadow">
+    <div className="min-h-screen bg-background pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[200] focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-lg focus:ring-2 focus:ring-primary">
         Skip to the content
       </a>
       <Header />
@@ -68,7 +66,7 @@ function AppShell() {
       <KeyboardShortcutsHelp open={showHelp} onClose={() => setShowHelp(false)} />
       <main id="main" tabIndex={-1} className="outline-none">
         <Suspense fallback={<RouteFallback />}>
-          <AnimatedRoutes />
+          <AppRoutes />
         </Suspense>
       </main>
       <Footer />

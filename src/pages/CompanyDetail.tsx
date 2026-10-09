@@ -27,6 +27,7 @@ import { downloadCompanyCsv, openPrintView } from "@/lib/export-utils";
 import { readRaw, writeRaw } from "@/lib/user/storage";
 import { STORAGE_KEYS } from "@/lib/contracts";
 import { remapHash } from "@/lib/views/company-view";
+import { PageShell } from "@/components/layout";
 
 /** Remembers the last companies opened (symbols only, newest first). */
 function rememberVisit(symbol: string): void {
@@ -145,7 +146,7 @@ export default function CompanyDetail() {
   const { symbol } = useParams<{ symbol: string }>();
   const state = useCompany(symbol);
   return (
-    <div className="container max-w-6xl space-y-3 py-2 md:py-3">
+    <PageShell className="space-y-4">
       {state.status === "loading" && (
         <div role="status" aria-live="polite" className="py-24 text-center text-sm text-muted-foreground">Loading company data…</div>
       )}
@@ -158,6 +159,6 @@ export default function CompanyDetail() {
       )}
       {state.status === "not_found" && <NotInData symbol={state.symbol || (symbol ?? "")} />}
       {state.status === "ready" && <CompanyView key={state.symbol} store={state.store} index={state.index} />}
-    </div>
+    </PageShell>
   );
 }

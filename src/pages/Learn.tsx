@@ -5,7 +5,7 @@ import type { ConceptEntry, GlossaryEntry, MetricDef } from "@/lib/contracts";
 import { CONCEPTS, GLOSSARY, conceptParagraphs } from "@/lib/learn";
 import { allMetricDefs } from "@/lib/metrics";
 import { GlossaryCard } from "@/components/learn/GlossaryCard";
-import { PageTransition } from "@/components/PageTransition";
+import { PageShell } from "@/components/layout";
 
 const SCREEN_LIMITS_ID = "what-a-screen-cannot-tell-you";
 
@@ -88,10 +88,9 @@ export default function Learn() {
   const limits = CONCEPTS.find((c) => c.id === SCREEN_LIMITS_ID) ?? null;
 
   return (
-    <PageTransition>
-      <div className="container max-w-4xl space-y-8 py-4">
+      <PageShell prose className="space-y-8">
         <header className="space-y-2">
-          <h1 className="text-xl font-bold text-foreground">Learn</h1>
+          <h1 className="type-page-title">Learn</h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Plain-language notes on the ideas and metrics used in this app. Rules of thumb are for study. They are not standards, and
             nothing here is investment advice.
@@ -147,7 +146,6 @@ export default function Learn() {
             </div>
           ))}
         </section>
-      </div>
-    </PageTransition>
+      </PageShell>
   );
 }

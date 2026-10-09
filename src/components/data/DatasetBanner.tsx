@@ -8,7 +8,7 @@
 //    scores are unavailable."
 //  • Memory only, added line: "Kept for this session only." with a JSON export.
 import { useState, type ReactNode } from "react";
-import { AlertTriangle, Download, Info, Upload } from "lucide-react";
+import { AlertTriangle, ChevronDown, Download, FlaskConical, Info, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImportDataDialog } from "@/components/ImportDataDialog";
 import { useDataset } from "@/hooks/use-dataset";
@@ -55,6 +55,7 @@ export interface DatasetBannerProps {
 export function DatasetBanner({ className }: DatasetBannerProps) {
   const state = useDataset();
   const [importOpen, setImportOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   if (state.status === "loading") return null;
 
@@ -62,20 +63,20 @@ export function DatasetBanner({ className }: DatasetBannerProps) {
     <aside
       aria-label="About the data"
       className={cn(
-        "border-b px-4 py-2 text-xs sm:text-sm",
-        tone === "sample" && "border-chart-amber/30 bg-chart-amber/5",
-        tone === "user" && "border-border bg-muted/40",
-        tone === "error" && "border-destructive/30 bg-destructive/5",
+        "border-b py-1.5 text-xs sm:text-[13px]",
+        tone === "sample" && "border-primary/15 bg-primary/[0.06]",
+        tone === "user" && "border-border bg-muted/50",
+        tone === "error" && "border-destructive/30 bg-destructive/10",
         className,
       )}
     >
-      <div className="container flex flex-col gap-1 px-0">{children}</div>
+      <div className="app-container flex flex-col gap-0.5">{children}</div>
       <ImportDataDialog open={importOpen} onOpenChange={setImportOpen} />
     </aside>
   );
 
   const importButton = (
-    <Button type="button" variant="link" size="sm" className="h-auto min-h-11 p-0 text-xs sm:min-h-0 sm:text-sm" onClick={() => setImportOpen(true)}>
+    <Button type="button" variant="link" size="sm" className="h-auto min-h-9 shrink-0 p-0 text-xs font-semibold sm:min-h-0 sm:text-[13px]" onClick={() => setImportOpen(true)}>
       <Upload className="mr-1 h-3.5 w-3.5" aria-hidden="true" />Import your data
     </Button>
   );
@@ -116,15 +117,30 @@ export function DatasetBanner({ className }: DatasetBannerProps) {
   );
 
   if (meta.isSynthetic) {
+    const full = `Sample data: ${formatNumberIN(n, 0)} fictional ${n === 1 ? "company" : "companies"} with generated figures. They describe no real business. Fiscal-year labels are for illustration only.`;
     return shell("sample", (
       <>
-        <p className="flex flex-wrap items-center gap-x-2 text-foreground">
-          <span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0 text-foreground" title={full}>
+          <FlaskConical className="hidden h-3.5 w-3.5 shrink-0 text-primary sm:block" aria-hidden="true" />
+          <p className="hidden sm:block">
             <strong>Sample data:</strong> {formatNumberIN(n, 0)} fictional {n === 1 ? "company" : "companies"} with generated figures.
             They describe no real business. Fiscal-year labels are for illustration only.
-          </span>
-          {importButton}
-        </p>
+          </p>
+          <p className="flex items-center gap-1.5 sm:hidden">
+            <FlaskConical className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+            <span><strong>Sample data</strong> · {formatNumberIN(n, 0)} fictional {n === 1 ? "company" : "companies"}</span>
+          </p>
+          <button
+            type="button"
+            onClick={() => setDetailsOpen((o) => !o)}
+            aria-expanded={detailsOpen}
+            className="flex min-h-9 items-center gap-0.5 rounded text-xs font-medium text-muted-foreground hover:text-foreground sm:hidden"
+          >
+            Details<ChevronDown className={cn("h-3.5 w-3.5 transition-transform", detailsOpen && "rotate-180")} aria-hidden="true" />
+          </button>
+          <span className="sm:ml-auto">{importButton}</span>
+        </div>
+        {detailsOpen && <p className="pb-1 text-muted-foreground sm:hidden">{full}</p>}
         {extraLines}
       </>
     ));

@@ -2,7 +2,8 @@
 // mode, plain-English preview, live results with near misses and a funnel, and an explanation for
 // every match. State lives in useScreen(); this file only composes the pieces.
 import { useMemo, useState } from "react";
-import { MotionConfig, motion } from "framer-motion";
+import { MotionConfig } from "framer-motion";
+import { PageHeader, PageShell } from "@/components/layout";
 import { Upload } from "lucide-react";
 import type { ScreenTemplate } from "@/lib/contracts";
 import { useScreen } from "@/hooks/use-screen";
@@ -88,20 +89,11 @@ export default function Screener() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-        className={`mx-auto w-full min-w-0 max-w-7xl space-y-6 px-4 py-4 sm:px-6 ${compared.length > 0 ? "pb-32" : "pb-8"}`}
-      >
-        <header className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold">Screener</h1>
-            <p className="max-w-prose text-sm text-muted-foreground">
-              Find companies whose numbers meet rules you choose. Start from a template, or write your own rules.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
+      <PageShell className={compared.length > 0 ? "pb-32" : "pb-8"}>
+        <PageHeader
+          title="Screener"
+          description="Find companies whose numbers meet rules you choose. Start from a template, or write your own rules."
+          actions={<>
             <Button type="button" variant="outline" className="min-h-11" onClick={() => setImportOpen(true)}>
               <Upload className="mr-1 h-4 w-4" aria-hidden="true" />
               Import data
@@ -115,8 +107,8 @@ export default function Screener() {
             {store && <ColumnChooser store={store} columns={s.columns} onChange={s.setColumns} />}
             {store && <ShareButton getUrl={s.shareUrl} />}
             <ExportButton run={run} store={store} />
-          </div>
-        </header>
+          </>}
+        />
 
         {s.dataset.status === "loading" && <LoadingState />}
 
@@ -213,7 +205,7 @@ export default function Screener() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </motion.div>
+      </PageShell>
     </MotionConfig>
   );
 }

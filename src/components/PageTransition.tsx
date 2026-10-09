@@ -1,7 +1,5 @@
-import { motion } from "framer-motion";
-
 export function SectionSkeleton({ type = "card" }: { type?: "card" | "chart" | "table" | "grid" }) {
-  const shimmer = "animate-pulse bg-muted/40 rounded";
+  const shimmer = "animate-pulse bg-muted rounded-md";
 
   if (type === "chart") {
     return (
@@ -52,15 +50,7 @@ export function SectionSkeleton({ type = "card" }: { type?: "card" | "chart" | "
   );
 }
 
+/** Page-enter transition (CSS only; disabled by prefers-reduced-motion). Prefer PageShell, which includes it. */
 export function PageTransition({ children }: { children: React.ReactNode }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className="animate-page-in">{children}</div>;
 }

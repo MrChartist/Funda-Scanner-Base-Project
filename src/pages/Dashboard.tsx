@@ -1,7 +1,7 @@
 import { AnimatePresence } from "framer-motion";
 import { Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageTransition } from "@/components/PageTransition";
+import { PageHeader, PageShell } from "@/components/layout";
 import { DatasetGate } from "@/components/common/DatasetGate";
 import { DashboardLayoutEditor, useDashboardLayout } from "@/components/DashboardLayout";
 import { DatasetCard } from "@/components/dashboard/DatasetCard";
@@ -14,15 +14,11 @@ export default function Dashboard() {
   const layout = useDashboardLayout();
 
   return (
-    <PageTransition>
-      <div className="container max-w-7xl space-y-4 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-sm text-muted-foreground">
-              Start with a guided screen, look at sector medians, or learn what a metric means.
-            </p>
-          </div>
+      <PageShell>
+        <PageHeader
+          title="Dashboard"
+          description="Start with a guided screen, look at sector medians, or learn what a metric means."
+          actions={
           <Button
             type="button"
             variant="outline"
@@ -33,7 +29,8 @@ export default function Dashboard() {
           >
             <Settings2 className="h-3.5 w-3.5" aria-hidden="true" /> Customise
           </Button>
-        </div>
+          }
+        />
 
         <AnimatePresence>
           {layout.isEditing && (
@@ -72,7 +69,6 @@ export default function Dashboard() {
             </div>
           )}
         </DatasetGate>
-      </div>
-    </PageTransition>
+      </PageShell>
   );
 }
