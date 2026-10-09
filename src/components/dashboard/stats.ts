@@ -12,6 +12,8 @@ export interface SectorRow {
   n: number;
   /** Null when n is below PEER_MIN.median. */
   median: number | null;
+  /** Median of whatever values exist (n >= 1), for drawing a muted bar; never presented as a reliable median. */
+  rawMedian: number | null;
 }
 
 export function median(values: readonly number[]): number | null {
@@ -52,6 +54,7 @@ export function sectorMedians(store: MetricStore, metricId: MetricId): SectorRow
       companies: g.companies,
       n: g.values.length,
       median: g.values.length >= PEER_MIN.median ? median(g.values) : null,
+      rawMedian: median(g.values),
     }))
     .sort((a, b) => b.companies - a.companies || a.sector.localeCompare(b.sector));
 }

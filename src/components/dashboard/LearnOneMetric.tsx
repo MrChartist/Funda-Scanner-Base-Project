@@ -16,7 +16,7 @@ export function LearnOneMetric({ store }: { store: MetricStore }) {
   if (!entry || !def) return null;
 
   return (
-    <section aria-labelledby="learn-one-title" className="glass-card space-y-2 p-4">
+    <section aria-labelledby="learn-one-title" className="glass-card flex h-full flex-col gap-2 p-4 sm:p-5">
       <div className="flex items-start justify-between gap-2">
         <h2 id="learn-one-title" className="section-title">Learn one metric</h2>
         <Button type="button" variant="ghost" size="sm" className="min-h-11 gap-1 text-xs sm:min-h-9" onClick={() => setI((n) => (n + 1) % ids.length)}>

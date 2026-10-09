@@ -24,7 +24,7 @@ export function readRecentSymbols(): string[] {
 export function RecentlyViewed({ store }: { store: MetricStore }) {
   const found = readRecentSymbols().filter((s) => store.indexOf(s) >= 0).slice(0, 8);
   return (
-    <section aria-labelledby="recent-title" className="glass-card space-y-2 p-4">
+    <section aria-labelledby="recent-title" className="glass-card flex h-full flex-col gap-3 p-4 sm:p-5">
       <h2 id="recent-title" className="section-title">Recently viewed</h2>
       {found.length === 0 ? (
         <p className="text-sm text-muted-foreground">Companies you open will appear here. The list stays in this browser.</p>

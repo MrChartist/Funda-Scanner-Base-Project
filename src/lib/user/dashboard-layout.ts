@@ -14,7 +14,9 @@ export interface DashboardWidgetDef {
 export const DASHBOARD_WIDGETS: readonly DashboardWidgetDef[] = [
   { id: "dataset", label: "About your data" },
   { id: "guided", label: "Guided screens" },
+  { id: "universe", label: "The universe at a glance" },
   { id: "sectors", label: "Sector medians" },
+  { id: "spread", label: "How returns are spread" },
   { id: "learn", label: "Learn one metric" },
   { id: "recent", label: "Recently viewed" },
 ];
