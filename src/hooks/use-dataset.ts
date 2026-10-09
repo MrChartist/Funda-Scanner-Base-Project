@@ -6,7 +6,6 @@ import { useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { CompanyState, DataProvider, DatasetState, FundamentalsDataset, MetricStore } from "@/lib/contracts";
 import { getDataProvider, loadDataset, providerInfo, subscribeDataProvider } from "@/lib/data";
-import { createStore } from "@/lib/engine";
 
 interface Loaded {
   dataset: FundamentalsDataset;
@@ -30,7 +29,8 @@ export function useDataset(): DatasetState {
     staleTime: Infinity,
     retry: false,
     queryFn: async ({ signal }) => {
-      const dataset = await loadDataset(provider, signal);
+      // The metric engine is its own chunk, fetched in parallel with the data so the shell paints first.
+      const [dataset, { createStore }] = await Promise.all([loadDataset(provider, signal), import("@/lib/engine")]);
       return { dataset, store: createStore(dataset) };
     },
   });

@@ -20,17 +20,18 @@ import {
 } from "@/lib/data";
 import { formatNumberIN } from "@/lib/format/indian";
 import { parseIsoDate } from "@/lib/time/civil";
+import { assetUrl } from "@/lib/base-path";
 import { toast } from "sonner";
 
 /** Files above this size are not read at all (the importer's own limits are lower). */
 const MAX_READ_BYTES = 60 * 1024 * 1024;
 
 const TEMPLATE_LINKS: readonly { href: string; label: string }[] = [
-  { href: "/sample-data/templates/companies-template.csv", label: "Company list" },
-  { href: "/sample-data/templates/annual-template.csv", label: "Annual statements" },
-  { href: "/sample-data/templates/quarterly-template.csv", label: "Quarterly results" },
-  { href: "/sample-data/templates/shareholding-template.csv", label: "Shareholding" },
-  { href: "/sample-data/fundamentals-template.csv", label: "One-row snapshot" },
+  { href: assetUrl("sample-data/templates/companies-template.csv"), label: "Company list" },
+  { href: assetUrl("sample-data/templates/annual-template.csv"), label: "Annual statements" },
+  { href: assetUrl("sample-data/templates/quarterly-template.csv"), label: "Quarterly results" },
+  { href: assetUrl("sample-data/templates/shareholding-template.csv"), label: "Shareholding" },
+  { href: assetUrl("sample-data/fundamentals-template.csv"), label: "One-row snapshot" },
 ];
 
 const DOCS_URL = "https://github.com/MrChartist/Funda-Scanner-Base-Project/blob/main/docs/data-format.md";

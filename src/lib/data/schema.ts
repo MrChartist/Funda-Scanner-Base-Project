@@ -4,6 +4,7 @@
 // rejecting a whole file.
 import { z } from "zod";
 import { DATASET_SCHEMA, DATASET_VERSION } from "@/lib/contracts";
+import { STORED_DATASET_VERSION } from "./stored";
 
 const looseObject = z.record(z.unknown());
 const rowList = z.array(looseObject);
@@ -32,8 +33,7 @@ export const datasetInputSchema = z
 
 export type DatasetInput = z.infer<typeof datasetInputSchema>;
 
-/** Envelope used for every stored dataset (IndexedDB, localStorage). */
-export const STORED_DATASET_VERSION = 1;
+export { STORED_DATASET_VERSION };
 
 export const storedEnvelopeSchema = z.object({
   v: z.literal(STORED_DATASET_VERSION),

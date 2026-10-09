@@ -5,8 +5,6 @@
 import { useSyncExternalStore } from "react";
 import type { DataProvider, StockRow } from "@/lib/contracts";
 import { getDataProvider, loadDataset, subscribeDataProvider } from "@/lib/data";
-import { createStore } from "@/lib/engine";
-import { toStockRows } from "@/lib/metrics";
 
 const views = new WeakMap<DataProvider, DataProvider>();
 
@@ -22,7 +20,10 @@ export function legacyProviderView(p: DataProvider): DataProvider {
       revision: p.revision,
       getDataset: p.getDataset?.bind(p),
       async getUniverse(): Promise<StockRow[]> {
-        return toStockRows(createStore(await loadDataset(p)));
+        const [dataset, { createStore }, { toStockRows }] = await Promise.all([
+          loadDataset(p), import("@/lib/engine"), import("@/lib/metrics"),
+        ]);
+        return toStockRows(createStore(dataset));
       },
     };
     views.set(p, view);

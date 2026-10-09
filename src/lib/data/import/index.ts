@@ -21,6 +21,9 @@ import {
 } from "./snapshot";
 import { MAX_CSV_ROWS, parseWideCsv, type CompanyPartial, type WideKind } from "./wide-csv";
 import { MONEY_SCALE_LABEL, type MoneyScale } from "./units";
+import { FILE_KIND_LABEL } from "./kind-labels";
+
+export { FILE_KIND_LABEL };
 
 export interface ImportFileInput {
   name: string;
@@ -46,15 +49,6 @@ const KIND_ORDER: Readonly<Record<ImportFileKind, number>> = {
   canonical_json: 0, snapshot: 1, companies: 2, annual: 3, quarterly: 4, shareholding: 5,
 };
 
-export const FILE_KIND_LABEL: Readonly<Record<ImportFileKind | "unknown", string>> = {
-  canonical_json: "Funda Scanner dataset (JSON)",
-  snapshot: "Snapshot (one row per company)",
-  companies: "Company list",
-  annual: "Annual statements",
-  quarterly: "Quarterly results",
-  shareholding: "Shareholding pattern",
-  unknown: "Not recognised",
-};
 
 const SYNTHETIC_MARKER = /fictional sample data/i;
 

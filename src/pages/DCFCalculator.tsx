@@ -5,6 +5,7 @@ import {
   Bar, BarChart, CartesianGrid, Cell, ComposedChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, Area,
 } from "recharts";
 import type { MetricStore } from "@/lib/contracts";
+import { ROUTER_BASENAME } from "@/lib/base-path";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompanyName } from "@/components/common/CompanyName";
@@ -460,7 +461,7 @@ function DcfPage({ store }: { store: MetricStore }) {
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/dcf?symbol=${encodeURIComponent(defaults.symbol)}`);
+      await navigator.clipboard.writeText(`${window.location.origin}${ROUTER_BASENAME ?? ""}/dcf?symbol=${encodeURIComponent(defaults.symbol)}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {

@@ -2,10 +2,10 @@
   "name": "funda-scanner",
   "private": true,
   "version": "0.1.0",
-  "description": "Open-source fundamental analysis dashboard for NSE-listed companies: screener, company deep-dive, DCF calculator, portfolio and watchlist.",
+  "description": "Open-source fundamentals screener for Indian stocks: query-language screener, company deep-dive, comparison, DCF calculator and a learning guide. Runs entirely in the browser.",
   "license": "MIT",
   "author": "MrChartist (https://github.com/MrChartist)",
-  "homepage": "https://github.com/MrChartist/Funda-Scanner-Base-Project#readme",
+  "homepage": "https://mrchartist.github.io/Funda-Scanner-Base-Project/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MrChartist/Funda-Scanner-Base-Project.git"
@@ -14,11 +14,14 @@
     "url": "https://github.com/MrChartist/Funda-Scanner-Base-Project/issues"
   },
   "keywords": [
-    "nse",
     "india",
+    "indian-stocks",
     "stock-market",
+    "stock-screener",
     "fundamental-analysis",
+    "equity-research",
     "screener",
+    "open-source",
     "dcf",
     "react",
     "typescript",
@@ -27,8 +30,9 @@
     "shadcn-ui"
   ],
   "type": "module",
+  "sideEffects": ["*.css"],
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
     "dev": "vite",
