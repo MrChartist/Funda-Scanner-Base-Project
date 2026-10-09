@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Check, Link2 } from "lucide-react";
+import { ROUTER_BASENAME } from "@/lib/base-path";
 
 export interface ShareSectionProps {
   symbol: string;
@@ -12,7 +13,7 @@ export function ShareSection({ symbol, sectionId, sectionLabel }: ShareSectionPr
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {
-    const base = `${window.location.origin}/company/${encodeURIComponent(symbol)}`;
+    const base = `${window.location.origin}${ROUTER_BASENAME ?? ""}/company/${encodeURIComponent(symbol)}`;
     const url = sectionId ? `${base}#${sectionId}` : base;
     try {
       await navigator.clipboard.writeText(url);

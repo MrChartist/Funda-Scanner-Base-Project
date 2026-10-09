@@ -9,13 +9,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
         node: [20, 22]
     steps:
@@ -30,3 +32,9 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - name: Build for a sub-path (GitHub Pages project site)
+        run: |
+          VITE_BASE=/Funda-Scanner-Base-Project/ npm run build
+          grep -q 'src="/Funda-Scanner-Base-Project/assets/' dist/index.html
+          test -f dist/404.html
+          grep -q '"start_url": "./"' dist/manifest.json
