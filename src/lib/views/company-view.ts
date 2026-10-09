@@ -2,10 +2,10 @@
 // Pure functions over a MetricStore: no React, no clock, no randomness. Every figure stays a
 // MetricValue so the UI renders it through <ValueCell> (spec P1); nothing is formatted here.
 import type {
-  AnnualRow, CompanySectionId, CompanyType, MetricDef, MetricId, MetricStore, MetricValue, NullReason, PeriodSel, ShareholdingRow,
+  AnnualRow, CompanySectionId, CompanyType, MetricDef, MetricId, MetricStore, MetricValue, NullReason, PeerScope, PeriodSel, ShareholdingRow,
   TypeFamily,
 } from "@/lib/contracts";
-import { ANNUAL_FIELD_INFO, ANNUAL_FIELDS, COMPANY_SECTION_IDS, VF } from "@/lib/contracts";
+import { ANNUAL_FIELD_INFO, ANNUAL_FIELDS, COMPANY_SECTION_IDS, PEER_MIN, VF } from "@/lib/contracts";
 import type { AnnualField, FieldStatement } from "@/lib/contracts";
 import { addMonths, daysBetween, fyLabel, monthYearLabel } from "@/lib/time/civil";
 
@@ -202,6 +202,42 @@ export function statementView(store: MetricStore, i: number, statement: "pnl" | 
   return { periods: periods.map((p) => p.col), rows, hidden };
 }
 
+
+/** Industry median per year for a metric (offsets are fiscal-year offsets); null when no year has one. */
+export function medianSeries(store: MetricStore, i: number, id: MetricId, offsets: readonly number[]): MetricValue[] | null {
+  const list = offsets.map((k) => {
+    const col = store.columnAt(id, fySel(k));
+    const med = store.medianOf(col.values, "industry");
+    const v = med.values[i];
+    return Number.isFinite(v) && med.reasons[i] === 0 ? PLAIN(v) : NO_VALUE("too_few_peers");
+  });
+  return list.some((m) => m.v !== null) ? list : null;
+}
+
+export interface MetricHistory {
+  labels: string[];
+  values: MetricValue[];
+  offsets: number[];
+}
+
+/** Metrics whose annual history is meaningful (a value per financial year). */
+export const HISTORY_IDS: ReadonlySet<string> = new Set([
+  "sales", "pat", "opm", "npm", "roce", "roe", "roa", "roic", "debt_equity", "interest_coverage", "current_ratio", "sales_growth",
+  "profit_growth", "eps", "bvps", "nim_approx", "cost_to_income", "gnpa_ratio", "nnpa_ratio", "credit_cost", "fcf", "dps",
+]);
+
+/** Up to `max` years of one metric, oldest first. */
+export function metricHistory(store: MetricStore, i: number, id: MetricId, max = 10): MetricHistory {
+  const periods = annualPeriods(store, i, max);
+  return {
+    labels: periods.map((p) => p.col.label),
+    offsets: periods.map((p) => p.offset),
+    values: periods.map((p) => store.at(id, i, fySel(p.offset))),
+  };
+}
+
+export const hasHistory = (h: MetricHistory, min = 3): boolean => h.values.filter((v) => v.v !== null).length >= min;
+
 // ── Ratios over time, with the industry median per year ─────────────────────
 const RATIO_IDS: Readonly<Record<TypeFamily, readonly MetricId[]>> = {
   non_financial: [
@@ -236,16 +272,7 @@ export function ratioView(store: MetricStore, i: number): RatioView {
     if (!def || !familyOk(def, family)) continue;
     const row = rowFor(store, i, id, offsets);
     if (!row || allNull(row)) continue;
-    let medians: MetricValue[] | null = null;
-    if (g >= 0) {
-      const list = offsets.map((k) => {
-        const col = store.columnAt(id, fySel(k));
-        const med = store.medianOf(col.values, "industry");
-        const v = med.values[i];
-        return Number.isFinite(v) && med.reasons[i] === 0 ? PLAIN(v) : NO_VALUE("too_few_peers");
-      });
-      if (list.some((m) => m.v !== null)) medians = list;
-    }
+    const medians = g >= 0 ? medianSeries(store, i, id, offsets) : null;
     rows.push({ ...row, medians });
   }
   return { periods: periods.map((p) => p.col), rows, groupLabel: g >= 0 ? groups.labels[g] : null };
@@ -404,8 +431,9 @@ export interface MetricGroup {
 export function keyMetricGroups(family: TypeFamily): MetricGroup[] {
   if (family === "lender") {
     return [
-      { title: "Size and valuation", ids: ["market_cap", "price", "pe", "pb", "p_abv", "dividend_yield", "eps", "bvps"] },
-      { title: "Returns and growth", ids: ["roe", "roa", "nim_approx", "cost_to_income", "sales_cagr_5y", "net_profit_cagr_5y"] },
+      { title: "Valuation", ids: ["market_cap", "price", "pe", "pb", "p_abv", "dividend_yield", "eps", "bvps"] },
+      { title: "Profitability", ids: ["roe", "roa", "nim_approx", "cost_to_income"] },
+      { title: "Growth", ids: ["sales_cagr_5y", "net_profit_cagr_5y"] },
       { title: "Asset quality", ids: ["gnpa_ratio", "nnpa_ratio", "provision_coverage", "credit_cost"] },
       {
         title: "Measures that do not apply to lenders",
@@ -416,8 +444,9 @@ export function keyMetricGroups(family: TypeFamily): MetricGroup[] {
   }
   if (family === "insurance") {
     return [
-      { title: "Size and valuation", ids: ["market_cap", "price", "pe", "pb", "dividend_yield", "eps", "bvps"] },
-      { title: "Returns and growth", ids: ["roe", "npm", "sales_cagr_5y", "net_profit_cagr_5y"] },
+      { title: "Valuation", ids: ["market_cap", "price", "pe", "pb", "dividend_yield", "eps", "bvps"] },
+      { title: "Profitability", ids: ["roe", "npm"] },
+      { title: "Growth", ids: ["sales_cagr_5y", "net_profit_cagr_5y"] },
       {
         title: "Measures that do not apply to insurers",
         note: "Insurers keep accounts differently, so these are shown as not applicable.",
@@ -426,11 +455,107 @@ export function keyMetricGroups(family: TypeFamily): MetricGroup[] {
     ];
   }
   return [
-    { title: "Size and valuation", ids: ["market_cap", "price", "pe", "pb", "ev_ebitda", "dividend_yield", "eps", "bvps"] },
-    { title: "Returns and margins", ids: ["roce", "roe", "roic", "opm", "npm"] },
+    { title: "Valuation", ids: ["market_cap", "price", "pe", "pb", "ev_ebitda", "dividend_yield", "eps", "bvps"] },
+    { title: "Profitability", ids: ["roce", "roe", "roic", "opm", "npm"] },
     { title: "Growth", ids: ["sales_cagr_5y", "net_profit_cagr_5y", "sales_growth", "profit_growth"] },
     { title: "Balance sheet and cash", ids: ["debt_equity", "interest_coverage", "current_ratio", "cum_cfo_to_pat_5y", "fcf_yield"] },
   ];
+}
+
+// ── Position within the peer group (bullet bars) and captions ───────────────
+/** Per-share amounts are not comparable across companies, so they are never placed against peers. */
+const NO_PEER_PLACEMENT: ReadonlySet<string> = new Set(["price", "eps", "bvps", "dps"]);
+
+export type BulletPlacement =
+  | { kind: "none" }
+  | { kind: "hidden"; note: string }
+  | {
+      kind: "ok";
+      value: number;
+      min: number;
+      max: number;
+      p25: number | null;
+      p75: number | null;
+      median: number;
+      n: number;
+      groupLabel: string;
+      scope: PeerScope;
+      fellBackTo: PeerScope | null;
+    };
+
+/** Where the company sits within its peer group (industry, widening to sector, then class when too small). */
+export function bulletPlacement(store: MetricStore, i: number, id: MetricId): BulletPlacement {
+  const value = store.get(id, i);
+  if (value.v === null || NO_PEER_PLACEMENT.has(id)) return { kind: "none" };
+  const stat = store.peerStat(id, i, "industry");
+  if (stat.median === null || stat.n < PEER_MIN.median) {
+    return { kind: "hidden", note: `Too few comparable companies to place this figure (at least ${PEER_MIN.median} are needed).` };
+  }
+  const groups = store.groups(stat.scope);
+  const g = groups.groupOf[i];
+  const col = store.column(id);
+  let min = value.v;
+  let max = value.v;
+  for (let j = 0; j < store.size; j++) {
+    if (g < 0 || groups.groupOf[j] !== g || col.reasons[j] !== 0 || !Number.isFinite(col.values[j])) continue;
+    if (col.values[j] < min) min = col.values[j];
+    if (col.values[j] > max) max = col.values[j];
+  }
+  return { kind: "ok", value: value.v, min, max, p25: stat.p25, p75: stat.p75, median: stat.median, n: stat.n, groupLabel: stat.groupLabel, scope: stat.scope, fellBackTo: stat.fellBackTo };
+}
+
+const CAPTION_NAME: Readonly<Record<string, string>> = {
+  pe: "P/E", pb: "P/B", roce: "Return on capital employed", roe: "Return on equity", sales_cagr_5y: "Five-year sales growth",
+  net_profit_cagr_5y: "Five-year profit growth", debt_equity: "Debt to equity", gnpa_ratio: "Gross NPA ratio", nim_approx: "Net interest margin",
+};
+
+function relation(v: number, m: number): string {
+  return v > m ? "above" : v < m ? "below" : "equal to";
+}
+
+/** "P/E is below the industry median." or null when there is no median to compare with. */
+function latestVsMedian(store: MetricStore, i: number, id: MetricId): string | null {
+  const v = store.get(id, i).v;
+  const stat = store.peerStat(id, i, "industry");
+  if (v === null || stat.median === null || stat.n < PEER_MIN.median) return null;
+  return `${CAPTION_NAME[id] ?? store.def(id)?.short ?? id} is ${relation(v, stat.median)} the ${stat.fellBackTo ? "peer-group" : "industry"} median.`;
+}
+
+/** "Return on capital is above the industry median in 5 of the last 5 years." Counts only years with a company value and a median. */
+export function yearsAboveMedianText(store: MetricStore, i: number, id: MetricId): string | null {
+  const hist = metricHistory(store, i, id);
+  const meds = medianSeries(store, i, id, hist.offsets);
+  if (!meds) return null;
+  let above = 0;
+  let total = 0;
+  hist.values.forEach((v, k) => {
+    const m = meds[k].v;
+    if (v.v === null || m === null) return;
+    total += 1;
+    if (v.v > m) above += 1;
+  });
+  if (total < 3) return null;
+  const name = CAPTION_NAME[id] ?? store.def(id)?.short ?? id;
+  return `${name} was above the industry median in ${above} of the last ${total} years.`;
+}
+
+/** One plain sentence per KPI group, worked out from the data; null when nothing can be said honestly. */
+export function groupCaption(store: MetricStore, i: number, title: string): string | null {
+  const family = store.family(i);
+  switch (title) {
+    case "Valuation":
+      return latestVsMedian(store, i, family === "non_financial" ? "pe" : "pb") ?? latestVsMedian(store, i, "pe");
+    case "Profitability":
+      return yearsAboveMedianText(store, i, family === "non_financial" ? "roce" : "roe") ?? latestVsMedian(store, i, family === "non_financial" ? "roce" : "roe");
+    case "Growth":
+      return latestVsMedian(store, i, "sales_cagr_5y") ?? latestVsMedian(store, i, "net_profit_cagr_5y");
+    case "Balance sheet and cash":
+      return latestVsMedian(store, i, "debt_equity");
+    case "Asset quality":
+      return latestVsMedian(store, i, "gnpa_ratio");
+    default:
+      return null;
+  }
 }
 
 // ── Peers ───────────────────────────────────────────────────────────────────
