@@ -29,9 +29,9 @@ export interface RuleChipProps {
 export function RuleChip({ chip, index, store, beginner, onChange, onRemove, onEditAsText }: RuleChipProps) {
   const n = index + 1;
   const complete = isChipComplete(chip);
-  const shell = cn("flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3", !complete && "border-dashed border-amber-500/60");
+  const shell = cn("flex flex-wrap items-center gap-2 rounded-lg border bg-background p-2.5", !complete && "border-dashed border-amber-500/60");
   const remove = (
-    <Button type="button" variant="ghost" size="icon" className="ml-auto h-11 w-11 shrink-0" aria-label={`Remove rule ${n}`} onClick={onRemove}>
+    <Button type="button" variant="ghost" size="icon" className="ml-auto h-11 w-11 shrink-0 lg:h-9 lg:w-9" aria-label={`Remove rule ${n}`} onClick={onRemove}>
       <X className="h-4 w-4" aria-hidden="true" />
     </Button>
   );
@@ -80,7 +80,7 @@ export function RuleChip({ chip, index, store, beginner, onChange, onRemove, onE
         aria-label={labelText}
         value={chip[which]}
         onChange={(e) => onChange({ ...chip, [which]: e.target.value })}
-        className="min-h-11 w-24 text-sm"
+        className="min-h-11 w-24 text-sm lg:min-h-9"
       />
       {unit && <span className="text-sm text-muted-foreground" data-testid="unit-suffix">{unit}</span>}
     </span>
@@ -88,10 +88,13 @@ export function RuleChip({ chip, index, store, beginner, onChange, onRemove, onE
 
   return (
     <li className={shell} aria-label={`Rule ${n}`}>
-      <MetricPicker store={store} value={chip.metric} onChange={setMetric} beginner={beginner} label={`Rule ${n} metric`} />
+      <div className="flex basis-full items-center gap-1">
+        <div className="min-w-0 flex-1"><MetricPicker store={store} value={chip.metric} onChange={setMetric} beginner={beginner} label={`Rule ${n} metric`} /></div>
+        {remove}
+      </div>
       {periods.length > 1 && (
         <Select value={chip.metric} onValueChange={(v) => onChange({ ...chip, metric: v })}>
-          <SelectTrigger aria-label={`Rule ${n} period`} className="min-h-11 min-w-[10rem] text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label={`Rule ${n} period`} className="min-h-11 min-w-[8rem] flex-1 text-sm lg:min-h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
             {periods.map((p) => <SelectItem key={p.id} value={p.id} className="min-h-11">{p.label}</SelectItem>)}
           </SelectContent>
@@ -99,7 +102,7 @@ export function RuleChip({ chip, index, store, beginner, onChange, onRemove, onE
       )}
       {chip.selector && <span className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{printSelector(chip.selector)}</span>}
       <Select value={chip.op} onValueChange={(v) => onChange({ ...chip, op: v as CmpOp | "between" })}>
-        <SelectTrigger aria-label={`Rule ${n} comparison`} className="min-h-11 w-36 text-sm"><SelectValue /></SelectTrigger>
+        <SelectTrigger aria-label={`Rule ${n} comparison`} className="min-h-11 w-36 text-sm lg:min-h-9"><SelectValue /></SelectTrigger>
         <SelectContent>
           {OPERATORS.map((o) => <SelectItem key={o} value={o} className="min-h-11">{OPERATOR_LABEL[o]}</SelectItem>)}
         </SelectContent>
@@ -111,7 +114,6 @@ export function RuleChip({ chip, index, store, beginner, onChange, onRemove, onE
           {valueInput("value2", `Rule ${n} upper value`)}
         </>
       )}
-      {remove}
       {!complete && <p className="basis-full text-sm text-amber-700 dark:text-amber-400">Incomplete. Not applied.</p>}
     </li>
   );

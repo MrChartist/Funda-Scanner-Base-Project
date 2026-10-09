@@ -99,6 +99,10 @@ export interface UseScreenResult {
   restore: (s: ScreenSnapshot) => void;
   /** The URL query string for the current state (for sharing). */
   shareUrl: () => string;
+  /** Watchlist and portfolio symbols in this browser (stable between renders). */
+  ctx: ScreenContext;
+  /** Removes one top-level rule (0-based) from the query and re-runs at once. No-op while the text has an error. */
+  removeRule: (clause: number) => void;
 }
 
 export function useScreen(): UseScreenResult {
@@ -242,6 +246,12 @@ export function useScreen(): UseScreenResult {
     return `${base}?${p.toString()}`;
   }, [draft, columns, sort, universe, templateId, page, pageSize]);
 
+  const removeRule = useCallback((clause: number) => {
+    if (!compiledDraft || !compiledDraft.ok) return;
+    const model = toChips(compiledDraft);
+    setQuery(fromChips({ ...model, chips: model.chips.filter((_, k) => k !== clause) }), { immediate: true });
+  }, [compiledDraft, setQuery]);
+
   const queryHasError = compiledDraft ? !compiledDraft.ok : false;
   return {
     dataset, store, draft, compiled: compiledDraft, queryHasError, run,
@@ -249,6 +259,6 @@ export function useScreen(): UseScreenResult {
     pending: draft !== committed || committed !== deferred,
     universe, columns, sort, templateId, page, pageSize,
     setQuery, runNow, setUniverse, setColumns, setSort, setPage, setPageSize,
-    applyTemplate, loadScreen, snapshot, restore, shareUrl,
+    applyTemplate, loadScreen, snapshot, restore, shareUrl, ctx, removeRule,
   };
 }

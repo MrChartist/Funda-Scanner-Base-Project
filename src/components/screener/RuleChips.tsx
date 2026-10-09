@@ -50,11 +50,11 @@ export function RuleChips({ store, draft, compiled, onQueryChange, onEditAsText 
   const broken = compiled !== null && !compiled.ok && draft !== source;
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-base font-semibold">Simple rules</h3>
-        <div className="flex min-h-11 items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="type-caption">Every rule must hold for a company to be listed.</p>
+        <div className="flex min-h-11 shrink-0 items-center gap-2 lg:min-h-8">
           <Switch id="beginner-view" checked={beginner} onCheckedChange={setBeginner} />
-          <Label htmlFor="beginner-view" className="text-sm">Beginner view</Label>
+          <Label htmlFor="beginner-view" className="text-xs">Beginner view</Label>
         </div>
       </div>
       {broken && (
@@ -64,7 +64,7 @@ export function RuleChips({ store, draft, compiled, onQueryChange, onEditAsText 
         </div>
       )}
       {model.chips.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+        <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
           No rules yet. Add a rule, or start from a template above. With no rules, every company in the universe is shown.
         </p>
       ) : (
@@ -83,7 +83,7 @@ export function RuleChips({ store, draft, compiled, onQueryChange, onEditAsText 
           ))}
         </ul>
       )}
-      <Button type="button" variant="outline" className="min-h-11" onClick={add}>
+      <Button type="button" variant="outline" className="min-h-11 w-full border-dashed lg:min-h-9" onClick={add}>
         <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
         Add rule
       </Button>

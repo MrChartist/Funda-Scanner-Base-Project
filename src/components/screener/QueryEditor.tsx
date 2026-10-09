@@ -15,7 +15,7 @@ export interface QueryEditorProps {
   onRunNow: () => void;
 }
 
-const LAYOUT = "whitespace-pre-wrap break-words p-3 font-mono text-base leading-6";
+const LAYOUT = "whitespace-pre-wrap break-words p-3 font-mono text-base leading-6 md:text-sm md:leading-6";
 
 /** FSQL editor: a plain textarea over a coloured copy of its text, with squiggles, issues and suggestions. */
 export function QueryEditor({ store, value, issues, onChange, onRunNow }: QueryEditorProps) {
@@ -32,7 +32,7 @@ export function QueryEditor({ store, value, issues, onChange, onRunNow }: QueryE
     const ta = ref.current;
     if (!ta) return;
     ta.style.height = "auto";
-    ta.style.height = `${Math.max(ta.scrollHeight, 144)}px`;
+    ta.style.height = `${Math.max(ta.scrollHeight, 120)}px`;
     if (pendingCursor.current !== null) {
       ta.setSelectionRange(pendingCursor.current, pendingCursor.current);
       pendingCursor.current = null;
@@ -110,7 +110,7 @@ export function QueryEditor({ store, value, issues, onChange, onRunNow }: QueryE
   const isOpen = completion !== null && completion.items.length > 0;
   return (
     <div className="space-y-2">
-      <div className="relative rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring">
+      <div className="relative rounded-lg border bg-background shadow-inner focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/60">
         <HighlightLayer source={value} issues={issues} className={LAYOUT} />
         <textarea
           ref={ref}
@@ -121,7 +121,7 @@ export function QueryEditor({ store, value, issues, onChange, onRunNow }: QueryE
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"
-          rows={6}
+          rows={4}
           aria-label="Query"
           data-slash-focus
           aria-describedby={issuesId}
@@ -129,10 +129,10 @@ export function QueryEditor({ store, value, issues, onChange, onRunNow }: QueryE
           aria-controls={isOpen ? listId : undefined}
           aria-activedescendant={isOpen && active >= 0 ? optionId(listId, active) : undefined}
           placeholder={"roce > 15\ndebt_equity < 0.5"}
-          className={`${LAYOUT} relative block min-h-36 w-full resize-none overflow-hidden rounded-md bg-transparent text-transparent caret-foreground outline-none placeholder:text-muted-foreground selection:bg-primary/25`}
+          className={`${LAYOUT} relative block min-h-[7.5rem] w-full resize-none overflow-hidden rounded-md bg-transparent text-transparent caret-foreground outline-none placeholder:text-muted-foreground selection:bg-primary/25`}
         />
       </div>
-      <p className="text-sm text-muted-foreground">One rule per line. Press Ctrl+Enter (Cmd+Enter on Mac) to run now. Ctrl+Space shows suggestions.</p>
+      <p className="type-caption">One rule per line. <span className="kbd">Ctrl</span>+<span className="kbd">Enter</span> runs now, <span className="kbd">Ctrl</span>+<span className="kbd">Space</span> suggests. Press <span className="kbd">/</span> anywhere to jump here.</p>
       {isOpen && completion && <CompletionPopover id={listId} items={completion.items} active={active} onPick={pick} />}
       <IssueList id={issuesId} source={value} issues={shown} onFix={fix} />
     </div>

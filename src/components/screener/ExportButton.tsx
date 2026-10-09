@@ -3,6 +3,7 @@ import type { MetricStore, ScreenRun } from "@/lib/contracts";
 import { screenCsvFilename, screenToCsv } from "@/lib/screen";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { ICON_BUTTON, ICON_LABEL } from "./toolbar";
 
 export interface ExportButtonProps {
   run: ScreenRun | null;
@@ -28,9 +29,9 @@ export function ExportButton({ run, store }: ExportButtonProps) {
     }
   };
   return (
-    <Button type="button" variant="outline" className="min-h-11" disabled={!run || !store} onClick={onClick}>
-      <Download className="mr-1 h-4 w-4" aria-hidden="true" />
-      Export CSV
+    <Button type="button" variant="ghost" className={ICON_BUTTON} title="Export CSV" disabled={!run || !store} onClick={onClick}>
+      <Download className="h-4 w-4" aria-hidden="true" />
+      <span className={ICON_LABEL}>Export CSV</span>
     </Button>
   );
 }
