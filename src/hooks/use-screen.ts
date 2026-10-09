@@ -8,7 +8,7 @@ import type {
 } from "@/lib/contracts";
 import { SCREEN_URL_VERSION, STORAGE_KEYS } from "@/lib/contracts";
 import { compileQuery, fromChips, toChips } from "@/lib/query";
-import { decodeScreenUrl, encodeScreenUrl, runScreen } from "@/lib/screen";
+import { decodeScreenUrl, encodeScreenUrl, runScreen, TEMPLATES } from "@/lib/screen";
 import { readRaw } from "@/lib/user/storage";
 import { useDataset } from "@/hooks/use-dataset";
 
@@ -110,7 +110,23 @@ export function useScreen(): UseScreenResult {
   const store = dataset.status === "ready" ? dataset.store : null;
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const initial = useMemo(() => decodeScreenUrl(searchParams), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const initial = useMemo(() => {
+    const decoded = decodeScreenUrl(searchParams);
+    // A link that names a template but carries no rules loads that template, so the highlighted
+    // chip and the results always agree.
+    if (decoded.templateId && !decoded.query.trim()) {
+      const t = TEMPLATES.find((x) => x.id === decoded.templateId);
+      if (t) {
+        return {
+          ...decoded,
+          query: t.query,
+          columns: decoded.columns ?? t.columns.map((id): ColumnSpec => ({ kind: "metric", id })),
+          sort: decoded.sort ?? t.sort,
+        };
+      }
+    }
+    return decoded;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [draft, setDraft] = useState(initial.query);
   const [committed, setCommitted] = useState(initial.query);
   const [universe, setUniverseState] = useState<UniverseSpec>(initial.universe);

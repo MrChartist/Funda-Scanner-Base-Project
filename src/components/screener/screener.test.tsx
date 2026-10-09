@@ -158,6 +158,13 @@ describe("Screener: default view and honest labelling", () => {
 });
 
 describe("Screener: templates", () => {
+  it("a link that names a template but carries no rules loads that template's rules", async () => {
+    await ready("/screener?v=1&t=quality");
+    expect(screen.getByRole("listitem", { name: "Rule 1" })).toBeInTheDocument();
+    expect(summary()).not.toHaveTextContent("150 of 150 match");
+    expect(screen.getByRole("button", { name: /^Quality compounders(,|$)/ })).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("applies a template to an empty screen and shows an Undo toast", async () => {
     await ready();
     useTemplateCard("Quality compounders");
