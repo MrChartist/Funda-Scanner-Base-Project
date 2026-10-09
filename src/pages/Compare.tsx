@@ -8,6 +8,7 @@ import { CompareTable } from "@/components/compare/CompareTable";
 import { CompanyPicker } from "@/components/compare/CompanyPicker";
 import { buildCompare, MAX_COMPARE, parseSymbols } from "@/components/compare/compare-view";
 import { Button } from "@/components/ui/button";
+import { PageHeader, PageShell } from "@/components/layout";
 import { INSIGHTS_FOOTER } from "@/lib/insights";
 
 function ReadyCompare({ store }: { store: Extract<ReturnType<typeof useDataset>, { status: "ready" }>["store"] }) {
@@ -65,16 +66,13 @@ function ReadyCompare({ store }: { store: Extract<ReturnType<typeof useDataset>,
 export default function Compare() {
   const state = useDataset();
   return (
-    <div className="container max-w-6xl space-y-4 py-3 md:py-4">
-      <div>
-        <h1 className="text-xl font-semibold sm:text-2xl">Compare companies</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Side-by-side figures for companies in the data you are viewing.</p>
-      </div>
+    <PageShell>
+      <PageHeader title="Compare companies" description="Side-by-side figures for companies in the data you are viewing." />
       {state.status === "loading" && <div role="status" aria-live="polite" className="py-20 text-center text-sm text-muted-foreground">Loading company data…</div>}
       {state.status === "error" && (
         <EmptyState title="The data could not be loaded." description={state.message} action={<Button type="button" variant="outline" className="min-h-11" onClick={state.retry}>Try again</Button>} />
       )}
       {state.status === "ready" && <ReadyCompare store={state.store} />}
-    </div>
+    </PageShell>
   );
 }

@@ -5,7 +5,7 @@ import { CompanyName } from "@/components/common/CompanyName";
 import { buildSearchItems } from "@/components/common/search";
 import { useStore } from "@/hooks/use-dataset";
 
-export function SearchBar({ variant = "header" }: { variant?: "header" | "hero" }) {
+export function SearchBar({ variant = "header", className = "" }: { variant?: "header" | "hero"; className?: string }) {
   const store = useStore();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -44,8 +44,8 @@ export function SearchBar({ variant = "header" }: { variant?: "header" | "hero" 
   const synthetic = store?.meta.isSynthetic ?? false;
 
   return (
-    <div className="relative">
-      <div className={`relative flex items-center ${isHero ? "w-full max-w-2xl" : "w-40 sm:w-60 md:w-44 lg:w-52 xl:w-64"}`}>
+    <div className={`relative ${className}`}>
+      <div className={`relative flex items-center ${isHero ? "w-full max-w-2xl" : "w-full"}`}>
         <Search className={`absolute left-3 ${isHero ? "h-5 w-5" : "h-4 w-4"} text-muted-foreground`} aria-hidden="true" />
         <input
           ref={inputRef}
@@ -66,9 +66,12 @@ export function SearchBar({ variant = "header" }: { variant?: "header" | "hero" 
           onKeyDown={onKeyDown}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
-          placeholder="Search company, symbol or metric"
-          className={`w-full rounded-lg border border-input bg-card ${isHero ? "py-4 pl-12 pr-10 text-lg" : "py-2 pl-9 pr-8 text-sm"} text-foreground outline-none ring-offset-background transition-all placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 [&::-webkit-search-cancel-button]:hidden`}
+          placeholder={isHero ? "Search company, symbol or metric" : "Search companies"}
+          className={`w-full rounded-lg border border-input bg-background/60 ${isHero ? "py-4 pl-12 pr-10 text-lg" : "h-9 pl-9 pr-9 text-sm"} text-foreground outline-none ring-offset-background transition-all placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/25 focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden`}
         />
+        {!query && !isHero && (
+          <kbd className="kbd pointer-events-none absolute right-2 hidden lg:inline-flex" aria-hidden="true">/</kbd>
+        )}
         {query && (
           <button
             type="button"

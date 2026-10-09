@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompanyName } from "@/components/common/CompanyName";
 import { DatasetGate } from "@/components/common/DatasetGate";
-import { PageTransition } from "@/components/PageTransition";
+import { PageHeader, PageShell } from "@/components/layout";
 import { calculateDCF, calculateWACC, monteCarloSimulation, reverseImpliedGrowth, summariseSimulation, type DCFInputs, type WACCInputs } from "@/lib/dcf";
 import { formatInr, formatInrCrore, formatNumberIN, formatPercent } from "@/lib/format/indian";
 import { nullReasonText } from "@/lib/format/metric-value";
@@ -506,19 +506,13 @@ function DcfPage({ store }: { store: MetricStore }) {
 
 export default function DCFCalculator() {
   return (
-    <PageTransition>
-      <div className="container max-w-7xl space-y-3 py-3">
-        <div className="flex items-center gap-2">
-          <Calculator className="h-5 w-5 text-primary" aria-hidden="true" />
-          <div>
-            <h1 className="text-xl font-bold text-foreground">DCF calculator</h1>
-            <p className="text-xs text-muted-foreground">
-              A two-stage discounted cash flow model for study. Cash flow, shares and net debt come from your data; the rates are your assumptions.
-            </p>
-          </div>
-        </div>
+      <PageShell>
+        <PageHeader
+          title="DCF calculator"
+          icon={Calculator}
+          description="A two-stage discounted cash flow model for study. Cash flow, shares and net debt come from your data; the rates are your assumptions."
+        />
         <DatasetGate>{({ store }) => <DcfPage store={store} />}</DatasetGate>
-      </div>
-    </PageTransition>
+      </PageShell>
   );
 }

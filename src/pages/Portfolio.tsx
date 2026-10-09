@@ -11,7 +11,7 @@ import { CompanyName } from "@/components/common/CompanyName";
 import { DatasetGate } from "@/components/common/DatasetGate";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ValueCell } from "@/components/common/ValueCell";
-import { PageTransition } from "@/components/PageTransition";
+import { PageHeader, PageShell } from "@/components/layout";
 import { usePortfolio } from "@/hooks/use-portfolio";
 import { formatInr, formatNumberIN, formatPercent } from "@/lib/format/indian";
 import { localDateStamp } from "@/lib/time/clock";
@@ -276,14 +276,9 @@ function PortfolioView({ store }: { store: MetricStore }) {
 
 export default function Portfolio() {
   return (
-    <PageTransition>
-      <div className="container max-w-7xl space-y-4 py-4">
-        <div className="flex items-center gap-2">
-          <Briefcase className="h-5 w-5 text-primary" aria-hidden="true" />
-          <h1 className="text-xl font-bold text-foreground">Portfolio</h1>
-        </div>
+      <PageShell>
+        <PageHeader title="Portfolio" icon={Briefcase} />
         <DatasetGate>{({ store }) => <PortfolioView store={store} />}</DatasetGate>
-      </div>
-    </PageTransition>
+      </PageShell>
   );
 }

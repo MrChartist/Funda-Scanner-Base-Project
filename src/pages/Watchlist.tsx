@@ -8,7 +8,7 @@ import { DatasetGate } from "@/components/common/DatasetGate";
 import { EmptyState } from "@/components/common/EmptyState";
 import { MetricInfo } from "@/components/common/MetricInfo";
 import { ValueCell } from "@/components/common/ValueCell";
-import { PageTransition } from "@/components/PageTransition";
+import { PageHeader, PageShell } from "@/components/layout";
 import { useWatchlist } from "@/hooks/use-watchlist";
 
 /** Columns read from the store; ids that the loaded catalogue does not have are left out. */
@@ -172,17 +172,12 @@ export default function Watchlist() {
   const { symbols } = useWatchlist();
 
   return (
-    <PageTransition>
-      <div className="container max-w-7xl space-y-5 py-6">
-        <div className="flex items-center gap-3">
-          <Eye className="h-6 w-6 text-primary" aria-hidden="true" />
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Watchlist</h1>
-            <p className="text-sm text-muted-foreground">
-              {symbols.length === 0 ? "Companies you follow appear here." : `${symbols.length} ${symbols.length === 1 ? "company" : "companies"} followed. The list stays in this browser.`}
-            </p>
-          </div>
-        </div>
+      <PageShell>
+        <PageHeader
+          title="Watchlist"
+          icon={Eye}
+          description={symbols.length === 0 ? "Companies you follow appear here." : `${symbols.length} ${symbols.length === 1 ? "company" : "companies"} followed. The list stays in this browser.`}
+        />
         {symbols.length === 0 ? (
           <EmptyState
             icon={<Bookmark className="h-6 w-6" />}
@@ -193,7 +188,6 @@ export default function Watchlist() {
         ) : (
           <DatasetGate>{({ store }) => <WatchlistTable store={store} symbols={symbols} />}</DatasetGate>
         )}
-      </div>
-    </PageTransition>
+      </PageShell>
   );
 }

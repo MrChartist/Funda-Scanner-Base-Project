@@ -1,33 +1,34 @@
 import { useDensity } from "@/hooks/use-density";
-import { AlignJustify, AlignCenter, AlignLeft } from "lucide-react";
 
 export function DensityPicker() {
   const { density, setDensity } = useDensity();
 
   const options = [
-    { mode: "compact" as const, icon: AlignJustify, label: "Compact" },
-    { mode: "comfortable" as const, icon: AlignCenter, label: "Comfortable" },
-    { mode: "spacious" as const, icon: AlignLeft, label: "Spacious" },
+    { mode: "compact" as const, label: "Compact" },
+    { mode: "comfortable" as const, label: "Comfortable" },
+    { mode: "spacious" as const, label: "Spacious" },
   ];
 
   return (
-    <div role="group" aria-label="Table density" className="flex items-center rounded-full border border-border/60 bg-secondary/50 p-0.5">
-      {options.map(({ mode, icon: Icon, label }) => (
-        <button
-          key={mode}
-          onClick={() => setDensity(mode)}
-          title={label}
-          aria-label={label}
-          aria-pressed={density === mode}
-          className={`rounded-full p-1.5 transition-all duration-200 ${
-            density === mode
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Icon className="h-3.5 w-3.5" />
-        </button>
-      ))}
+    <div className="space-y-2">
+      <p className="type-label">Table density</p>
+      <div role="group" aria-label="Table density" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+        {options.map(({ mode, label }) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setDensity(mode)}
+            title={label}
+            aria-label={label}
+            aria-pressed={density === mode}
+            className={`flex min-h-8 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium transition-all duration-150 ${
+              density === mode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
