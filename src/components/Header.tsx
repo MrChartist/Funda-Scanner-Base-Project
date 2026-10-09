@@ -48,7 +48,7 @@ const MORE_ITEMS: NavItem[] = [
 
 function Logo({ compact = false }: { compact?: boolean }) {
   return (
-    <Link to="/" className="group flex items-center gap-2 rounded-md" aria-label="Funda Scanner, Dashboard">
+    <Link to="/" className="group flex items-center gap-2 rounded-md" aria-label="FundaScanner, Dashboard">
       <span className="brand-gradient flex h-8 w-8 items-center justify-center rounded-lg shadow-sm ring-1 ring-inset ring-white/20 transition-transform group-hover:scale-105">
         <TrendingUp className="h-4 w-4 text-primary-foreground" aria-hidden="true" />
       </span>

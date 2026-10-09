@@ -52,7 +52,7 @@ export function DataHealthPanel({ store, index, health, className }: DataHealthP
     && h.issues.length === 0 && !h.snapshotOnly && h.years.gaps.length === 0;
 
   return (
-    <section aria-label="Data health" className={cn("space-y-4 text-sm", className)}>
+    <section aria-label="Data coverage and checks" className={cn("space-y-4 text-sm", className)}>
       <dl className="grid gap-x-4 gap-y-2 sm:grid-cols-2">
         <div>
           <dt className="text-xs text-muted-foreground">Annual statements</dt>
