@@ -60,7 +60,9 @@ describe("Dashboard", () => {
       const run = runScreen(store, { query: t.query, columns: null, sort: t.sort, universe: { kind: "all" } }, { watchlist: [], portfolio: [] });
       const text = screen.getByTestId(`match-count-${t.id}`).textContent ?? "";
       expect(run.ok).toBe(true);
-      expect(text).toContain(`${run.matchCount.toLocaleString("en-IN")} of ${run.universe.length.toLocaleString("en-IN")} companies match`);
+      const limit = run.compiled.limit;
+      if (limit !== null && run.matchCount > limit) expect(text).toContain(`top ${limit} of ${run.matchCount.toLocaleString("en-IN")} ranked`);
+      else expect(text).toContain(`${run.matchCount.toLocaleString("en-IN")} of ${run.universe.length.toLocaleString("en-IN")} companies match`);
     }
   });
 
