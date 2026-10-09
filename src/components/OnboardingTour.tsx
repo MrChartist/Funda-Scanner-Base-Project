@@ -1,47 +1,75 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRight, Sparkles, Search, GitCompare, Star, BarChart3, Calculator, Keyboard, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { ArrowRight, BarChart3, BookOpen, Calculator, ChevronRight, Keyboard, Search, Sparkles, type LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
-const TOUR_STEPS = [
+const SEEN_KEY = "funda-tour-seen";
+
+interface TourStep {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  points?: string[];
+  action?: { label: string; to: string };
+}
+
+/** Every step describes a feature that exists in this app. */
+export const TOUR_STEPS: TourStep[] = [
   {
-    title: "Welcome to FundaScanner",
-    description: "Your institutional-grade financial data platform for 2,229 NSE companies. Here's what you can do:",
+    title: "Welcome to Funda Scanner",
+    description:
+      "An open-source tool for studying company fundamentals. It opens with 150 fictional companies, so you can learn the tools before using real figures.",
     icon: Sparkles,
-    features: ["10-year financial data", "Live market tracking", "Advanced stock screening"],
+    points: ["Sample data is clearly labelled as fictional", "Import your own files to study real companies", "Every figure shows its period, unit and formula"],
   },
   {
-    title: "Search Any Company",
-    description: "Press ⌘K or / to instantly search. Navigate results with arrow keys.",
+    title: "Search anywhere",
+    description: "Press Ctrl+K (⌘K on a Mac) to search companies, metrics and guided screens, or press / to jump to the search box.",
     icon: Search,
-    action: "Try it: Press / now",
   },
   {
-    title: "Deep Company Analysis",
-    description: "Each company page has 15+ sections: ratios, charts, shareholding, insider activity, and peer comparisons.",
+    title: "Screener and guided screens",
+    description:
+      "Write a rule such as roce > 15 AND debt_equity < 0.5, or start from a guided screen that explains each rule. The results show why each company passed or missed.",
     icon: BarChart3,
-    action: "Click any stock to explore",
+    action: { label: "Open the Screener", to: "/screener" },
   },
   {
-    title: "Advanced Stock Screener",
-    description: "Build custom filters like \"ROCE > 20% AND D/E < 0.5\" or use presets like High ROCE Low Debt.",
-    icon: Star,
-    action: "Navigate to Screener →",
-    navTo: "/screener",
+    title: "Learn the metrics",
+    description:
+      "The Learn page explains every metric in plain language, with worked examples, common pitfalls and a note on what a screen cannot tell you.",
+    icon: BookOpen,
+    action: { label: "Open Learn", to: "/learn" },
   },
   {
-    title: "Compare & DCF",
-    description: "Compare up to 4 stocks side-by-side, or estimate intrinsic value with the DCF calculator.",
-    icon: GitCompare,
+    title: "Watchlist, Portfolio and DCF",
+    description:
+      "Follow companies, record holdings and try a two-stage discounted cash flow model. Everything you enter stays in this browser.",
+    icon: Calculator,
   },
   {
-    title: "Keyboard Power User",
-    description: "Use j/k to scroll, g+d for Dashboard, g+s for Screener. Press ? anytime for all shortcuts.",
+    title: "Keyboard shortcuts",
+    description: "Press ? at any time for the list. For example, g then s opens the Screener and g then l opens Learn.",
     icon: Keyboard,
-    action: "Press ? for full list",
   },
 ];
+
+function hasSeenTour(): boolean {
+  try {
+    return localStorage.getItem(SEEN_KEY) !== null;
+  } catch {
+    return true; // no storage: do not interrupt on every visit
+  }
+}
+
+function markTourSeen(): void {
+  try {
+    localStorage.setItem(SEEN_KEY, "true");
+  } catch {
+    /* storage unavailable; the tour may show again */
+  }
+}
 
 export function OnboardingTour() {
   const [isOpen, setIsOpen] = useState(false);
@@ -49,118 +77,75 @@ export function OnboardingTour() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const seen = localStorage.getItem("funda-tour-seen");
-    if (!seen) {
-      const timer = setTimeout(() => setIsOpen(true), 1000);
-      return () => clearTimeout(timer);
-    }
+    if (hasSeenTour()) return;
+    const timer = setTimeout(() => setIsOpen(true), 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   const dismiss = () => {
     setIsOpen(false);
-    localStorage.setItem("funda-tour-seen", "true");
+    markTourSeen();
   };
-
-  const next = () => {
-    if (step < TOUR_STEPS.length - 1) setStep(step + 1);
-    else dismiss();
-  };
-
-  const handleAction = () => {
-    const current = TOUR_STEPS[step];
-    if (current.navTo) {
-      dismiss();
-      navigate(current.navTo);
-    }
-  };
-
-  if (!isOpen) return null;
 
   const current = TOUR_STEPS[step];
+  const last = step === TOUR_STEPS.length - 1;
   const Icon = current.icon;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-background/50 backdrop-blur-sm p-4"
-        onClick={dismiss}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 40, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 40, scale: 0.95 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          onClick={(e) => e.stopPropagation()}
-          className="glass-card-elevated p-6 max-w-md w-full space-y-4"
-        >
-          {/* Step indicator */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Icon className="h-4.5 w-4.5 text-primary" />
-              </div>
-              <span className="text-[10px] font-mono text-muted-foreground">
-                {step + 1} / {TOUR_STEPS.length}
-              </span>
-            </div>
-            <button onClick={dismiss} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-secondary">
-              <X className="h-4 w-4" />
-            </button>
+    <Dialog open={isOpen} onOpenChange={(o) => (o ? setIsOpen(true) : dismiss())}>
+      <DialogContent className="max-w-md space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
           </div>
+          <span className="font-mono text-xs text-muted-foreground">
+            Step {step + 1} of {TOUR_STEPS.length}
+          </span>
+        </div>
 
-          <div>
-            <h3 className="text-lg font-bold text-foreground tracking-tight">{current.title}</h3>
-            <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{current.description}</p>
-          </div>
+        <div>
+          <DialogTitle className="text-lg font-bold tracking-tight text-foreground">{current.title}</DialogTitle>
+          <DialogDescription className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{current.description}</DialogDescription>
+        </div>
 
-          {/* Feature list if present */}
-          {current.features && (
-            <div className="space-y-1.5">
-              {current.features.map((f) => (
-                <div key={f} className="flex items-center gap-2 text-xs text-foreground">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
-                  {f}
-                </div>
-              ))}
-            </div>
-          )}
+        {current.points && (
+          <ul className="space-y-1.5">
+            {current.points.map((p) => (
+              <li key={p} className="flex items-center gap-2 text-sm text-foreground">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                {p}
+              </li>
+            ))}
+          </ul>
+        )}
 
-          {/* Action button if present */}
-          {current.action && (
-            <button onClick={handleAction}
-              className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
-              {current.action}
-              <ChevronRight className="h-3 w-3" />
-            </button>
-          )}
+        {current.action && (
+          <button
+            type="button"
+            onClick={() => {
+              dismiss();
+              navigate(current.action!.to);
+            }}
+            className="flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80"
+          >
+            {current.action.label}
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        )}
 
-          {/* Progress bar */}
-          <div className="h-1 bg-secondary rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-primary rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${((step + 1) / TOUR_STEPS.length) * 100}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-
-          <div className="flex items-center justify-between pt-1">
-            <button onClick={dismiss} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              Skip tour
-            </button>
-            <Button size="sm" onClick={next} className="gap-1.5 rounded-full px-4">
-              {step < TOUR_STEPS.length - 1 ? (
-                <>Next <ArrowRight className="h-3 w-3" /></>
-              ) : (
-                "Get Started"
-              )}
-            </Button>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+        <div className="flex items-center justify-between pt-1">
+          <button type="button" onClick={dismiss} className="min-h-11 text-sm text-muted-foreground hover:text-foreground">
+            Skip tour
+          </button>
+          <Button type="button" onClick={() => (last ? dismiss() : setStep(step + 1))} className="min-h-11 gap-1.5 rounded-full px-5">
+            {last ? "Get started" : (
+              <>
+                Next <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

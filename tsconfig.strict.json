@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": { "strict": true, "noImplicitAny": true, "strictNullChecks": true, "noFallthroughCasesInSwitch": true },
+  "include": ["src/lib/contracts", "src/lib/time", "src/lib/format", "src/lib/data", "src/lib/metrics", "src/lib/query",
+              "src/lib/screen", "src/lib/insights", "src/lib/learn", "src/lib/sample", "src/lib/user", "src/lib/engine",
+              "src/test/fixtures"]
+}

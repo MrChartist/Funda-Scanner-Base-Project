@@ -1,101 +1,106 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Design tokens. Brand = indigo ("Mr. Chartist"). Neutrals carry a faint cool tint.
+  Dark mode is deep slate/navy, never pure black. --primary and --ring are overridden
+  at runtime by AccentColorPicker; --ring and the sidebar tokens follow --primary.
+  Semantic colours (--chart-green/red/amber, --success, --warning, --destructive) are
+  tuned to pass WCAG AA (4.5:1) as text on --background and --card in each mode.
+*/
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 20% 8%;
+    color-scheme: light;
+    --background: 225 25% 97%;
+    --foreground: 224 30% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 8%;
+    --card-foreground: 224 30% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 8%;
-    --primary: 211 100% 50%;
+    --popover-foreground: 224 30% 11%;
+    --primary: 243 75% 59%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 94%;
-    --secondary-foreground: 220 20% 8%;
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 220 14% 92%;
-    --accent-foreground: 220 20% 8%;
-    --destructive: 0 84% 60%;
+    --secondary: 225 20% 94%;
+    --secondary-foreground: 224 30% 14%;
+    --muted: 225 20% 94%;
+    --muted-foreground: 222 14% 38%;
+    --accent: 232 45% 95%;
+    --accent-foreground: 224 30% 14%;
+    --destructive: 0 72% 46%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 88%;
-    --input: 220 13% 88%;
-    --ring: 211 100% 50%;
-    --radius: 0.5rem;
-    --success: 142 71% 45%;
+    --border: 225 18% 88%;
+    --input: 225 16% 82%;
+    --ring: var(--primary);
+    --radius: 0.625rem;
+    --success: 142 72% 28%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 30 95% 33%;
     --warning-foreground: 0 0% 100%;
-    --chart-green: 142 71% 45%;
-    --chart-red: 0 84% 60%;
-    --chart-blue: 211 100% 50%;
-    --chart-cyan: 199 89% 48%;
-    --chart-amber: 38 92% 50%;
-    --card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03);
-    --card-shadow-hover: 0 2px 8px -2px rgb(0 0 0 / 0.06);
-    --card-shadow-elevated: 0 4px 16px -4px rgb(0 0 0 / 0.08);
-    --sidebar-background: 220 20% 96%;
-    --sidebar-foreground: 220 14% 20%;
-    --sidebar-primary: 211 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 92%;
-    --sidebar-accent-foreground: 220 14% 15%;
-    --sidebar-border: 220 13% 88%;
-    --sidebar-ring: 211 100% 50%;
+    --chart-green: 142 72% 28%;
+    --chart-red: 0 72% 44%;
+    --chart-blue: 243 75% 59%;
+    --chart-cyan: 190 85% 31%;
+    --chart-amber: 30 95% 33%;
+
+    /* Layered, low-contrast shadows */
+    --shadow-color: 224 40% 20%;
+    --card-shadow: 0 1px 2px 0 hsl(var(--shadow-color) / 0.05), 0 1px 1px 0 hsl(var(--shadow-color) / 0.03);
+    --card-shadow-hover: 0 2px 4px -1px hsl(var(--shadow-color) / 0.06), 0 8px 16px -6px hsl(var(--shadow-color) / 0.1);
+    --card-shadow-elevated: 0 2px 4px -1px hsl(var(--shadow-color) / 0.06), 0 12px 28px -8px hsl(var(--shadow-color) / 0.16);
+
+    --sidebar-background: 225 25% 96%;
+    --sidebar-foreground: 224 25% 22%;
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: var(--accent);
+    --sidebar-accent-foreground: var(--accent-foreground);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
 
     /* Density system */
     --density-padding: 1rem;
     --density-gap: 0.75rem;
     --density-text-sm: 0.8125rem;
-    --density-text-xs: 0.6875rem;
+    --density-text-xs: 0.75rem;
     --density-cell-py: 0.5rem;
     --density-cell-px: 0.75rem;
   }
 
   .dark {
-    --background: 225 16% 6%;
-    --foreground: 210 20% 92%;
-    --card: 225 16% 9%;
-    --card-foreground: 210 20% 92%;
-    --popover: 225 16% 9%;
-    --popover-foreground: 210 20% 92%;
-    --primary: 211 100% 55%;
-    --primary-foreground: 225 16% 6%;
-    --secondary: 225 14% 13%;
-    --secondary-foreground: 210 20% 92%;
-    --muted: 225 14% 13%;
-    --muted-foreground: 220 10% 50%;
-    --accent: 225 14% 15%;
-    --accent-foreground: 210 20% 92%;
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 225 14% 15%;
-    --input: 225 14% 15%;
-    --ring: 211 100% 55%;
-    --success: 152 69% 42%;
-    --success-foreground: 225 16% 6%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 225 16% 6%;
-    --chart-green: 152 69% 48%;
-    --chart-red: 0 72% 58%;
-    --chart-blue: 211 100% 55%;
-    --chart-cyan: 199 89% 55%;
-    --chart-amber: 38 92% 55%;
-    --card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --card-shadow-hover: 0 2px 8px -2px rgb(0 0 0 / 0.4);
-    --card-shadow-elevated: 0 4px 16px -4px rgb(0 0 0 / 0.5);
-    --sidebar-background: 225 16% 8%;
-    --sidebar-foreground: 210 20% 92%;
-    --sidebar-primary: 211 100% 55%;
-    --sidebar-primary-foreground: 225 16% 6%;
-    --sidebar-accent: 225 14% 13%;
-    --sidebar-accent-foreground: 210 20% 92%;
-    --sidebar-border: 225 14% 15%;
-    --sidebar-ring: 211 100% 55%;
+    color-scheme: dark;
+    --background: 224 28% 9%;
+    --foreground: 220 25% 93%;
+    --card: 224 24% 12%;
+    --card-foreground: 220 25% 93%;
+    --popover: 224 24% 13%;
+    --popover-foreground: 220 25% 93%;
+    --primary: 243 100% 77%;
+    --primary-foreground: 224 40% 10%;
+    --secondary: 224 20% 17%;
+    --secondary-foreground: 220 25% 93%;
+    --muted: 224 20% 17%;
+    --muted-foreground: 220 14% 68%;
+    --accent: 230 26% 20%;
+    --accent-foreground: 220 25% 95%;
+    --destructive: 0 80% 66%;
+    --destructive-foreground: 224 40% 10%;
+    --border: 224 18% 20%;
+    --input: 224 16% 26%;
+    --success: 142 60% 55%;
+    --success-foreground: 224 40% 10%;
+    --warning: 40 92% 60%;
+    --warning-foreground: 224 40% 10%;
+    --chart-green: 142 60% 55%;
+    --chart-red: 0 85% 69%;
+    --chart-blue: 243 100% 77%;
+    --chart-cyan: 188 80% 58%;
+    --chart-amber: 40 92% 60%;
+    --shadow-color: 224 60% 3%;
+    --card-shadow: 0 1px 2px 0 hsl(var(--shadow-color) / 0.35), 0 0 0 1px hsl(0 0% 100% / 0.02) inset;
+    --card-shadow-hover: 0 2px 4px -1px hsl(var(--shadow-color) / 0.4), 0 10px 20px -8px hsl(var(--shadow-color) / 0.55);
+    --card-shadow-elevated: 0 2px 4px -1px hsl(var(--shadow-color) / 0.4), 0 16px 32px -8px hsl(var(--shadow-color) / 0.65);
+    --sidebar-background: 224 28% 10%;
+    --sidebar-foreground: 220 25% 90%;
   }
 
   /* Density modes */
@@ -103,7 +108,7 @@
     --density-padding: 0.5rem;
     --density-gap: 0.375rem;
     --density-text-sm: 0.75rem;
-    --density-text-xs: 0.625rem;
+    --density-text-xs: 0.75rem;
     --density-cell-py: 0.25rem;
     --density-cell-px: 0.375rem;
   }
@@ -123,53 +128,128 @@
     @apply border-border;
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-family: theme('fontFamily.sans');
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 14px;
+    line-height: 1.55;
+    text-rendering: optimizeLegibility;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
     font-weight: 600;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.22);
+    color: inherit;
+  }
+
+  /* One visible focus treatment: 2px primary ring with a 2px offset. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-offset: 0;
   }
 }
 
 @layer components {
-  /* Bloomberg-style cards — flat, minimal shadow, tight borders */
-  .glass-card {
-    @apply rounded-lg border border-border bg-card;
-    box-shadow: var(--card-shadow);
-    transition: box-shadow 0.15s ease;
+  /* Page container: same width and left edge for the header, banner, pages and footer. */
+  .app-container {
+    @apply mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8;
   }
 
-  .glass-card:hover {
+  /* Cards */
+  .glass-card {
+    @apply rounded-xl border border-border bg-card text-card-foreground;
+    box-shadow: var(--card-shadow);
+    transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+
+  /* Interactive cards (links, buttons, or opted in with .card-interactive) lift on hover. */
+  a.glass-card,
+  button.glass-card,
+  .glass-card.card-interactive {
+    @apply cursor-pointer;
+  }
+
+  a.glass-card:hover,
+  button.glass-card:hover,
+  .glass-card.card-interactive:hover {
+    border-color: hsl(var(--primary) / 0.35);
     box-shadow: var(--card-shadow-hover);
+    transform: translateY(-1px);
+  }
+
+  a.glass-card:active,
+  button.glass-card:active,
+  .glass-card.card-interactive:active {
+    transform: translateY(0);
   }
 
   .glass-card-elevated {
-    @apply rounded-lg border border-border bg-card;
+    @apply rounded-xl border border-border bg-card text-card-foreground;
     box-shadow: var(--card-shadow-elevated);
   }
 
+  /* Section heading: small-caps eyebrow with an accent bar. Used by every section. */
   .section-title {
-    @apply text-sm font-semibold text-foreground tracking-tight flex items-center gap-2 uppercase;
-    letter-spacing: 0.04em;
-    font-size: 11px;
+    @apply flex items-center gap-2 font-semibold uppercase text-foreground;
+    letter-spacing: 0.06em;
+    font-size: 12px;
+    line-height: 1.25rem;
   }
 
   .section-title::before {
     content: '';
-    @apply w-0.5 h-4 rounded-full bg-primary inline-block;
+    @apply inline-block h-3.5 w-1 shrink-0 rounded-full bg-primary;
   }
 
+  /* Type scale (min 12px): page title, section title, label, body, caption. */
+  .type-page-title {
+    @apply text-2xl font-bold text-foreground sm:text-[1.75rem];
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  .type-section-title {
+    @apply text-base font-semibold text-foreground;
+    line-height: 1.35;
+  }
+
+  .type-label {
+    @apply font-medium uppercase text-muted-foreground;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
+
+  .type-body {
+    @apply text-sm text-foreground;
+  }
+
+  .type-caption {
+    @apply text-muted-foreground;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  /* Tables */
   .data-cell {
     padding: var(--density-cell-py) var(--density-cell-px);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: theme('fontFamily.mono');
     font-size: var(--density-text-xs);
     font-variant-numeric: tabular-nums;
     line-height: 1.4;
@@ -178,42 +258,52 @@
   .data-header {
     padding: var(--density-cell-py) var(--density-cell-px);
     @apply text-left font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap;
-    font-size: 10px;
-    letter-spacing: 0.06em;
+    font-size: 12px;
+    letter-spacing: 0.04em;
   }
 
   .metric-badge {
-    @apply inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-semibold font-mono;
-    font-size: 10px;
+    @apply inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 font-semibold font-mono;
+    font-size: 12px;
   }
 
-  /* Subtle glow effects */
   .glow-green {
-    box-shadow: 0 0 0 1px hsl(var(--chart-green) / 0.2);
+    box-shadow: 0 0 0 1px hsl(var(--chart-green) / 0.25);
   }
 
   .glow-red {
-    box-shadow: 0 0 0 1px hsl(var(--chart-red) / 0.2);
+    box-shadow: 0 0 0 1px hsl(var(--chart-red) / 0.25);
   }
 
   .glow-primary {
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.2);
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.25);
   }
 
-  /* Bloomberg-style pill buttons */
+  /* Pill buttons */
   .pill-button {
-    @apply rounded px-3 py-1.5 text-xs font-medium transition-all duration-150;
-    @apply bg-secondary text-secondary-foreground hover:bg-accent;
+    @apply rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150;
+    @apply bg-secondary text-secondary-foreground hover:bg-accent active:scale-[0.97];
   }
 
   .pill-button-active {
-    @apply bg-primary text-primary-foreground;
+    @apply bg-primary text-primary-foreground hover:bg-primary;
+  }
+
+  /* Constrained reading measure: children keep the page's left edge but stop at ~74ch. */
+  .page-prose > * {
+    max-width: 74ch;
   }
 }
 
 @layer utilities {
   .font-mono-data {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: theme('fontFamily.mono');
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Figures: aligned digits. */
+  .num {
+    font-variant-numeric: tabular-nums lining-nums;
   }
 
   .text-positive {
@@ -238,8 +328,8 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar {
-    width: 3px;
-    height: 3px;
+    width: 4px;
+    height: 4px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
@@ -257,7 +347,11 @@
 
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--chart-cyan)));
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.65));
+  }
+
+  .brand-gradient {
+    background-image: linear-gradient(135deg, hsl(var(--primary) / 0.95), hsl(var(--primary) / 0.7));
   }
 
   .safe-area-bottom {
@@ -268,35 +362,42 @@
     animation: countFade 0.4s ease-out;
   }
 
+  .animate-page-in {
+    animation: pageIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
   @keyframes countFade {
     from { opacity: 0; transform: translateY(2px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
+  @keyframes pageIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   .focus-ring {
-    @apply outline-none ring-1 ring-primary/40 ring-offset-1 ring-offset-background rounded;
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background rounded;
   }
 
   .kbd {
-    @apply inline-flex items-center justify-center rounded border border-border bg-muted px-1 py-0.5 font-mono text-muted-foreground;
-    font-size: 9px;
+    @apply inline-flex items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-muted-foreground;
+    font-size: 12px;
+    line-height: 1;
   }
 
   /* Mobile responsive tables */
   @media (max-width: 768px) {
     .data-header, .data-cell {
       padding: 4px 6px;
-      font-size: 10px;
-    }
-    .glass-card {
-      border-radius: 8px;
+      font-size: 12px;
     }
   }
 
   /* Data freshness indicator */
   .freshness-badge {
     @apply inline-flex items-center gap-1 font-mono text-muted-foreground;
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .freshness-dot {
@@ -380,7 +481,7 @@
   .section-title {
     font-size: 11pt !important;
     color: #111 !important;
-    border-bottom: 1px solid #0ea5e9;
+    border-bottom: 1px solid #4f46e5;
     padding-bottom: 3pt;
     margin-bottom: 6pt;
   }
@@ -389,7 +490,7 @@
     display: none !important;
   }
 
-  .container {
+  .container, .app-container {
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -410,5 +511,21 @@
     border-bottom: 2px solid #333;
     padding-bottom: 6pt;
     margin-bottom: 12pt;
+  }
+}
+
+/* Anchors such as /learn#roce land below the sticky header. */
+[id] {
+  scroll-margin-top: 4.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

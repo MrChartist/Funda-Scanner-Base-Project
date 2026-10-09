@@ -1,372 +1,307 @@
-import { useState, useMemo, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Plus, X, Filter, Save, RotateCcw, ChevronDown, Download, AreaChart as AreaChartIcon, Loader2, RefreshCw } from "lucide-react";
-import { MOCK_COMPANIES } from "@/lib/mock-data";
-import { fetchScreenedStocks, type TVStockData } from "@/lib/tradingview";
+// src/pages/Screener.tsx — the Screener (WS5, spec §E.7), results first: a header with grouped actions,
+// a template bar with live match counts, the Rules card beside (wide screens) or above (narrow) the
+// results, removable rule chips, and a table of data bars. State lives in useScreen(); this file only
+// composes the pieces.
+import { useEffect, useMemo, useState } from "react";
+import { MotionConfig } from "framer-motion";
+import { ChevronDown, SlidersHorizontal, Upload } from "lucide-react";
+import { PageHeader, PageShell } from "@/components/layout";
+import type { ScreenTemplate } from "@/lib/contracts";
+import { TEMPLATES } from "@/lib/screen";
+import { useScreen } from "@/hooks/use-screen";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
-import { LiveMarketIndicator } from "@/hooks/use-live-prices";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToastAction } from "@/components/ui/toast";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ImportDataDialog } from "@/components/ImportDataDialog";
+import { cn } from "@/lib/utils";
+import { ActiveRules } from "@/components/screener/ActiveRules";
+import { ColumnChooser } from "@/components/screener/ColumnChooser";
+import { CompareTray } from "@/components/screener/CompareTray";
+import { ExportButton } from "@/components/screener/ExportButton";
+import { FunnelPanel } from "@/components/screener/FunnelPanel";
+import { NearMissPanel } from "@/components/screener/NearMissPanel";
+import { NoMatches } from "@/components/screener/NoMatches";
+import { ResultCards } from "@/components/screener/ResultCards";
+import { ResultsSummary } from "@/components/screener/ResultsSummary";
+import { ResultsTable } from "@/components/screener/ResultsTable";
+import { RulesPanel, type RulesMode } from "@/components/screener/RulesPanel";
+import { SavedScreensMenu } from "@/components/screener/SavedScreensMenu";
+import { ShareButton } from "@/components/screener/ShareButton";
+import { TemplateBar } from "@/components/screener/TemplateBar";
+import { TemplateGallery } from "@/components/screener/TemplateGallery";
+import { WhyDrawer } from "@/components/screener/WhyDrawer";
+import { MAX_COMPARE, universePositions } from "@/components/screener/helpers";
+import { ICON_BUTTON, ICON_GROUP, ICON_LABEL } from "@/components/screener/toolbar";
+import { useTemplateCounts } from "@/components/screener/use-template-counts";
 
-// Metrics available for filtering — mapped to TradingView field names
-const METRICS = [
-  { key: "market_cap_basic", label: "Market Cap", tvField: "market_cap_basic", type: "number", category: "Valuation" },
-  { key: "close", label: "Price", tvField: "close", type: "number", category: "Price" },
-  { key: "change", label: "Change %", tvField: "change", type: "number", category: "Price" },
-  { key: "price_earnings_ttm", label: "P/E Ratio", tvField: "price_earnings_ttm", type: "number", category: "Valuation" },
-  { key: "earnings_per_share_basic_ttm", label: "EPS", tvField: "earnings_per_share_basic_ttm", type: "number", category: "Valuation" },
-  { key: "volume", label: "Volume", tvField: "volume", type: "number", category: "Price" },
-  { key: "relative_volume_10d_calc", label: "Relative Volume", tvField: "relative_volume_10d_calc", type: "number", category: "Price" },
-  // Fundamental metrics
-  { key: "return_on_invested_capital", label: "ROCE (ROIC)", tvField: "return_on_invested_capital", type: "number", category: "Fundamental" },
-  { key: "return_on_equity", label: "ROE", tvField: "return_on_equity", type: "number", category: "Fundamental" },
-  { key: "debt_to_equity", label: "Debt/Equity", tvField: "debt_to_equity", type: "number", category: "Fundamental" },
-  { key: "dividend_yield_recent", label: "Dividend Yield %", tvField: "dividend_yield_recent", type: "number", category: "Fundamental" },
-  { key: "revenue_growth_quarterly", label: "Sales Growth (QoQ)", tvField: "revenue_growth_quarterly", type: "number", category: "Growth" },
-  { key: "earnings_growth_quarterly", label: "Profit Growth (QoQ)", tvField: "earnings_growth_quarterly", type: "number", category: "Growth" },
-  { key: "price_book_fq", label: "Price/Book", tvField: "price_book_fq", type: "number", category: "Valuation" },
-  { key: "total_debt_to_ebitda", label: "Debt/EBITDA", tvField: "total_debt_to_ebitda", type: "number", category: "Fundamental" },
-  { key: "free_cash_flow_yield_ttm", label: "FCF Yield %", tvField: "free_cash_flow_yield_ttm", type: "number", category: "Fundamental" },
-];
-
-const OPERATORS = [
-  { key: "greater", label: ">" },
-  { key: "less", label: "<" },
-  { key: "in_range", label: "Between" },
-  { key: "equal", label: "=" },
-];
-
-const PRESETS = [
-  { name: "Large Cap (>₹50K Cr)", filters: [{ left: "market_cap_basic", operation: "greater", right: 500000000000 }] },
-  { name: "High P/E (>30)", filters: [{ left: "price_earnings_ttm", operation: "greater", right: 30 }] },
-  { name: "Low P/E (<15)", filters: [{ left: "price_earnings_ttm", operation: "less", right: 15 }, { left: "price_earnings_ttm", operation: "greater", right: 0 }] },
-  { name: "Top Gainers (>2%)", filters: [{ left: "change", operation: "greater", right: 2 }] },
-  { name: "Top Losers (<-2%)", filters: [{ left: "change", operation: "less", right: -2 }] },
-  { name: "High Volume", filters: [{ left: "relative_volume_10d_calc", operation: "greater", right: 2 }] },
-  { name: "Penny Stocks (<₹50)", filters: [{ left: "close", operation: "less", right: 50 }] },
-  // Fundamental presets
-  { name: "High ROCE (>20%)", filters: [{ left: "return_on_invested_capital", operation: "greater", right: 20 }] },
-  { name: "Low Debt (D/E<0.5)", filters: [{ left: "debt_to_equity", operation: "less", right: 0.5 }, { left: "debt_to_equity", operation: "greater", right: 0 }] },
-  { name: "Dividend Stars (>3%)", filters: [{ left: "dividend_yield_recent", operation: "greater", right: 3 }] },
-  { name: "High ROE (>15%)", filters: [{ left: "return_on_equity", operation: "greater", right: 15 }] },
-  { name: "Growth Stocks", filters: [{ left: "revenue_growth_quarterly", operation: "greater", right: 15 }, { left: "earnings_growth_quarterly", operation: "greater", right: 15 }] },
-  { name: "Value Picks (P/B<2)", filters: [{ left: "price_book_fq", operation: "less", right: 2 }, { left: "price_book_fq", operation: "greater", right: 0 }] },
-];
-
-interface FilterCondition {
-  id: string;
-  metric: string;
-  operator: string;
-  value: string;
-  value2?: string; // for "between" operator
-}
-
-function formatMarketCap(val: number) {
-  if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L Cr`;
-  if (val >= 1000) return `₹${(val / 1000).toFixed(0)}K Cr`;
-  return `₹${val.toFixed(0)} Cr`;
-}
-
-export default function Screener() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const sectorParam = searchParams.get("sector");
-
-  const [filters, setFilters] = useState<FilterCondition[]>([]);
-  const [sortKey, setSortKey] = useState<string>("market_cap");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [results, setResults] = useState<TVStockData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastFetched, setLastFetched] = useState<Date | null>(null);
-
-  // Build TradingView filters from user conditions
-  const buildTVFilters = () => {
-    const tvFilters: Array<{ left: string; operation: string; right: any }> = [];
-
-    filters.forEach((f) => {
-      if (!f.value) return;
-      const metric = METRICS.find((m) => m.key === f.metric);
-      if (!metric) return;
-
-      let right: any = Number(f.value);
-      // Market cap needs conversion from Cr to raw INR
-      if (f.metric === "market_cap_basic") {
-        right = right * 10000000; // Cr to INR
-      }
-
-      if (f.operator === "in_range" && f.value2) {
-        let right2 = Number(f.value2);
-        if (f.metric === "market_cap_basic") right2 = right2 * 10000000;
-        tvFilters.push({ left: f.metric, operation: "in_range", right: [right, right2] });
-      } else {
-        tvFilters.push({ left: f.metric, operation: f.operator, right });
-      }
-    });
-
-    return tvFilters;
-  };
-
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const tvFilters = buildTVFilters();
-
-      // Map sort key to TradingView field
-      const sortMap: Record<string, string> = {
-        market_cap: "market_cap_basic", price: "close", change_pct: "change",
-        pe: "price_earnings_ttm", volume: "volume", symbol: "name",
-      };
-
-      const data = await fetchScreenedStocks({
-        filters: tvFilters,
-        sortBy: sortMap[sortKey] || "market_cap_basic",
-        sortOrder: sortDir,
-        count: 100,
-      });
-      setResults(data);
-      setLastFetched(new Date());
-    } catch (err: any) {
-      console.error("Screener fetch failed:", err);
-      setError("Failed to fetch data. Using fallback.");
-      // Fallback to mock data
-      setResults(MOCK_COMPANIES.map((c) => ({
-        symbol: c.symbol, name: c.name, industry: c.sector,
-        sector: c.sector, market_cap: c.market_cap, currency: "INR",
-        eps: 0, pe: 0, price: c.price, change_pct: c.change_pct,
-        volume: 0, relative_volume: 0, avg_volume_10d: 0,
-        high_52w: 0, low_52w: 0, sma10: 0, sma20: 0, sma50: 0,
-        roe: 0, roce: 0, debt_equity: 0, dividend_yield: 0,
-        sales_growth: 0, profit_growth: 0, price_book: 0,
-        interest_coverage: 0, fcf_yield: 0,
-      })));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch on mount and when filters/sort change
-  useEffect(() => {
-    fetchData();
-  }, [filters, sortKey, sortDir]);
-
-  // Apply sector param from URL
-  useEffect(() => {
-    if (sectorParam) {
-      // For sector filtering, we'd need TradingView's sector values
-      // For now just fetch all and note the sector
-    }
-  }, [sectorParam]);
-
-  const addFilter = () => setFilters((f) => [...f, { id: crypto.randomUUID(), metric: "market_cap_basic", operator: "greater", value: "" }]);
-  const updateFilter = (id: string, field: keyof FilterCondition, value: string) =>
-    setFilters((f) => f.map((x) => (x.id === id ? { ...x, [field]: value } : x)));
-  const removeFilter = (id: string) => setFilters((f) => f.filter((x) => x.id !== id));
-  const applyPreset = (preset: typeof PRESETS[0]) => {
-    setFilters(preset.filters.map((f) => ({
-      id: crypto.randomUUID(),
-      metric: f.left,
-      operator: f.operation,
-      value: f.left === "market_cap_basic" ? String(f.right / 10000000) : String(f.right),
-    })));
-  };
-
-  const toggleSort = (key: string) => {
-    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(key); setSortDir("desc"); }
-  };
-
-  const exportCSV = () => {
-    const headers = ["Symbol", "Company", "Sector", "Industry", "Price", "Change %", "P/E", "EPS", "Market Cap (Cr)", "Volume", "52W High", "52W Low"];
-    const rows = results.map((c) => [c.symbol, c.name, c.sector, c.industry, c.price, c.change_pct, c.pe, c.eps, c.market_cap, c.volume, c.high_52w, c.low_52w]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `screener_${new Date().toISOString().split("T")[0]}.csv`; a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const saveScreen = () => {
-    const name = prompt("Name this screen:");
-    if (!name) return;
-    const saved = JSON.parse(localStorage.getItem("funda-screens") || "[]");
-    saved.push({ name, filters });
-    localStorage.setItem("funda-screens", JSON.stringify(saved));
-  };
-
+function LoadingState() {
   return (
-    <div className="container py-6 space-y-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-display font-bold text-foreground">Stock Screener</h1>
-              <LiveMarketIndicator />
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Real-time NSE data · {results.length} results
-              {lastFetched && <span className="ml-2 text-[10px] font-mono">Updated {lastFetched.toLocaleTimeString()}</span>}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} />Refresh
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportCSV}><Download className="h-4 w-4 mr-1" />Export</Button>
-            <Button variant="outline" size="sm" onClick={saveScreen}><Save className="h-4 w-4 mr-1" />Save</Button>
-            <Button variant="outline" size="sm" onClick={() => setFilters([])}><RotateCcw className="h-4 w-4 mr-1" />Reset</Button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Error banner */}
-      {error && (
-        <div className="rounded-lg border border-chart-amber/30 bg-chart-amber/5 px-4 py-2.5 text-sm text-foreground flex items-center gap-2">
-          <span className="text-chart-amber">⚠</span> {error}
-        </div>
-      )}
-
-      {/* Presets */}
-      <div className="flex flex-wrap gap-2">
-        {PRESETS.map((p) => (
-          <button key={p.name} onClick={() => applyPreset(p)}
-            className="rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-foreground hover:bg-accent transition-colors">
-            {p.name}
-          </button>
-        ))}
+    <div role="status" aria-live="polite" className="space-y-4">
+      <p className="text-sm text-muted-foreground">Loading data…</p>
+      <div className="flex gap-2 overflow-hidden">
+        {Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-9 w-44 shrink-0 rounded-full" />)}
       </div>
-
-      {/* Filter Builder */}
-      <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Filter className="h-4 w-4" />Filter Conditions
-          <span className="text-[10px] font-normal text-muted-foreground ml-2">(Powered by TradingView Scanner)</span>
-        </div>
-        {filters.map((f, i) => (
-          <div key={f.id} className="flex items-center gap-2 flex-wrap">
-            {i > 0 && <Badge variant="outline" className="text-xs">AND</Badge>}
-            <Select value={f.metric} onValueChange={(v) => updateFilter(f.id, "metric", v)}>
-              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {["Valuation", "Price", "Fundamental", "Growth"].map((cat) => {
-                  const items = METRICS.filter((m) => m.category === cat);
-                  if (items.length === 0) return null;
-                  return (
-                    <div key={cat}>
-                      <div className="px-2 py-1 text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">{cat}</div>
-                      {items.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}
-                    </div>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-            <Select value={f.operator} onValueChange={(v) => updateFilter(f.id, "operator", v)}>
-              <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-              <SelectContent>{OPERATORS.map((o) => <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>)}</SelectContent>
-            </Select>
-            <Input value={f.value} onChange={(e) => updateFilter(f.id, "value", e.target.value)}
-              placeholder={f.metric === "market_cap_basic" ? "Value (Cr)" : "Value"} className="w-32" type="number" />
-            {f.operator === "in_range" && (
-              <Input value={f.value2 || ""} onChange={(e) => updateFilter(f.id, "value2", e.target.value)}
-                placeholder="Max" className="w-32" type="number" />
-            )}
-            <button onClick={() => removeFilter(f.id)} className="text-muted-foreground hover:text-destructive"><X className="h-4 w-4" /></button>
-          </div>
-        ))}
-        <Button variant="ghost" size="sm" onClick={addFilter}><Plus className="h-4 w-4 mr-1" /> Add Filter</Button>
-      </div>
-
-      {/* Results Table */}
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <div className="p-3 border-b border-border flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
-            {loading ? <span className="flex items-center gap-2"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Fetching...</span> : `${results.length} companies found`}
-          </span>
-          {results.length >= 2 && (
-            <button onClick={() => navigate(`/compare?symbols=${results.slice(0, 2).map((r) => r.symbol).join(",")}`)}
-              className="text-xs text-primary hover:underline font-medium">Compare Top 2 →</button>
-          )}
-        </div>
-        <div className="overflow-x-auto scrollbar-thin">
-          <table className="w-full text-sm min-w-[800px]">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                {[
-                  { key: "symbol", label: "Symbol" },
-                  { key: "name", label: "Company" },
-                  { key: "sector", label: "Sector" },
-                  { key: "price", label: "Price" },
-                  { key: "change_pct", label: "Chg%" },
-                  { key: "pe", label: "P/E" },
-                  { key: "roce", label: "ROCE" },
-                  { key: "roe", label: "ROE" },
-                  { key: "debt_equity", label: "D/E" },
-                  { key: "dividend_yield", label: "Div%" },
-                  { key: "price_book", label: "P/B" },
-                  { key: "fcf_yield", label: "FCF%" },
-                  { key: "sales_growth", label: "Sales G" },
-                  { key: "profit_growth", label: "Profit G" },
-                  { key: "market_cap", label: "MCap" },
-                ].map((col) => (
-                  <th key={col.key} onClick={() => toggleSort(col.key)}
-                    className="data-header cursor-pointer hover:text-foreground group whitespace-nowrap">
-                    <span className="flex items-center gap-1">
-                      {col.label}
-                      {sortKey === col.key && <ChevronDown className={`h-3 w-3 text-primary transition-transform ${sortDir === "asc" ? "rotate-180" : ""}`} />}
-                      {sortKey !== col.key && <ChevronDown className="h-3 w-3 opacity-0 group-hover:opacity-30 transition-opacity" />}
-                    </span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((c) => (
-                <tr key={c.symbol} onClick={() => navigate(`/company/${c.symbol}`)}
-                  className="border-b border-border/30 last:border-0 hover:bg-accent/50 cursor-pointer transition-colors">
-                  <td className="data-cell font-bold text-primary">{c.symbol}</td>
-                  <td className="data-cell text-foreground whitespace-nowrap max-w-[180px] truncate">{c.name}</td>
-                  <td className="data-cell text-muted-foreground whitespace-nowrap">{c.sector}</td>
-                  <td className="data-cell font-mono text-foreground">₹{c.price.toLocaleString()}</td>
-                  <td className={`data-cell font-mono font-semibold ${c.change_pct >= 0 ? "text-positive" : "text-negative"}`}>
-                    {c.change_pct >= 0 ? "+" : ""}{c.change_pct.toFixed(2)}%
-                  </td>
-                  <td className="data-cell font-mono text-foreground">{c.pe > 0 ? c.pe.toFixed(1) : "—"}</td>
-                  <td className={`data-cell font-mono ${c.roce > 15 ? "text-positive" : c.roce > 0 ? "text-foreground" : "text-muted-foreground"}`}>
-                    {c.roce > 0 ? `${c.roce}%` : "—"}
-                  </td>
-                  <td className={`data-cell font-mono ${c.roe > 15 ? "text-positive" : c.roe > 0 ? "text-foreground" : "text-muted-foreground"}`}>
-                    {c.roe > 0 ? `${c.roe}%` : "—"}
-                  </td>
-                  <td className={`data-cell font-mono ${c.debt_equity > 1 ? "text-negative" : c.debt_equity > 0 ? "text-foreground" : "text-muted-foreground"}`}>
-                    {c.debt_equity > 0 ? c.debt_equity.toFixed(2) : "—"}
-                  </td>
-                  <td className={`data-cell font-mono ${c.dividend_yield > 2 ? "text-positive" : c.dividend_yield > 0 ? "text-foreground" : "text-muted-foreground"}`}>
-                    {c.dividend_yield > 0 ? `${c.dividend_yield}%` : "—"}
-                  </td>
-                  <td className="data-cell font-mono text-foreground">{c.price_book > 0 ? c.price_book.toFixed(1) : "—"}</td>
-                  <td className={`data-cell font-mono ${c.fcf_yield > 5 ? "text-positive" : c.fcf_yield > 0 ? "text-foreground" : "text-muted-foreground"}`}>
-                    {c.fcf_yield > 0 ? `${c.fcf_yield}%` : "—"}
-                  </td>
-                  <td className={`data-cell font-mono ${c.sales_growth > 0 ? "text-positive" : c.sales_growth < 0 ? "text-negative" : "text-muted-foreground"}`}>
-                    {c.sales_growth !== 0 ? `${c.sales_growth > 0 ? "+" : ""}${c.sales_growth}%` : "—"}
-                  </td>
-                  <td className={`data-cell font-mono ${c.profit_growth > 0 ? "text-positive" : c.profit_growth < 0 ? "text-negative" : "text-muted-foreground"}`}>
-                    {c.profit_growth !== 0 ? `${c.profit_growth > 0 ? "+" : ""}${c.profit_growth}%` : "—"}
-                  </td>
-                  <td className="data-cell font-mono text-foreground">{formatMarketCap(c.market_cap)}</td>
-                </tr>
-              ))}
-              {!loading && results.length === 0 && (
-                <tr><td colSpan={15} className="px-4 py-12 text-center text-muted-foreground">No stocks match your criteria. Try adjusting filters.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="space-y-2 rounded-xl border bg-card p-3">
+        <Skeleton className="h-8 w-full" />
+        {Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-9 w-full" />)}
       </div>
     </div>
+  );
+}
+
+const RESULT_TAB = "inline-flex min-h-11 items-center gap-2 px-3.5 text-sm lg:min-h-0 lg:py-1.5";
+const COUNT_PILL = "num rounded-full bg-background/70 px-1.5 py-0.5 text-xs font-semibold text-muted-foreground group-data-[state=active]:bg-primary/10 group-data-[state=active]:text-primary";
+
+export default function Screener() {
+  const s = useScreen();
+  const isMobile = useIsMobile();
+  const [importOpen, setImportOpen] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [mode, setMode] = useState<RulesMode>("simple");
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [resultTab, setResultTab] = useState("matches");
+  const [pendingTemplate, setPendingTemplate] = useState<ScreenTemplate | null>(null);
+  const [whyIndex, setWhyIndex] = useState<number | null>(null);
+  const [compared, setCompared] = useState<string[]>([]);
+  const [slashTick, setSlashTick] = useState(0);
+
+  const { store, run } = s;
+  const positions = useMemo(() => (run ? universePositions(run) : new Map<number, number>()), [run]);
+  const counts = useTemplateCounts(store, s.universe, s.ctx);
+
+  // "/" jumps to the query editor: switch to the Query tab, open the Rules card if it is folded, then focus.
+  useEffect(() => {
+    if (!store) return undefined;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.defaultPrevented || e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (t instanceof HTMLElement && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
+      e.preventDefault();
+      setMode("query");
+      setRulesOpen(true);
+      setSlashTick((n) => n + 1);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [store]);
+  // The editor mounts a moment after the tab changes (inside the tabs component, not this page), so retry for a few frames.
+  useEffect(() => {
+    if (slashTick === 0) return undefined;
+    let tries = 0;
+    let frame = 0;
+    const attempt = () => {
+      const box = document.querySelector<HTMLElement>("[data-slash-focus]");
+      // The Rules card is folded with the "hidden" class on narrow screens; wait until it is open.
+      if (box && !box.closest(".hidden")) {
+        box.focus();
+        box.scrollIntoView?.({ block: "nearest" });
+        return;
+      }
+      if (tries++ < 20) frame = window.requestAnimationFrame(attempt);
+    };
+    attempt();
+    return () => window.cancelAnimationFrame(frame);
+  }, [slashTick]);
+
+  const apply = (t: ScreenTemplate, how: "replace" | "add") => {
+    const undo = s.applyTemplate(t, how);
+    setGalleryOpen(false);
+    setResultTab("matches");
+    toast({
+      title: how === "add" ? `${t.title} added to your rules` : `${t.title} applied`,
+      description: "The rules and columns were updated.",
+      action: <ToastAction altText="Undo this change" onClick={undo}>Undo</ToastAction>,
+    });
+  };
+  const useTemplate = (t: ScreenTemplate) => {
+    if (s.draft.trim() === "") apply(t, "replace");
+    else setPendingTemplate(t);
+  };
+  const toggleCompare = (symbol: string) =>
+    setCompared((c) => (c.includes(symbol) ? c.filter((x) => x !== symbol) : c.length >= MAX_COMPARE ? c : [...c, symbol]));
+
+  const pages = run ? Math.max(1, Math.ceil(run.matched.length / s.pageSize)) : 1;
+  const pageNo = Math.min(s.page, pages);
+  const rows = run ? Array.from(run.matched.subarray((pageNo - 1) * s.pageSize, pageNo * s.pageSize)) : [];
+  const rowProps = run && store
+    ? { run, store, rows, positions, compared, onToggleCompare: toggleCompare, onWhy: setWhyIndex }
+    : null;
+  const tableProps = rowProps
+    ? { ...rowProps, sort: s.sort, onSort: s.setSort, page: pageNo, pageSize: s.pageSize, onPage: s.setPage, onPageSize: s.setPageSize }
+    : null;
+
+  const ruleCount = (s.compiled?.ok ? s.compiled.clauses : run?.compiled.clauses ?? []).length;
+  const templateTitle = s.templateId ? TEMPLATES.find((t) => t.id === s.templateId)?.title ?? null : null;
+  const queryOk = s.compiled?.ok === true;
+
+  return (
+    <MotionConfig reducedMotion="user">
+      <PageShell className={cn("space-y-4 md:space-y-5", compared.length > 0 ? "pb-32" : "pb-8")}>
+        <PageHeader
+          title="Screener"
+          description={isMobile ? undefined : "Every company is listed below. Narrow the list with a template or your own rules."}
+          actions={
+            <div className="flex items-center gap-2">
+              {store && (
+                <SavedScreensMenu
+                  part="save"
+                  draft={{ query: s.draft, columns: s.columns ?? [], sort: s.sort, universe: s.universe, templateId: s.templateId }}
+                  onLoad={s.loadScreen}
+                />
+              )}
+              {store && <ShareButton getUrl={s.shareUrl} />}
+              <div className={ICON_GROUP} role="group" aria-label="More actions">
+                <Button type="button" variant="ghost" className={ICON_BUTTON} title="Import data" onClick={() => setImportOpen(true)}>
+                  <Upload className="h-4 w-4" aria-hidden="true" />
+                  <span className={ICON_LABEL}>Import data</span>
+                </Button>
+                {store && (
+                  <SavedScreensMenu
+                    part="list"
+                    draft={{ query: s.draft, columns: s.columns ?? [], sort: s.sort, universe: s.universe, templateId: s.templateId }}
+                    onLoad={s.loadScreen}
+                  />
+                )}
+                {store && <ColumnChooser store={store} columns={s.columns} onChange={s.setColumns} />}
+                <ExportButton run={run} store={store} />
+              </div>
+            </div>
+          }
+        />
+
+        {s.dataset.status === "loading" && <LoadingState />}
+
+        {s.dataset.status === "error" && (
+          <div role="alert" className="space-y-3 rounded-lg border border-red-500/40 bg-red-500/10 p-4">
+            <p className="font-medium">The data could not be loaded.</p>
+            <p className="text-sm">{s.dataset.message}</p>
+            <Button type="button" className="min-h-11" onClick={s.dataset.retry}>Retry</Button>
+          </div>
+        )}
+
+        {store && (
+          <>
+            <TemplateBar counts={counts} activeId={s.templateId} onUse={useTemplate} galleryOpen={galleryOpen} onToggleGallery={() => setGalleryOpen((o) => !o)} />
+            <TemplateGallery open={galleryOpen} activeId={s.templateId} counts={counts} onUse={useTemplate} detailsId={detailsId} onDetailsChange={setDetailsId} />
+
+            <div className={cn("grid items-start gap-3 md:gap-4", rulesOpen && "xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]")}>
+              <div className={cn("space-y-2", rulesOpen && "xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:pr-1")}>
+                <button
+                  type="button"
+                  aria-expanded={rulesOpen}
+                  aria-controls="rules-panel"
+                  onClick={() => setRulesOpen((o) => !o)}
+                  className={cn("flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border bg-card px-3 text-left text-sm font-medium shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:min-h-9", !rulesOpen && "xl:w-fit xl:gap-4")}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <SlidersHorizontal className="h-4 w-4 text-primary" aria-hidden="true" />
+                    {rulesOpen ? "Hide rules" : "Edit rules"}
+                    <span className="num rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{ruleCount} {ruleCount === 1 ? "rule" : "rules"}</span>
+                  </span>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform motion-reduce:transition-none", rulesOpen && "rotate-180")} aria-hidden="true" />
+                </button>
+                <div id="rules-panel" className={rulesOpen ? "block" : "hidden"}>
+                  <RulesPanel
+                    store={store}
+                    draft={s.draft}
+                    compiled={s.compiled}
+                    mode={mode}
+                    onModeChange={setMode}
+                    onQueryChange={(t) => s.setQuery(t)}
+                    onRunNow={s.runNow}
+                    universe={s.universe}
+                    onUniverseChange={s.setUniverse}
+                  />
+                </div>
+              </div>
+
+              <section aria-labelledby="results-heading" className="min-w-0 space-y-3" aria-busy={s.pending || undefined}>
+                <h2 id="results-heading" className="sr-only">Results</h2>
+                <ActiveRules
+                  compiled={queryOk ? s.compiled : run?.compiled ?? null}
+                  total={run?.universe.length ?? store.size}
+                  editable={queryOk}
+                  templateTitle={templateTitle}
+                  onRemove={s.removeRule}
+                  onClear={() => s.setQuery("", { immediate: true })}
+                  onTemplateDetails={() => setDetailsId(s.templateId)}
+                  onAddRule={() => { setMode("simple"); setRulesOpen(true); }}
+                />
+                {run ? (
+                  <Tabs value={resultTab} onValueChange={setResultTab}>
+                    <ResultsSummary
+                      run={run}
+                      stale={s.stale}
+                      trailing={
+                        <TabsList className="h-auto" aria-label="Result views">
+                          <TabsTrigger value="matches" className={cn("group", RESULT_TAB)}>Matches <span className={COUNT_PILL}>{run.matchCount}</span></TabsTrigger>
+                          <TabsTrigger value="near" className={cn("group", RESULT_TAB)}>Near misses <span className={COUNT_PILL}>{run.nearMisses.length}</span></TabsTrigger>
+                          <TabsTrigger value="funnel" className={cn("group", RESULT_TAB)}>Funnel</TabsTrigger>
+                        </TabsList>
+                      }
+                    />
+                    <div className={s.stale ? "opacity-60" : undefined}>
+                      <TabsContent value="matches" className="mt-3">
+                        {run.matched.length === 0 ? (
+                          <NoMatches
+                            run={run}
+                            onRemoveRule={queryOk ? s.removeRule : undefined}
+                            onShowNearMisses={() => setResultTab("near")}
+                            onShowFunnel={() => setResultTab("funnel")}
+                          />
+                        ) : isMobile && tableProps ? (
+                          <ResultCards {...tableProps} />
+                        ) : tableProps ? (
+                          <ResultsTable {...tableProps} />
+                        ) : null}
+                      </TabsContent>
+                      <TabsContent value="near" className="mt-3">
+                        <NearMissPanel run={run} store={store} onWhy={setWhyIndex} />
+                      </TabsContent>
+                      <TabsContent value="funnel" className="mt-3">
+                        <FunnelPanel run={run} />
+                      </TabsContent>
+                    </div>
+                  </Tabs>
+                ) : (
+                  <EmptyState title="Results will appear here" description="Fix the issues listed under your query to see results." />
+                )}
+                <p className="text-xs text-muted-foreground">Rule-based observations on the data you loaded. Not a recommendation.</p>
+              </section>
+            </div>
+
+            {run && <WhyDrawer run={run} store={store} index={whyIndex} onClose={() => setWhyIndex(null)} />}
+            <CompareTray store={store} symbols={compared} onRemove={toggleCompare} onClear={() => setCompared([])} />
+          </>
+        )}
+
+        <ImportDataDialog open={importOpen} onOpenChange={setImportOpen} />
+
+        <AlertDialog open={pendingTemplate !== null} onOpenChange={(o) => { if (!o) setPendingTemplate(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>You already have rules</AlertDialogTitle>
+              <AlertDialogDescription>
+                {pendingTemplate ? `Do you want to replace your rules with “${pendingTemplate.title}”, or add its rules to yours?` : ""}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2">
+              <AlertDialogCancel className="min-h-11">Cancel</AlertDialogCancel>
+              <AlertDialogAction className="min-h-11" onClick={() => pendingTemplate && apply(pendingTemplate, "add")}>Add to my rules</AlertDialogAction>
+              <AlertDialogAction className="min-h-11" onClick={() => pendingTemplate && apply(pendingTemplate, "replace")}>Replace my rules</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </PageShell>
+    </MotionConfig>
   );
 }

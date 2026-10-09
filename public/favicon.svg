@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Funda Scanner</title>
+  <rect width="64" height="64" rx="14" fill="#0d0f14"/>
+  <g fill="#5048e5">
+    <rect x="11" y="39" width="9" height="13" rx="2" opacity=".55"/>
+    <rect x="23" y="32" width="9" height="20" rx="2" opacity=".7"/>
+    <rect x="35" y="24" width="9" height="28" rx="2" opacity=".85"/>
+    <rect x="47" y="14" width="9" height="38" rx="2"/>
+  </g>
+  <polyline points="15.5,33 27.5,26 39.5,19 51.5,9" fill="none" stroke="#a5b4fc" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="51.5" cy="9" r="3.4" fill="#a5b4fc"/>
+</svg>

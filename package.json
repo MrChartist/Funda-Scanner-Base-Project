@@ -1,8 +1,39 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "funda-scanner",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Open-source fundamentals screener for Indian stocks: query-language screener, company deep-dive, comparison, DCF calculator and a learning guide. Runs entirely in the browser.",
+  "license": "MIT",
+  "author": "MrChartist (https://github.com/MrChartist)",
+  "homepage": "https://mrchartist.github.io/Funda-Scanner-Base-Project/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MrChartist/Funda-Scanner-Base-Project.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MrChartist/Funda-Scanner-Base-Project/issues"
+  },
+  "keywords": [
+    "india",
+    "indian-stocks",
+    "stock-market",
+    "stock-screener",
+    "fundamental-analysis",
+    "equity-research",
+    "screener",
+    "open-source",
+    "dcf",
+    "react",
+    "typescript",
+    "vite",
+    "tailwindcss",
+    "shadcn-ui"
+  ],
   "type": "module",
+  "sideEffects": ["*.css"],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,7 +41,14 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
+    "lint:fix": "eslint . --fix",
+    "check": "npm run typecheck && npm run typecheck:strict && npm run lint && npm test && npm run build",
+    "sample:files": "vitest run src/lib/sample/sample-files.test.ts -u",
+    "docs:metrics": "vitest run src/lib/metrics/docs.test.ts -u",
+    "test:perf": "vitest run src/test/perf"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -66,7 +104,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@playwright/test": "^1.57.0",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
@@ -80,7 +117,6 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "jsdom": "^20.0.3",
-    "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

@@ -1,207 +1,193 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { AreaChart, Area, ResponsiveContainer } from "recharts";
-import { Bookmark, X, Bell, TrendingUp, TrendingDown, Eye, ChevronUp, ChevronDown } from "lucide-react";
-import { MOCK_COMPANIES, getMockCompanyIntelligence } from "@/lib/mock-data";
-import { Badge } from "@/components/ui/badge";
+import { ArrowDown, ArrowUp, Bookmark, Eye, X } from "lucide-react";
+import type { MetricId, MetricStore } from "@/lib/contracts";
+import { CompanyName } from "@/components/common/CompanyName";
+import { DatasetGate } from "@/components/common/DatasetGate";
+import { EmptyState } from "@/components/common/EmptyState";
+import { MetricInfo } from "@/components/common/MetricInfo";
+import { ValueCell } from "@/components/common/ValueCell";
+import { PageHeader, PageShell } from "@/components/layout";
+import { useWatchlist } from "@/hooks/use-watchlist";
 
-function MiniSparkline({ data, color }: { data: number[]; color: string }) {
-  const chartData = data.map((v, i) => ({ v, i }));
+/** Columns read from the store; ids that the loaded catalogue does not have are left out. */
+export const WATCHLIST_COLUMNS: readonly MetricId[] = ["price", "market_cap", "pe", "roce", "debt_equity", "sales_cagr_5y"];
+
+type SortKey = "symbol" | MetricId;
+
+interface Row {
+  symbol: string;
+  index: number;
+}
+
+function WatchlistTable({ store, symbols }: { store: MetricStore; symbols: readonly string[] }) {
+  const { unfollow } = useWatchlist();
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [dir, setDir] = useState<"asc" | "desc">("desc");
+
+  const columns = useMemo(() => WATCHLIST_COLUMNS.map((id) => store.def(id)).filter((d): d is NonNullable<typeof d> => !!d), [store]);
+
+  const { present, missing } = useMemo(() => {
+    const present: Row[] = [];
+    const missing: string[] = [];
+    for (const symbol of symbols) {
+      const index = store.indexOf(symbol);
+      if (index >= 0) present.push({ symbol: store.symbols[index], index });
+      else missing.push(symbol);
+    }
+    return { present, missing };
+  }, [store, symbols]);
+
+  const sorted = useMemo(() => {
+    if (!sortKey) return present;
+    const out = [...present];
+    if (sortKey === "symbol") {
+      out.sort((a, b) => (dir === "asc" ? a.symbol.localeCompare(b.symbol) : b.symbol.localeCompare(a.symbol)));
+      return out;
+    }
+    const col = store.column(sortKey);
+    out.sort((a, b) => {
+      const av = col.values[a.index];
+      const bv = col.values[b.index];
+      const an = Number.isNaN(av);
+      const bn = Number.isNaN(bv);
+      if (an || bn) return an === bn ? 0 : an ? 1 : -1; // missing values always last
+      return dir === "asc" ? av - bv : bv - av;
+    });
+    return out;
+  }, [present, sortKey, dir, store]);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(key);
+      setDir(key === "symbol" ? "asc" : "desc");
+    }
+  };
+
+  const ariaSort = (key: SortKey): "ascending" | "descending" | "none" => (sortKey === key ? (dir === "asc" ? "ascending" : "descending") : "none");
+  const Arrow = dir === "asc" ? ArrowUp : ArrowDown;
+
   return (
-    <div className="h-8 w-20">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-          <defs>
-            <linearGradient id={`wl-${color}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-              <stop offset="100%" stopColor={color} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <Area type="monotone" dataKey="v" stroke={color} fill={`url(#wl-${color})`} strokeWidth={1.5} dot={false} />
-        </AreaChart>
-      </ResponsiveContainer>
+    <div className="space-y-6">
+      {present.length > 0 && (
+        <section aria-labelledby="in-data-title" className="space-y-2">
+          <h2 id="in-data-title" className="section-title">In your current data ({present.length})</h2>
+          <div className="glass-card overflow-hidden">
+            <div className="relative overflow-x-auto">
+              <table className="w-full text-sm">
+                <caption className="sr-only">Followed companies with figures from the loaded data. Select a column heading to sort.</caption>
+                <thead>
+                  <tr className="border-b border-border/60 bg-muted/30">
+                    <th scope="col" className="data-header" aria-sort={ariaSort("symbol")}>
+                      <button type="button" onClick={() => toggleSort("symbol")} className="flex min-h-11 items-center gap-1 sm:min-h-0">
+                        Company {sortKey === "symbol" && <Arrow className="h-3 w-3 text-primary" aria-hidden="true" />}
+                      </button>
+                    </th>
+                    {columns.map((d) => (
+                      <th key={d.id} scope="col" className="data-header" aria-sort={ariaSort(d.id)}>
+                        <span className="flex items-center gap-1">
+                          <button type="button" onClick={() => toggleSort(d.id)} className="flex min-h-11 items-center gap-1 sm:min-h-0">
+                            {d.short} <span className="font-normal normal-case text-muted-foreground">{d.periodTag}</span>
+                            {sortKey === d.id && <Arrow className="h-3 w-3 text-primary" aria-hidden="true" />}
+                          </button>
+                          <MetricInfo def={d} />
+                        </span>
+                      </th>
+                    ))}
+                    <th scope="col" className="data-header"><span className="sr-only">Remove</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((r, idx) => (
+                    <motion.tr
+                      key={r.symbol}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: Math.min(idx, 10) * 0.03 }}
+                      className="border-b border-border/20 last:border-0 hover:bg-accent/30"
+                    >
+                      <th scope="row" className="data-cell text-left font-sans">
+                        <Link to={`/company/${encodeURIComponent(r.symbol)}`} className="group block min-h-11 sm:min-h-0">
+                          <span className="font-mono font-bold text-foreground group-hover:text-primary">{r.symbol}</span>
+                          <span className="block text-xs font-normal text-muted-foreground">
+                            <CompanyName name={store.company(r.index).name} isSynthetic={store.meta.isSynthetic} />
+                          </span>
+                        </Link>
+                      </th>
+                      {columns.map((d) => (
+                        <td key={d.id} className="data-cell text-foreground">
+                          <ValueCell def={d} value={store.get(d.id, r.index)} family={store.family(r.index)} />
+                        </td>
+                      ))}
+                      <td className="data-cell">
+                        <button
+                          type="button"
+                          onClick={() => unfollow(r.symbol)}
+                          aria-label={`Remove ${r.symbol} from the watchlist`}
+                          className="flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-destructive sm:h-8 sm:w-8"
+                        >
+                          <X className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {missing.length > 0 && (
+        <section aria-labelledby="not-in-data-title" className="space-y-2">
+          <h2 id="not-in-data-title" className="section-title">Not in your current data ({missing.length})</h2>
+          <p className="text-xs text-muted-foreground">
+            These symbols are on your list, but the data you have loaded does not include them. They are kept, and will show figures
+            again if you load data that has them.
+          </p>
+          <ul className="glass-card divide-y divide-border/30">
+            {missing.map((s) => (
+              <li key={s} className="flex items-center justify-between gap-3 px-3 py-1">
+                <span className="font-mono text-sm font-semibold text-foreground">{s}</span>
+                <button
+                  type="button"
+                  onClick={() => unfollow(s)}
+                  aria-label={`Remove ${s} from the watchlist`}
+                  className="flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-destructive sm:h-9 sm:w-9"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
 
-type SortKey = "symbol" | "price" | "change_pct" | "pe" | "roce" | "npm" | "market_cap";
-
 export default function Watchlist() {
-  const navigate = useNavigate();
-  const [followed, setFollowed] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("funda-followed") || "[]"); } catch { return []; }
-  });
-
-  const [alerts, setAlerts] = useState<Record<string, { above?: number; below?: number }>>({});
-  const [editingAlert, setEditingAlert] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-
-  const watchlistData = useMemo(() => {
-    return followed.map((symbol) => {
-      const company = MOCK_COMPANIES.find((c) => c.symbol === symbol);
-      if (!company) return null;
-      const intel = getMockCompanyIntelligence(symbol);
-      const prices = intel.intelligence.price_history.slice(-30).map((p) => p.close);
-      return { ...company, prices, pe: intel.company.pe, roce: intel.company.roce, npm: intel.company.npm };
-    }).filter(Boolean) as any[];
-  }, [followed]);
-
-  const sortedData = useMemo(() => {
-    if (!sortKey) return watchlistData;
-    return [...watchlistData].sort((a, b) => {
-      const av = a[sortKey];
-      const bv = b[sortKey];
-      if (typeof av === "string") return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
-      return sortDir === "asc" ? av - bv : bv - av;
-    });
-  }, [watchlistData, sortKey, sortDir]);
-
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("desc"); }
-  };
-
-  const removeFromWatchlist = (symbol: string) => {
-    const updated = followed.filter((s) => s !== symbol);
-    setFollowed(updated);
-    localStorage.setItem("funda-followed", JSON.stringify(updated));
-  };
-
-  const setAlert = (symbol: string, above?: number, below?: number) => {
-    setAlerts((prev) => ({ ...prev, [symbol]: { above, below } }));
-    setEditingAlert(null);
-  };
-
-  const SortIcon = ({ col }: { col: SortKey }) => {
-    if (sortKey !== col) return <ChevronDown className="h-3 w-3 opacity-0 group-hover:opacity-30 transition-opacity" />;
-    return sortDir === "asc" ? <ChevronUp className="h-3 w-3 text-primary" /> : <ChevronDown className="h-3 w-3 text-primary" />;
-  };
-
-  if (followed.length === 0) {
-    return (
-      <div className="container max-w-7xl py-20 text-center">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          <Bookmark className="h-16 w-16 text-muted-foreground/30 mx-auto" />
-          <h1 className="text-2xl font-display font-bold text-foreground">Your Watchlist is Empty</h1>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Follow companies from their detail page to track them here with sparklines, alerts, and key metrics.
-          </p>
-          <button onClick={() => navigate("/")} className="text-primary font-medium hover:underline">
-            Browse Companies →
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
+  const { symbols } = useWatchlist();
 
   return (
-    <div className="container max-w-7xl py-6 space-y-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Eye className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-2xl font-display font-bold text-foreground">Watchlist</h1>
-              <p className="text-sm text-muted-foreground">{followed.length} companies tracked</p>
-            </div>
-          </div>
-          {sortKey && (
-            <button onClick={() => setSortKey(null)}
-              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-              Clear sort
-            </button>
-          )}
-        </div>
-      </motion.div>
-
-      <div className="glass-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border/60 bg-muted/30">
-                <th className="data-header cursor-pointer group" onClick={() => toggleSort("symbol")}>
-                  <span className="flex items-center gap-1">Company <SortIcon col="symbol" /></span>
-                </th>
-                <th className="data-header cursor-pointer group" onClick={() => toggleSort("price")}>
-                  <span className="flex items-center gap-1">Price <SortIcon col="price" /></span>
-                </th>
-                <th className="data-header cursor-pointer group" onClick={() => toggleSort("change_pct")}>
-                  <span className="flex items-center gap-1">Change <SortIcon col="change_pct" /></span>
-                </th>
-                <th className="data-header">30D Trend</th>
-                <th className="data-header cursor-pointer group" onClick={() => toggleSort("pe")}>
-                  <span className="flex items-center gap-1">P/E <SortIcon col="pe" /></span>
-                </th>
-                <th className="data-header cursor-pointer group" onClick={() => toggleSort("roce")}>
-                  <span className="flex items-center gap-1">ROCE <SortIcon col="roce" /></span>
-                </th>
-                <th className="data-header cursor-pointer group" onClick={() => toggleSort("npm")}>
-                  <span className="flex items-center gap-1">NPM <SortIcon col="npm" /></span>
-                </th>
-                <th className="data-header cursor-pointer group" onClick={() => toggleSort("market_cap")}>
-                  <span className="flex items-center gap-1">Market Cap <SortIcon col="market_cap" /></span>
-                </th>
-                <th className="data-header">Alert</th>
-                <th className="data-header w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedData.map((c, idx) => {
-                const isPositive = c.change_pct >= 0;
-                const sparkColor = isPositive ? "hsl(var(--chart-green))" : "hsl(var(--chart-red))";
-                const alert = alerts[c.symbol];
-                return (
-                  <motion.tr key={c.symbol} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.03 }}
-                    className="border-b border-border/20 last:border-0 hover:bg-accent/30 transition-colors">
-                    <td className="data-cell">
-                      <button onClick={() => navigate(`/company/${c.symbol}`)} className="text-left group">
-                        <span className="font-mono font-bold text-foreground group-hover:text-primary transition-colors">{c.symbol}</span>
-                        <span className="block text-[10px] text-muted-foreground">{c.name.split(" ").slice(0, 3).join(" ")}</span>
-                      </button>
-                    </td>
-                    <td className="data-cell font-mono text-foreground">₹{c.price.toLocaleString()}</td>
-                    <td className="data-cell">
-                      <span className={`inline-flex items-center gap-1 font-mono font-semibold ${isPositive ? "text-positive" : "text-negative"}`}>
-                        {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                        {isPositive ? "+" : ""}{c.change_pct.toFixed(2)}%
-                      </span>
-                    </td>
-                    <td className="data-cell"><MiniSparkline data={c.prices} color={sparkColor} /></td>
-                    <td className="data-cell font-mono text-foreground">{c.pe}</td>
-                    <td className="data-cell font-mono text-positive">{c.roce}%</td>
-                    <td className="data-cell font-mono text-foreground">{c.npm}%</td>
-                    <td className="data-cell font-mono text-foreground">
-                      {c.market_cap >= 100000 ? `₹${(c.market_cap / 100000).toFixed(1)}L Cr` : `₹${(c.market_cap / 1000).toFixed(0)}K Cr`}
-                    </td>
-                    <td className="data-cell">
-                      {editingAlert === c.symbol ? (
-                        <div className="flex gap-1 items-center">
-                          <input type="number" placeholder="Above" className="w-16 px-1 py-0.5 text-xs bg-muted rounded border border-border"
-                            onKeyDown={(e) => { if (e.key === "Enter") setAlert(c.symbol, Number((e.target as any).value)); }} />
-                        </div>
-                      ) : (
-                        <button onClick={() => setEditingAlert(c.symbol)}
-                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors">
-                          <Bell className="h-3 w-3" />
-                          {alert?.above ? `>₹${alert.above}` : "Set"}
-                        </button>
-                      )}
-                    </td>
-                    <td className="data-cell">
-                      <button onClick={() => removeFromWatchlist(c.symbol)} className="text-muted-foreground hover:text-destructive transition-colors">
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </td>
-                  </motion.tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      <PageShell>
+        <PageHeader
+          title="Watchlist"
+          icon={Eye}
+          description={symbols.length === 0 ? "Companies you follow appear here." : `${symbols.length} ${symbols.length === 1 ? "company" : "companies"} followed. The list stays in this browser.`}
+        />
+        {symbols.length === 0 ? (
+          <EmptyState
+            icon={<Bookmark className="h-6 w-6" />}
+            title="Your watchlist is empty"
+            description="Follow a company from its page to see its figures here, side by side, from the data you have loaded."
+            action={<Link to="/screener" className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">Find companies in the Screener</Link>}
+          />
+        ) : (
+          <DatasetGate>{({ store }) => <WatchlistTable store={store} symbols={symbols} />}</DatasetGate>
+        )}
+      </PageShell>
   );
 }

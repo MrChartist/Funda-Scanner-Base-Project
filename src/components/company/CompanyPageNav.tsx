@@ -1,129 +1,104 @@
-import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { List, ChevronRight, Menu } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { CompanySectionId } from "@/lib/contracts";
+import { SECTION_LIST } from "@/lib/views/company-view";
+import { cn } from "@/lib/utils";
 
-interface Section {
-  id: string;
-  label: string;
+export interface CompanyPageNavProps {
+  /** Id of the header card. Once it has scrolled out of view the `mini` row appears above the section links. */
+  headerId?: string;
+  /** Compact name, reference price and Follow control. */
+  mini?: ReactNode;
 }
 
-const SECTIONS: Section[] = [
-  { id: "header", label: "Overview" },
-  { id: "ratios-grid", label: "Key Ratios" },
-  { id: "fundamental-scores", label: "F-Score / Z-Score" },
-  { id: "pros-cons", label: "Pros & Cons" },
-  { id: "price-chart", label: "Price Chart" },
-  { id: "analyst-ratings", label: "Analyst Ratings" },
-  { id: "quarterly", label: "Quarterly Results" },
-  { id: "financials", label: "Financial Statements" },
-  { id: "cashflow-quality", label: "Cash Flow Quality" },
-  { id: "ratio-trends", label: "Ratio Trends" },
-  { id: "shareholding", label: "Shareholding" },
-  { id: "segments", label: "Revenue Segments" },
-  { id: "insider-deals", label: "Insider Activity" },
-  { id: "management", label: "Management" },
-  { id: "dividends", label: "Dividend Analysis" },
-  { id: "documents", label: "Documents" },
-  { id: "corporate-actions", label: "Corporate Actions" },
-  { id: "peers", label: "Peer Comparison" },
-];
+const prefersReducedMotion = (): boolean => typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-export function CompanyPageNav() {
-  const [activeSection, setActiveSection] = useState("header");
-  const [isOpen, setIsOpen] = useState(false);
+const GUTTER = "px-4 sm:px-6 lg:px-8";
 
+/** Sticky bar: a mini header (after the header card scrolls away) and jump links that follow the section being read. */
+export function CompanyPageNav({ headerId = "company-header", mini }: CompanyPageNavProps) {
+  const [active, setActive] = useState<CompanySectionId>("summary");
+  const [showMini, setShowMini] = useState(false);
+  const list = useRef<HTMLUListElement>(null);
+
+  // Active section: the topmost section crossing a band just under the sticky bars.
   useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const inView = new Set<string>();
     const observer = new IntersectionObserver(
       (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible.length > 0) {
-          setActiveSection(visible[0].target.id);
+        for (const e of entries) {
+          if (e.isIntersecting) inView.add(e.target.id);
+          else inView.delete(e.target.id);
         }
+        const first = SECTION_LIST.find((s) => inView.has(s.id));
+        if (first) setActive(first.id);
       },
-      { rootMargin: "-80px 0px -60% 0px", threshold: 0.1 }
+      { rootMargin: "-150px 0px -60% 0px", threshold: 0 },
     );
-
-    SECTIONS.forEach((s) => {
+    for (const s of SECTION_LIST) {
       const el = document.getElementById(s.id);
       if (el) observer.observe(el);
-    });
-
+    }
     return () => observer.disconnect();
   }, []);
 
-  const scrollTo = (id: string) => {
+  // Mini header: shown once the header card is above the viewport.
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const el = document.getElementById(headerId);
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowMini(!entry.isIntersecting && entry.boundingClientRect.bottom < 100),
+      { threshold: 0, rootMargin: "-48px 0px 0px 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [headerId]);
+
+  // Keep the active link visible in the horizontally scrolling bar (no page scroll involved).
+  useEffect(() => {
+    const ul = list.current;
+    const a = ul?.querySelector<HTMLElement>('a[aria-current="location"]');
+    if (!ul || !a || typeof ul.scrollTo !== "function") return;
+    const left = a.offsetLeft - (ul.clientWidth - a.offsetWidth) / 2;
+    ul.scrollTo({ left, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  }, [active]);
+
+  const go = (id: CompanySectionId) => (e: React.MouseEvent) => {
     const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-      setActiveSection(id);
-      setIsOpen(false);
-    }
+    if (!el) return;
+    e.preventDefault();
+    el.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    window.history.replaceState(null, "", `#${id}`);
+    setActive(id);
   };
 
   return (
-    <>
-      {/* Desktop: sticky sidebar TOC */}
-      <aside className="hidden xl:block fixed left-[max(0px,calc(50%-650px))] top-24 w-44 z-30">
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
-          className="glass-card p-3 space-y-0.5 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-thin">
-          <div className="flex items-center gap-1.5 px-2 pb-2 border-b border-border/30 mb-1">
-            <List className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Sections</span>
-          </div>
-          {SECTIONS.map((s) => {
-            const isActive = activeSection === s.id;
-            return (
-              <button key={s.id} onClick={() => scrollTo(s.id)}
-                className={`flex items-center gap-1.5 w-full text-left px-2 py-1.5 rounded-md text-[11px] transition-all ${
-                  isActive
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                }`}>
-                {isActive && <ChevronRight className="h-3 w-3 flex-shrink-0" />}
-                <span className={isActive ? "" : "ml-[18px]"}>{s.label}</span>
-              </button>
-            );
-          })}
-        </motion.div>
-      </aside>
-
-      {/* Mobile: floating TOC button */}
-      <div className="xl:hidden fixed bottom-20 right-4 z-50 md:bottom-4">
-        <button onClick={() => setIsOpen(!isOpen)}
-          className="h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 transition-transform">
-          <Menu className="h-5 w-5" />
-        </button>
-
-        <AnimatePresence>
-          {isOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="absolute bottom-12 right-0 z-50 w-48 glass-card-elevated p-2 space-y-0.5 max-h-[60vh] overflow-y-auto scrollbar-thin"
+    <div className="sticky top-[49px] z-30 -mx-4 border-b bg-background/95 backdrop-blur sm:-mx-6 md:top-[57px] lg:-mx-8" data-no-print>
+      {showMini && mini && (
+        <div className={cn("flex min-h-12 items-center justify-between gap-3 border-b py-1", GUTTER)} data-testid="mini-header">
+          {mini}
+        </div>
+      )}
+      <nav aria-label="Sections of this page" className={GUTTER}>
+        <ul ref={list} className="flex gap-1 overflow-x-auto py-1">
+          {SECTION_LIST.map((s) => (
+            <li key={s.id} className="shrink-0">
+              <a
+                href={`#${s.id}`}
+                onClick={go(s.id)}
+                aria-current={active === s.id ? "location" : undefined}
+                className={cn(
+                  "inline-flex min-h-11 items-center rounded-md px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  active === s.id ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
               >
-                {SECTIONS.map((s) => {
-                  const isActive = activeSection === s.id;
-                  return (
-                    <button key={s.id} onClick={() => scrollTo(s.id)}
-                      className={`flex items-center w-full text-left px-3 py-2 rounded-md text-xs transition-colors ${
-                        isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent/50"
-                      }`}>
-                      {s.label}
-                    </button>
-                  );
-                })}
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      </div>
-    </>
+                {s.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
   );
 }
-
-export { SECTIONS };

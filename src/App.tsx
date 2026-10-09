@@ -6,27 +6,36 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { DensityProvider } from "@/hooks/use-density";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useDocumentTitle } from "@/hooks/use-document-title";
-import { AnimatePresence } from "framer-motion";
+import { MotionConfig } from "framer-motion";
+import { lazy, Suspense } from "react";
+import { ROUTER_BASENAME } from "@/lib/base-path";
 import { OnboardingTour } from "./components/OnboardingTour";
-import { useMarketNotifications } from "./components/NotificationSystem";
+import { LoadingState } from "@/components/layout";
+import { DatasetBanner } from "@/components/data/DatasetBanner";
+import { LearnModeProvider } from "@/hooks/use-learn-mode";
 import { useKeyboardNav, KeyboardShortcutsHelp } from "@/hooks/use-keyboard-nav";
-import Dashboard from "./pages/Dashboard";
-import CompanyDetail from "./pages/CompanyDetail";
-import Screener from "./pages/Screener";
-import Compare from "./pages/Compare";
-import Watchlist from "./pages/Watchlist";
-import DCFCalculator from "./pages/DCFCalculator";
-import Portfolio from "./pages/Portfolio";
-import NotFound from "./pages/NotFound";
+const Learn = lazy(() => import("./pages/Learn"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
+const Screener = lazy(() => import("./pages/Screener"));
+const Compare = lazy(() => import("./pages/Compare"));
+const Watchlist = lazy(() => import("./pages/Watchlist"));
+const DCFCalculator = lazy(() => import("./pages/DCFCalculator"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const RouteFallback = () => <LoadingState className="py-24" />;
 
 const queryClient = new QueryClient();
 
-function AnimatedRoutes() {
+/** Each page animates itself in (PageShell, CSS only), so there is no exit animation to wait for. */
+function AppRoutes() {
   const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
+    <>
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/company/:symbol" element={<CompanyDetail />} />
@@ -35,24 +44,33 @@ function AnimatedRoutes() {
         <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/dcf" element={<DCFCalculator />} />
         <Route path="/portfolio" element={<Portfolio />} />
+        <Route path="/learn" element={<Learn />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </AnimatePresence>
+    </>
   );
 }
 
 function AppShell() {
-  useMarketNotifications();
   useDocumentTitle();
   const { showHelp, setShowHelp } = useKeyboardNav();
 
   return (
-    <div className="min-h-screen bg-background pb-14 md:pb-0">
+    <div className="min-h-screen bg-background pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[200] focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-lg focus:ring-2 focus:ring-primary">
+        Skip to the content
+      </a>
       <Header />
+      <DatasetBanner />
       <CommandPalette />
       <OnboardingTour />
       <KeyboardShortcutsHelp open={showHelp} onClose={() => setShowHelp(false)} />
-      <AnimatedRoutes />
+      <main id="main" tabIndex={-1} className="outline-none">
+        <Suspense fallback={<RouteFallback />}>
+          <AppRoutes />
+        </Suspense>
+      </main>
+      <Footer />
     </div>
   );
 }
@@ -61,13 +79,17 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <DensityProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppShell />
-          </BrowserRouter>
-        </TooltipProvider>
+        <MotionConfig reducedMotion="user">
+          <LearnModeProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter basename={ROUTER_BASENAME}>
+                <AppShell />
+              </BrowserRouter>
+            </TooltipProvider>
+          </LearnModeProvider>
+        </MotionConfig>
       </DensityProvider>
     </ThemeProvider>
   </QueryClientProvider>
