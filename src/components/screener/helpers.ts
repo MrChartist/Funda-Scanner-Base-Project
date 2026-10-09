@@ -154,3 +154,10 @@ export function nextSort(sort: DisplaySort | null, key: string, isText: boolean)
 export const OPERATOR_LABEL: Readonly<Record<CmpOp | "between", string>> = {
   ">": "is above", ">=": "is at least", "<": "is below", "<=": "is at most", "=": "equals", "!=": "is not", between: "is between",
 };
+
+/** The rule whose removal would bring back the most companies (largest drop-one count), if any. */
+export function loosestRule(run: ScreenRun) {
+  let best: ScreenRun["funnel"][number] | null = null;
+  for (const step of run.funnel) if (step.dropOneMatches > 0 && (best === null || step.dropOneMatches > best.dropOneMatches)) best = step;
+  return best;
+}

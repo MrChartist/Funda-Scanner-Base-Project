@@ -25,7 +25,7 @@ export function MetricPicker({ store, value, onChange, beginner, label }: Metric
   return (
     <div className="flex items-center gap-1">
       <Select value={base ? base.id : undefined} onValueChange={onChange} open={open} onOpenChange={setOpen}>
-        <SelectTrigger aria-label={label} className="min-h-11 min-w-[11rem] flex-1 text-sm">
+        <SelectTrigger aria-label={label} className="min-h-11 min-w-[11rem] flex-1 text-sm lg:min-h-9">
           <SelectValue placeholder="Choose a metric" />
         </SelectTrigger>
         <SelectContent className="max-h-80">

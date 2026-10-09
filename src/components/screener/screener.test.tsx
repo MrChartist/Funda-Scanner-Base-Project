@@ -101,16 +101,20 @@ function expectedCount(query: string): number {
   return runScreen(store, { query, columns: null, sort: null, universe: { kind: "all" } }, { watchlist: [], portfolio: [] }).matchCount;
 }
 
+/** Applies a template from the template bar (the chips above the results). */
 function useTemplateCard(title: string) {
-  fireEvent.click(screen.getByRole("button", { name: `Use ${title}` }));
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${title}(,|$)`) }));
 }
 
 describe("Screener: default view and honest labelling", () => {
-  it("shows the template gallery and Simple rules by default, and keeps Import data", async () => {
+  it("shows the results first: the table is populated, the template bar is compact, Simple rules is the default tab", async () => {
     await ready();
-    expect(screen.getByRole("heading", { name: /start from a template/i })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Simple rules", selected: true })).toBeInTheDocument();
-    for (const t of TEMPLATES) expect(screen.getByRole("heading", { name: t.title })).toBeInTheDocument();
+    // The table is already there with every company, and the gallery is folded away.
+    expect(await screen.findByRole("table")).toBeInTheDocument();
+    expect(summary()).toHaveTextContent("150 of 150 match");
+    expect(screen.queryByRole("heading", { name: /about the templates/i })).toBeNull();
+    for (const t of TEMPLATES) expect(screen.getByRole("button", { name: new RegExp(`^${t.title}(,|$)`) })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /import data/i })).toBeInTheDocument();
     // The one data-source badge lives in the Header, not on this page.
     expect(screen.queryByLabelText(/data source/i)).toBeNull();
@@ -167,7 +171,6 @@ describe("Screener: templates", () => {
 
   it("adds a template to existing rules, then Undo returns to the original rules", async () => {
     await ready("/screener?q=" + encodeURIComponent("roce > 15"));
-    fireEvent.click(screen.getByRole("button", { name: /start from a template/i }));
     useTemplateCard("Reliable dividend payers");
     const dialog = await screen.findByRole("alertdialog");
     expect(within(dialog).getByRole("button", { name: "Replace my rules" })).toBeInTheDocument();
@@ -180,7 +183,6 @@ describe("Screener: templates", () => {
 
   it("replaces existing rules when asked", async () => {
     await ready("/screener?q=" + encodeURIComponent("roce > 15"));
-    fireEvent.click(screen.getByRole("button", { name: /start from a template/i }));
     useTemplateCard("Steady growers");
     const dialog = await screen.findByRole("alertdialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "Replace my rules" }));
@@ -549,5 +551,183 @@ describe("Screener: universe, URL, save, share, export, compare", () => {
     fireEvent.change(within(dialog).getByLabelText("Search metrics"), { target: { value: "piotroski" } });
     fireEvent.click(within(dialog).getAllByRole("button", { name: /^Add column/ })[0]);
     expect(within(dialog).getByRole("button", { name: /Remove column/ })).toBeInTheDocument();
+  });
+});
+
+describe("Screener: results-first template bar", () => {
+  it("shows a live match count on every template chip, equal to the engine's count", async () => {
+    await ready();
+    for (const t of TEMPLATES) {
+      const n = expectedCount(t.query);
+      const label = `${t.title}, ${n} ${n === 1 ? "match" : "matches"}`;
+      expect(await screen.findByRole("button", { name: label })).toBeInTheDocument();
+    }
+  });
+
+  it("marks the applied template chip as pressed and keeps 'Details' reachable from the rules line", async () => {
+    await ready();
+    useTemplateCard("Quality compounders");
+    const chip = await screen.findByRole("button", { name: /^Quality compounders, \d+ match/ });
+    expect(chip).toHaveAttribute("aria-pressed", "true");
+    const line = screen.getByTestId("rules-summary");
+    expect(line).toHaveTextContent("from Quality compounders");
+    fireEvent.click(within(line).getByRole("button", { name: "Details" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("The rules")).toBeInTheDocument();
+  });
+
+  it("'More about templates' opens the described gallery in a panel and Details stays reachable", async () => {
+    await ready();
+    const more = screen.getByRole("button", { name: "More about templates" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(more);
+    expect(more).toHaveAttribute("aria-expanded", "true");
+    for (const t of TEMPLATES) expect(screen.getByRole("heading", { name: t.title })).toBeInTheDocument();
+    expect(screen.getByText(TEMPLATES[0].idea)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: `Details of ${TEMPLATES[0].title}` }));
+    expect(await screen.findByRole("dialog")).toHaveTextContent(TEMPLATES[0].title);
+  });
+});
+
+describe("Screener: active rule chips above the results", () => {
+  it("lists one removable chip per rule and removing one updates the query and the count", async () => {
+    const query = "roce > 15\ndebt_equity < 1";
+    await ready("/screener?q=" + encodeURIComponent(query));
+    const list = screen.getByRole("list", { name: "Active rules" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(2);
+    const remove = within(list).getAllByRole("button", { name: /^Remove rule:/ })[0];
+    fireEvent.click(remove);
+    const n = expectedCount("debt_equity < 1");
+    await waitFor(() => expect(summary()).toHaveTextContent(new RegExp(`${n} of 150 match`)));
+    expect(within(screen.getByRole("list", { name: "Active rules" })).getAllByRole("listitem")).toHaveLength(1);
+    openTab("Query");
+    expect(queryBox().value).toBe("debt_equity < 1");
+  });
+
+  it("'Clear all rules' empties the query and shows the hint", async () => {
+    await ready("/screener?q=" + encodeURIComponent("roce > 15"));
+    fireEvent.click(screen.getByRole("button", { name: "Clear all rules" }));
+    await waitFor(() => expect(summary()).toHaveTextContent("150 of 150 match"));
+    expect(screen.queryByRole("list", { name: "Active rules" })).toBeNull();
+    expect(screen.getByTestId("rules-summary")).toHaveTextContent(/no rules yet/i);
+  });
+});
+
+describe("Screener: column presets", () => {
+  it("applies a preset, marks it pressed and encodes it in the URL like other columns", async () => {
+    await ready();
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    const dialog = await screen.findByRole("dialog");
+    const valuation = within(dialog).getByRole("button", { name: "Valuation" });
+    expect(within(dialog).getByRole("button", { name: "Overview" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(valuation);
+    expect(valuation).toHaveAttribute("aria-pressed", "true");
+    const header = store.def("ev_ebitda")?.short ?? "";
+    expect(header).not.toBe("");
+    await waitFor(() => expect(within(screen.getByRole("table", { hidden: true })).getByRole("columnheader", { name: new RegExp(header.replace("/", "\\/")), hidden: true })).toBeInTheDocument());
+    await waitFor(() => expect(decodeURIComponent(screen.getByTestId("location").textContent ?? "")).toContain("cols=pb,ev_ebitda"));
+    // Overview returns to the defaults.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Overview" }));
+    await waitFor(() => expect(screen.getByTestId("location").textContent).not.toContain("cols="));
+  });
+
+  it("offers all six presets", async () => {
+    await ready();
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    const dialog = await screen.findByRole("dialog");
+    for (const name of ["Overview", "Valuation", "Quality", "Growth", "Balance sheet", "Cash flow"]) {
+      expect(within(dialog).getByRole("button", { name })).toBeInTheDocument();
+    }
+  });
+});
+
+describe("Screener: data bars", () => {
+  it("draws bars as aria-hidden decoration with no text, so a value is read once", async () => {
+    await ready();
+    const table = await screen.findByRole("table");
+    const bars = table.querySelectorAll("[data-bar]");
+    expect(bars.length).toBeGreaterThan(0);
+    for (const bar of Array.from(bars)) {
+      expect(bar).toHaveAttribute("aria-hidden", "true");
+      expect(bar.textContent).toBe("");
+      const pct = Number(bar.getAttribute("data-bar"));
+      expect(pct).toBeGreaterThanOrEqual(0);
+      expect(pct).toBeLessThanOrEqual(100);
+    }
+    // A ROCE cell holds its value exactly once.
+    const cell = table.querySelector(`[data-metric="roce"]`);
+    expect(cell).not.toBeNull();
+    const td = cell?.closest("td") as HTMLElement;
+    expect(td.querySelectorAll('[data-metric="roce"]')).toHaveLength(1);
+    expect(within(td).getAllByText(/%/)).toHaveLength(1);
+    // The scale is explained in words.
+    expect(screen.getByTestId("bar-legend")).toHaveTextContent(/ranks/i);
+  });
+
+  it("gives longer bars to higher values within the listed companies", async () => {
+    await ready("/screener?q=" + encodeURIComponent("roce > 0"));
+    const table = await screen.findByRole("table");
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+    const pairs = rows.map((r) => {
+      const cell = r.querySelector('[data-metric="roce"]');
+      const bar = cell?.closest("td")?.querySelector("[data-bar]");
+      return cell && bar ? { text: parseFloat(cell.textContent ?? "NaN"), pct: Number(bar.getAttribute("data-bar")) } : null;
+    }).filter((p): p is { text: number; pct: number } => p !== null && Number.isFinite(p.text));
+    expect(pairs.length).toBeGreaterThan(5);
+    const hi = pairs.reduce((a, b) => (b.text > a.text ? b : a));
+    const lo = pairs.reduce((a, b) => (b.text < a.text ? b : a));
+    expect(hi.pct).toBeGreaterThan(lo.pct);
+  });
+
+  it("shows null reasons as muted chips in words, not bare dashes", async () => {
+    await ready();
+    useTemplateCard("Lenders with clean books");
+    const table = await screen.findByRole("table");
+    await waitFor(() => expect(table.querySelectorAll("[data-null-reason]").length).toBeGreaterThan(0));
+    for (const chip of Array.from(table.querySelectorAll("[data-null-reason]"))) expect((chip.textContent ?? "").trim().length).toBeGreaterThan(1);
+  });
+
+  it("cards on a narrow screen carry mini bars that are also aria-hidden", async () => {
+    window.innerWidth = 390;
+    await ready();
+    await waitFor(() => expect(screen.queryByRole("table")).toBeNull());
+    const bars = document.querySelectorAll("li[aria-label] [data-bar]");
+    expect(bars.length).toBeGreaterThan(0);
+    for (const bar of Array.from(bars)) expect(bar.parentElement).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getAllByText("(fictional)").length).toBeGreaterThan(0);
+  });
+});
+
+describe("Screener: empty state and keyboard", () => {
+  it("suggests the rule with the largest drop-one count and can remove it", async () => {
+    const query = "roce > 5000\ndebt_equity < 1";
+    await ready("/screener?q=" + encodeURIComponent(query));
+    const run = runScreen(store, { query, columns: null, sort: null, universe: { kind: "all" } }, { watchlist: [], portfolio: [] });
+    const best = run.funnel.reduce((a, b) => (b.dropOneMatches > a.dropOneMatches ? b : a));
+    const tip = await screen.findByTestId("loosen-suggestion");
+    expect(tip).toHaveTextContent(`Loosen rule ${best.clause + 1} first`);
+    expect(tip).toHaveTextContent(String(best.dropOneMatches));
+    expect(document.body.textContent ?? "").not.toMatch(FORBIDDEN);
+    fireEvent.click(screen.getByRole("button", { name: `Remove rule ${best.clause + 1} and list more companies` }));
+    const n = expectedCount("debt_equity < 1");
+    await waitFor(() => expect(summary()).toHaveTextContent(new RegExp(`${n} of 150 match`)));
+    expect(screen.queryByText("No companies match these rules")).toBeNull();
+  });
+
+  it("'/' switches to the Query tab and focuses the editor", async () => {
+    await ready();
+    expect(screen.queryByRole("textbox", { name: "Query" })).toBeNull();
+    fireEvent.keyDown(document.body, { key: "/" });
+    await waitFor(() => expect(queryBox()).toHaveFocus());
+    expect(queryBox()).toHaveAttribute("data-slash-focus");
+    expect(tab("Query")).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("announces the result count in a polite live region and keeps aria-sort on headers", async () => {
+    await ready();
+    const live = summary().querySelector('[aria-live="polite"]');
+    expect(live).toHaveTextContent("150 of 150 match");
+    const table = await screen.findByRole("table");
+    expect(within(table).getAllByRole("columnheader").some((h) => h.getAttribute("aria-sort") !== null)).toBe(true);
   });
 });

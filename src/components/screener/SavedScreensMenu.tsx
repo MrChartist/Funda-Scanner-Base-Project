@@ -5,16 +5,19 @@ import { deleteScreen, duplicateScreen, loadSavedScreens } from "@/lib/screen";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SaveScreenDialog, type ScreenDraft } from "./SaveScreenDialog";
+import { ICON_BUTTON, ICON_LABEL } from "./toolbar";
 
 export interface SavedScreensMenuProps {
   /** The current screen (for "Save"). */
   draft: ScreenDraft;
   onLoad: (def: ScreenDefinition) => void;
   onSaved?: (def: ScreenDefinition) => void;
+  /** Which button to draw: "save" (primary), "list" (icon) or both. */
+  part?: "save" | "list" | "both";
 }
 
 /** "Saved screens" list (load, copy, delete) and the "Save screen" dialog. */
-export function SavedScreensMenu({ draft, onLoad, onSaved }: SavedScreensMenuProps) {
+export function SavedScreensMenu({ draft, onLoad, onSaved, part = "both" }: SavedScreensMenuProps) {
   const [listOpen, setListOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [screens, setScreens] = useState<ScreenDefinition[]>(() => loadSavedScreens());
@@ -22,11 +25,12 @@ export function SavedScreensMenu({ draft, onLoad, onSaved }: SavedScreensMenuPro
 
   return (
     <>
+      {part !== "save" && (
       <Dialog open={listOpen} onOpenChange={(o) => { setListOpen(o); if (o) refresh(); }}>
         <DialogTrigger asChild>
-          <Button type="button" variant="outline" className="min-h-11">
-            <BookmarkCheck className="mr-1 h-4 w-4" aria-hidden="true" />
-            Saved screens
+          <Button type="button" variant="ghost" className={ICON_BUTTON} title="Saved screens">
+            <BookmarkCheck className="h-4 w-4" aria-hidden="true" />
+            <span className={ICON_LABEL}>Saved screens</span>
           </Button>
         </DialogTrigger>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
@@ -53,19 +57,25 @@ export function SavedScreensMenu({ draft, onLoad, onSaved }: SavedScreensMenuPro
           )}
         </DialogContent>
       </Dialog>
-      <Button type="button" variant="outline" className="min-h-11" onClick={() => setSaveOpen(true)}>
-        <Save className="mr-1 h-4 w-4" aria-hidden="true" />
-        Save screen
-      </Button>
-      <SaveScreenDialog
-        open={saveOpen}
-        onOpenChange={setSaveOpen}
-        draft={draft}
-        onSaved={(d) => {
-          refresh();
-          onSaved?.(d);
-        }}
-      />
+      )}
+      {part !== "list" && (
+        <>
+          <Button type="button" className="min-h-11 lg:min-h-9" onClick={() => setSaveOpen(true)}>
+            <Save className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            <span className="sm:hidden" aria-hidden="true">Save</span>
+            <span className="sr-only sm:not-sr-only">Save screen</span>
+          </Button>
+          <SaveScreenDialog
+            open={saveOpen}
+            onOpenChange={setSaveOpen}
+            draft={draft}
+            onSaved={(d) => {
+              refresh();
+              onSaved?.(d);
+            }}
+          />
+        </>
+      )}
     </>
   );
 }

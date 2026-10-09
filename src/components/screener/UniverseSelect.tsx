@@ -29,9 +29,9 @@ export function UniverseSelect({ store, value, onChange }: UniverseSelectProps) 
   const current = matchedSector ? `sector:${matchedSector}` : matchedIndustry ? `industry:${matchedIndustry}` : universeValue(value);
   return (
     <div className="flex flex-col gap-1">
-      <Label htmlFor="universe-select" className="text-sm">Companies to screen</Label>
+      <Label htmlFor="universe-select" className="text-xs font-medium text-muted-foreground">Companies to screen</Label>
       <Select value={current} onValueChange={(v) => onChange(universeFromValue(v, value))}>
-        <SelectTrigger id="universe-select" className="min-h-11 w-full text-sm sm:w-72">
+        <SelectTrigger id="universe-select" className="min-h-11 w-full text-sm lg:min-h-9">
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="max-h-80">

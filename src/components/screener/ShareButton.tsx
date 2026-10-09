@@ -35,9 +35,9 @@ export function ShareButton({ getUrl }: ShareButtonProps) {
 
   return (
     <>
-      <Button type="button" variant="outline" className="min-h-11" onClick={() => void share()}>
-        <Share2 className="mr-1 h-4 w-4" aria-hidden="true" />
-        Share
+      <Button type="button" variant="outline" className="h-11 w-11 shrink-0 px-0 sm:w-auto sm:px-4 lg:h-9" onClick={() => void share()}>
+        <Share2 className="h-4 w-4 sm:mr-1.5" aria-hidden="true" />
+        <span className="sr-only sm:not-sr-only">Share</span>
       </Button>
       <Dialog open={fallback !== null} onOpenChange={(o) => { if (!o) setFallback(null); }}>
         <DialogContent className="sm:max-w-lg">
