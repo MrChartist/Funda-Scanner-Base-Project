@@ -41,14 +41,4 @@ export function parseCanonicalJson(text: string, sink: IssueSink, fallbackName: 
   return readCanonicalDataset(value, sink, fallbackName);
 }
 
-/** Serialises a dataset as canonical JSON. Small datasets are indented for readability. */
-export function exportDatasetJson(ds: FundamentalsDataset, o: { pretty?: boolean } = {}): string {
-  const pretty = o.pretty ?? ds.companies.length <= 50;
-  return JSON.stringify(ds, null, pretty ? 2 : undefined);
-}
-
-/** File name for an exported dataset; synthetic data carries the SAMPLE- prefix (§F.6). */
-export function exportFileName(ds: FundamentalsDataset, dateStamp: string): string {
-  const base = ds.meta.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "dataset";
-  return `${ds.meta.isSynthetic ? "SAMPLE-" : ""}funda-${base}-${dateStamp}.json`;
-}
+export { exportDatasetJson, exportFileName } from "./canonical-export";

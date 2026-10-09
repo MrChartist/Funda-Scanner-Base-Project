@@ -7,16 +7,19 @@
 //  • Snapshot-only, added line: "Statements were not provided, so history-based metrics, checks and
 //    scores are unavailable."
 //  • Memory only, added line: "Kept for this session only." with a JSON export.
-import { useState, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { AlertTriangle, Download, Info, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ImportDataDialog } from "@/components/ImportDataDialog";
 import { useDataset } from "@/hooks/use-dataset";
 import type { FundamentalsDataset } from "@/lib/contracts";
 import { clearImportedData, exportDatasetJson, exportFileName, persistenceOf } from "@/lib/data";
 import { formatNumberIN } from "@/lib/format/indian";
 import { localDateStamp } from "@/lib/time/clock";
 import { cn } from "@/lib/utils";
+
+// The import dialog (file readers, report, select) is fetched the first time it is opened, so it
+// stays out of the first-load bundle; once opened it stays mounted so closing still animates.
+const ImportDataDialog = lazy(() => import("@/components/ImportDataDialog").then((m) => ({ default: m.ImportDataDialog })));
 
 export const SNAPSHOT_ONLY_TEXT = "Statements were not provided, so history-based metrics, checks and scores are unavailable.";
 export const SESSION_ONLY_TEXT = "Kept for this session only.";
@@ -55,6 +58,7 @@ export interface DatasetBannerProps {
 export function DatasetBanner({ className }: DatasetBannerProps) {
   const state = useDataset();
   const [importOpen, setImportOpen] = useState(false);
+  const [importRequested, setImportRequested] = useState(false);
 
   if (state.status === "loading") return null;
 
@@ -70,12 +74,16 @@ export function DatasetBanner({ className }: DatasetBannerProps) {
       )}
     >
       <div className="container flex flex-col gap-1 px-0">{children}</div>
-      <ImportDataDialog open={importOpen} onOpenChange={setImportOpen} />
+      {importRequested && (
+        <Suspense fallback={null}>
+          <ImportDataDialog open={importOpen} onOpenChange={setImportOpen} />
+        </Suspense>
+      )}
     </aside>
   );
 
   const importButton = (
-    <Button type="button" variant="link" size="sm" className="h-auto min-h-11 p-0 text-xs sm:min-h-0 sm:text-sm" onClick={() => setImportOpen(true)}>
+    <Button type="button" variant="link" size="sm" className="h-auto min-h-11 p-0 text-xs sm:min-h-0 sm:text-sm" onClick={() => { setImportRequested(true); setImportOpen(true); }}>
       <Upload className="mr-1 h-3.5 w-3.5" aria-hidden="true" />Import your data
     </Button>
   );

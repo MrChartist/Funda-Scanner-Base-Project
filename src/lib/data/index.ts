@@ -7,6 +7,7 @@
 //    (boot, including the one-time v0 migration), clearImportedData.
 //  • Health: computeDataHealth.
 import type { DataProvider, FundamentalsDataset, ImportOutcome } from "@/lib/contracts";
+import type { ImportFileInput, ImportOptions } from "./import";
 import { STORAGE_KEYS } from "@/lib/contracts";
 import { nowIso } from "@/lib/time/clock";
 import { readRaw } from "@/lib/user/storage";
@@ -20,15 +21,26 @@ import { legacyLocalStorageKey, migrateLegacyImport, type LegacyKeyAccess } from
 
 export { getDataProvider, setDataProvider, subscribeDataProvider, loadDataset, getProviderSwitchCount } from "./registry";
 export { datasetFromStockRows, companyFromStockRow } from "./providers/legacy-adapter";
-export { importFiles, FILE_KIND_LABEL, IMPORT_LIMITS, type ImportFileInput, type ImportOptions } from "./import";
+export { FILE_KIND_LABEL } from "./import/kind-labels";
+export type { ImportFileInput, ImportOptions } from "./import";
 export { detectFileKind } from "./import/detect";
-export { exportDatasetJson, exportFileName } from "./import/canonical-json";
+export { exportDatasetJson, exportFileName } from "./import/canonical-export";
 export { MONEY_SCALES, MONEY_SCALE_LABEL, type MoneyScale } from "./import/units";
 export { computeDataHealth, ASSUMED_ZERO_TEXT, MISMATCH_THRESHOLD_PCT } from "./health";
 export { validateCompany, validateDataset, ISIN_PATTERN } from "./validate";
 export { normalizeDataset } from "./normalize";
 export { providerInfo, IMPORTED_PROVIDER_ID, type ProviderInfo } from "./providers/imported";
 export { setStorageAdapters, type PersistKind, type DatasetStorageAdapter } from "./storage";
+
+/**
+ * Reads, checks and joins the dropped files into a dataset plus a validation report. The importer
+ * (parsers, zod schemas, validation) is a separate chunk fetched on the first call, so the app
+ * opens without it.
+ */
+export async function importFiles(files: readonly ImportFileInput[], o: ImportOptions = {}): Promise<ImportOutcome> {
+  const { importFiles: run } = await import("./import");
+  return run(files, o);
+}
 
 let importRevision = 0;
 

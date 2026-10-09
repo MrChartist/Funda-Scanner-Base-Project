@@ -2,8 +2,11 @@
 // guided screens. Used by the header search box and the command palette.
 import type { MetricStore, ScreenTemplate, ScreenUrlState } from "@/lib/contracts";
 import { SCREEN_URL_VERSION } from "@/lib/contracts";
-import { GLOSSARY } from "@/lib/learn";
-import { encodeScreenUrl, TEMPLATES } from "@/lib/screen";
+// Deep imports on purpose: the barrels ("@/lib/learn", "@/lib/screen") also pull in the query and
+// metric engine, and this module is part of the app shell (header search, command palette).
+import { hasGlossaryEntry } from "@/lib/learn/glossary-ids";
+import { TEMPLATES } from "@/lib/screen/templates";
+import { encodeScreenUrl } from "@/lib/screen/url";
 
 export interface CompanyHit {
   symbol: string;
@@ -100,7 +103,7 @@ export function buildSearchItems(store: MetricStore, query: string, limits = { c
 
 /** The Learn page location of a metric: the glossary anchor when there is one, else the page. */
 export function learnHref(metricId: string): string {
-  return GLOSSARY[metricId] ? `/learn#${metricId}` : "/learn";
+  return hasGlossaryEntry(metricId) ?`/learn#${metricId}` : "/learn";
 }
 
 /** The Screener location that opens a guided screen with its own columns and sort. */

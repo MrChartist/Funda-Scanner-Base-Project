@@ -7,7 +7,7 @@ import type { FundamentalsDataset } from "@/lib/contracts";
 import { STORAGE_KEYS } from "@/lib/contracts";
 import { readEnvelope, readRaw, removeKey, writeEnvelope, writeRaw } from "@/lib/user/storage";
 import { makeIssue, normalizeDataset, type IssueSink } from "./normalize";
-import { STORED_DATASET_VERSION, storedEnvelopeSchema } from "./schema";
+import { isStoredEnvelope, STORED_DATASET_VERSION } from "./stored";
 import { utf8Length } from "./import/csv";
 
 export type PersistKind = "indexeddb" | "localstorage" | "memory";
@@ -210,12 +210,11 @@ export async function saveDataset(ds: FundamentalsDataset, adapters: readonly Da
 /** Reads a stored envelope back as a normalised dataset; null when absent or unreadable. */
 export function datasetFromStored(value: unknown, sink: IssueSink = { file: null, issues: [] }): FundamentalsDataset | null {
   if (value === null || value === undefined) return null;
-  const parsed = storedEnvelopeSchema.safeParse(value);
-  if (!parsed.success) {
+  if (!isStoredEnvelope(value)) {
     sink.issues.push(makeIssue("warning", "W121_STORED_UNREADABLE", "The saved dataset in this browser could not be read."));
     return null;
   }
-  return normalizeDataset(parsed.data.data, sink, "Imported data");
+  return normalizeDataset(value.data, sink, "Imported data");
 }
 
 /** Loads the saved dataset from the first adapter that has a readable one. */
