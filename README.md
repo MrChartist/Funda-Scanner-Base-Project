@@ -1,4 +1,6 @@
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,50:1a1a2e,100:6366f1&height=180&section=header&text=Funda%20Scanner&fontSize=52&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=Open-source%20fundamentals%20research%20for%20Indian%20stocks&descSize=16&descAlignY=55&descColor=8b5cf6" width="100%" />
+<p align="center">
+  <img src="public/og-image.png" alt="Funda Scanner: open-source fundamentals research for Indian stocks" width="100%" />
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=white" alt="React 18" />
@@ -27,6 +29,21 @@
   <a href="#contributing">Contributing</a>
 </p>
 
+<p align="center">
+  <img src="docs/images/dashboard-light.jpg" alt="Dashboard: a scatter of return on capital against earnings yield, with the median lines and quadrant captions" width="49%" />
+  <img src="docs/images/screener-light.jpg" alt="Screener: results first, with percentile bars inside the cells and the active rules shown as removable chips" width="49%" />
+</p>
+<p align="center">
+  <img src="docs/images/company-light.jpg" alt="Company page: ten-year history strip, checks by area and the headline figures" width="49%" />
+  <img src="docs/images/compare-dark.jpg" alt="Compare page in the dark theme with bars for each figure" width="49%" />
+</p>
+<p align="center">
+  <img src="docs/images/screener-mobile.jpg" alt="Screener on a phone" width="24%" />
+  <img src="docs/images/company-mobile.jpg" alt="Company page on a phone" width="24%" />
+</p>
+
+<p align="center"><sub>Screenshots show the built-in sample: 150 fictional companies with generated figures.</sub></p>
+
 ---
 
 ## What is Funda Scanner?
@@ -43,17 +60,22 @@ This is the **front-end project**. It ships with **150 fictional companies with 
 
 ### Dashboard
 - **About your data**: what is loaded, how many companies and sectors, the latest common year, the price date and the "as of" date, exactly as supplied.
+- **The universe at a glance**: a scatter of return on capital against earnings yield with the median lines. Pick a guided screen and its companies are highlighted. Every chart states how many companies it plots and why others are left out, and has a table alternative.
+- **Sector medians** and **how returns are spread**: bars for a chosen metric by sector (always with n, the number of companies behind it) and a histogram with quartile markers. Banks, NBFCs and insurers are never mixed with other companies.
 - **Guided screens**: ready-made study screens with live match counts, worked out on the data you have loaded. Each opens in the Screener.
-- **Sector medians**: the median of a chosen metric by sector, always with n (the number of companies behind it). Banks, NBFCs and insurers are never mixed with other companies.
 - **Learn one metric** and **Recently viewed**. The layout can be reordered and sections hidden.
 
 ### Screener and FSQL
 - Write conditions in **FSQL**, a small readable language, for example `every(roce > 15, 5y)` and `pe < industry_median(pe)`. See [docs/query-language.md](docs/query-language.md).
+- **Results first**: every company is listed on arrival, with percentile bars inside the cells (position among the listed companies, not a quality score). Pick a template chip or add rules; active rules show as removable chips.
 - Results explain themselves: which rule each company passed or missed, near misses, and why a company was not evaluated.
+- Column presets (Overview, Valuation, Quality, Growth, Balance sheet, Cash flow).
 - Guided screens (templates) with the idea, a note on every rule, and what the screen will not find.
 - Save screens in your browser and export them with their provenance.
 
 ### Company page, Compare
+- A ten-year history strip (sales, net profit, operating margin, return on capital with the industry median), then headline figures grouped by theme. Each figure shows its trend and where it sits within its industry range, when there are enough peers.
+- Statement tables open on the latest period, with a "Last 5 / All" control and trend sparklines.
 - Figures with their period, unit and formula. A missing figure shows its reason; it is never shown as zero.
 - Lenders (banks, NBFCs, insurers) get lender metrics, and metrics that do not apply say so.
 - Rule-based observations on the data you loaded, with their inputs. They are not recommendations.
@@ -107,6 +129,12 @@ npm run test:perf      # performance budgets (PERF=1 for the strict targets)
 npm run sample:files   # regenerate the public sample files after a generator change
 npm run docs:metrics   # regenerate docs/metrics.md after a catalogue change
 ```
+
+---
+
+## Deploy
+
+It is a static site, so any static host works. A ready GitHub Pages workflow is included (`.github/workflows/pages.yml`): in your repository go to **Settings, Pages, Source: GitHub Actions** and push to `main`. Sub-path deployments, custom domains, Netlify, Vercel, Cloudflare Pages and Docker/nginx are covered in [docs/deploy.md](docs/deploy.md).
 
 ---
 

@@ -10,6 +10,23 @@ The app was rebuilt around one data engine. Every page now reads the same metric
 formatted the same way on the Screener, the company page, Compare and the Watchlist (an integration test
 checks this). This is a large, breaking change; read "Breaking changes" below before upgrading.
 
+### Visual and publishing pass
+
+- **Design system**: one indigo brand in light and dark, a calm navy dark theme, one page container and
+  header style on every page, a compact "sample data" banner on phones, no external font request.
+- **Dashboard**: charts now lead the page: a return-on-capital vs earnings-yield scatter that highlights the
+  companies of a chosen guided screen, sector medians as bars, and a ROCE histogram. Each states how many
+  companies it plots and has a table alternative.
+- **Screener**: results first, with a template bar, removable rule chips, percentile bars inside the cells,
+  column presets and a scroll fade on wide tables.
+- **Company and Compare**: ten-year history strip, grouped headline figures with trend and peer-range bars,
+  statement tables that open on the latest period (Last 5 / All), mini header and active-section navigation.
+- **Publishing**: GitHub Pages workflow, sub-path deployment support, social-share image and icons,
+  `docs/deploy.md`. The first-load script is 45 KB gzip (it was 195 KB): the importer, the validation library
+  and the metric engine now load on demand.
+- **Accessibility**: automated axe checks found no colour-contrast failures; landmark names and the logo
+  link name were fixed.
+
 #### Added
 - **Dataset format v1** (`funda-dataset`): companies with annual statements, quarterly results and
   shareholding history, validated with a report of coded errors and warnings, normalised, and kept in

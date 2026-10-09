@@ -29,7 +29,7 @@ export function CompareCards({ store, indices, model, onRemove }: CompareCardsPr
           <li key={c.symbol} className="flex flex-col rounded-lg border bg-card p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <Link to={`/company/${encodeURIComponent(c.symbol)}`} className="block truncate text-sm font-semibold underline-offset-2 hover:underline">
+                <Link to={`/company/${encodeURIComponent(c.symbol)}`} className="block break-words text-sm font-semibold underline-offset-2 hover:underline">
                   <CompanyName name={c.name} isSynthetic={synthetic} />
                 </Link>
                 <p className="text-xs text-muted-foreground">{c.symbol} · {TYPE_LABEL[t.type]}{t.inferred ? " (inferred)" : ""}</p>

@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, Check, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { DisplaySort, MetricStore, ResolvedColumn, ScreenRun, Tri } from "@/lib/contracts";
@@ -190,10 +190,28 @@ export function ResultsTable(props: ResultsTableProps) {
   const scales = useMemo(() => buildScales(run), [run]);
   const hasRules = run.compiled.clauses.length > 0;
   const hasBars = scales.size > 0;
+
+  // A soft fade on the right edge tells people the table scrolls sideways.
+  const scroller = useRef<HTMLDivElement>(null);
+  const [moreRight, setMoreRight] = useState(false);
+  const measure = useCallback(() => {
+    const el = scroller.current;
+    if (el) setMoreRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+  useEffect(() => {
+    measure();
+    const el = scroller.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [measure, rows, run]);
+
   return (
     <div className="space-y-3">
       {hasBars && <BarLegend count={run.matched.length} />}
-      <div className="scrollbar-thin relative max-h-[calc(100vh-7rem)] min-h-[16rem] overflow-auto rounded-xl border bg-card shadow-sm">
+      <div className="relative">
+      <div ref={scroller} onScroll={measure} className="scrollbar-thin relative max-h-[calc(100vh-7rem)] min-h-[16rem] overflow-auto rounded-xl border bg-card shadow-sm">
         <table className="w-full min-w-max border-separate border-spacing-0 text-sm">
           <caption className="sr-only">
             Companies that match your rules, {sortLabel}. The last row shows the median of all {run.matched.length} listed matches.
@@ -288,6 +306,10 @@ export function ResultsTable(props: ResultsTableProps) {
             </tr>
           </tfoot>
         </table>
+      </div>
+      {moreRight && (
+        <div aria-hidden="true" data-testid="table-fade-right" className="pointer-events-none absolute inset-y-px right-px z-[2] w-10 rounded-r-xl bg-gradient-to-l from-card via-card/70 to-transparent" />
+      )}
       </div>
       {full && <p className="text-sm text-muted-foreground">You can compare up to {MAX_COMPARE} companies at a time.</p>}
       <PaginationBar total={run.matched.length} page={page} pageSize={pageSize} onPage={onPage} onPageSize={onPageSize} />
